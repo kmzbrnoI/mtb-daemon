@@ -1,0 +1,23 @@
+---
+Language: Cpp
+BasedOnStyle: WebKit
+AlignConsecutiveAssignments: false
+AllowShortBlocksOnASingleLine: true
+BreakBeforeBraces: Attach
+# BreakConstructorInitializersBeforeComma: false
+DerivePointerAlignment: true
+PointerAlignment: Middle
+Standard: Cpp11
+TabWidth: 4
+UseTab: ForIndentation
+Cpp11BracedListStyle: true
+ConstructorInitializerAllOnOneLineOrOnePerLine: true
+AlignAfterOpenBracket: true
+ColumnLimit: 100
+BreakBeforeBinaryOperators: None
+AlignOperands: true
+AlwaysBreakTemplateDeclarations: true
+PointerAlignment: Right
+DerivePointerAlignment: false
+...
+
