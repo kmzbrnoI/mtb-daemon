@@ -5,16 +5,16 @@ CONFIG -= app_bundle
 
 SOURCES += \
 	src/main.cpp \
-	src/mtbusb.cpp \
-	src/mtbusb-send.cpp \
-	src/mtbusb-receive.cpp \
-	src/mtbusb-hist.cpp \
-	src/mtbusb-common.cpp
+	src/mtbusb/mtbusb.cpp \
+	src/mtbusb/mtbusb-send.cpp \
+	src/mtbusb/mtbusb-receive.cpp \
+	src/mtbusb/mtbusb-hist.cpp \
+	src/mtbusb/mtbusb-common.cpp
 
 HEADERS += \
-	src/mtbusb.h \
-	src/mtbusb-commands.h
-	src/mtbusb-common.h
+	src/mtbusb/mtbusb.h \
+	src/mtbusb/mtbusb-commands.h
+	src/mtbusb/mtbusb-common.h
 
 CONFIG += c++14
 QMAKE_CXXFLAGS += -Wall -Wextra -pedantic
