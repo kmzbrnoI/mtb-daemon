@@ -221,6 +221,26 @@ Command types:
 }
 ```
 
+### Module subscribe/unsubscribe
+
+```json
+{
+    "command": "module_subscribe"/"module_unsubscribe",
+    "type": "request",
+    "id": int,
+    "addresses": [int, int, ..., int]
+}
+```
+
+```json
+{
+    "command": "module_subscribe"/"module_unsubscribe",
+    "type": "response",
+    "id": int,
+    "status": "ok",
+}
+```
+
 ## Events
 
 ### Module input changed
