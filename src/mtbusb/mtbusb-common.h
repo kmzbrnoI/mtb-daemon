@@ -6,7 +6,8 @@
 namespace Mtb {
 
 struct EInvalidSpeed : public std::logic_error {
-	EInvalidSpeed(const std::string& str) : logic_error(str) {}
+	EInvalidSpeed() : logic_error("Invalid MTBbus speed!") {}
+	EInvalidSpeed(const std::string &str) : logic_error(str) {}
 };
 
 enum class MtbBusSpeed {
@@ -16,6 +17,15 @@ enum class MtbBusSpeed {
 };
 
 int mtbBusSpeedToInt(MtbBusSpeed speed);
+
+struct EInvalidAddress : public std::logic_error {
+	EInvalidAddress() : logic_error("Invalid MTBbus module address!") {}
+	EInvalidAddress(size_t addr) : logic_error("Invalid MTBbus module address: "+std::to_string(addr)+"!") {}
+	EInvalidAddress(const std::string &str) : logic_error(str) {}
+};
+
+bool isValidModuleAddress(size_t addr);
+void checkValidModuleAddress(size_t addr);
 
 }; // namespace Mtb
 

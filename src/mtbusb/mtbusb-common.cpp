@@ -9,7 +9,16 @@ int mtbBusSpeedToInt(MtbBusSpeed speed) {
 		return 57600;
 	if (speed == MtbBusSpeed::br115200)
 		return 115200;
-	throw EInvalidSpeed("Invalid MTBbus speed!");
+	throw EInvalidSpeed();
+}
+
+bool isValidModuleAddress(size_t addr) {
+	return (addr > 0) && (addr < 256);
+}
+
+void checkValidModuleAddress(size_t addr) {
+	if (!isValidModuleAddress(addr))
+		throw EInvalidAddress(addr);
 }
 
 }; // namespace Mtb
