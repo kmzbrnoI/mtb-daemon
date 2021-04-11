@@ -2,7 +2,7 @@
 
 namespace Mtb {
 
-void MtbUsb::m_out_timer_tick() {
+void MtbUsb::outTimerTick() {
 	// TODO
 }
 

@@ -2,7 +2,7 @@
 
 namespace Mtb {
 
-void MtbUsb::sp_handle_ready_read() {
+void MtbUsb::spHandleReadyRead() {
 	// TODO
 }
 

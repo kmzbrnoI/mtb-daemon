@@ -7,6 +7,8 @@
 #include <QSerialPort>
 #include <QTimer>
 
+#include "mtbusb-commands.h"
+
 namespace Mtb {
 
 constexpr size_t _MAX_HISTORY_LEN = 32;
@@ -47,11 +49,11 @@ public:
 	bool connected() const;
 
 private slots:
-	void sp_handle_ready_read();
-	void sp_handle_error(QSerialPort::SerialPortError);
-	void sp_about_to_close();
-	void m_hist_timer_tick();
-	void m_out_timer_tick();
+	void spHandleReadyRead();
+	void spHandleError(QSerialPort::SerialPortError);
+	void spAboutToClose();
+	void histTimerTick();
+	void outTimerTick();
 
 signals:
 	void onLog(QString message, Mtb::LogLevel loglevel);
@@ -61,8 +63,8 @@ signals:
 private:
 	QSerialPort m_serialPort;
 	QByteArray m_readData;
-	QTimer m_hist_timer;
-	QTimer m_out_timer;
+	QTimer m_histTimer;
+	QTimer m_outTimer;
 
 	void log(const QString &message, LogLevel loglevel);
 

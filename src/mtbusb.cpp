@@ -5,10 +5,10 @@ namespace Mtb {
 MtbUsb::MtbUsb(QObject *parent) : QObject(parent) {
 	m_serialPort.setReadBufferSize(128);
 
-	QObject::connect(&m_serialPort, SIGNAL(readyRead()), this, SLOT(sp_handle_ready_read()));
+	QObject::connect(&m_serialPort, SIGNAL(readyRead()), this, SLOT(spHandleReadyRead()));
 	QObject::connect(&m_serialPort, SIGNAL(errorOccurred(QSerialPort::SerialPortError)), this,
-	                 SLOT(sp_handle_error(QSerialPort::SerialPortError)));
-	QObject::connect(&m_serialPort, SIGNAL(aboutToClose()), this, SLOT(sp_about_to_close()));
+	                 SLOT(spHandleError(QSerialPort::SerialPortError)));
+	QObject::connect(&m_serialPort, SIGNAL(aboutToClose()), this, SLOT(spAboutToClose()));
 }
 
 void MtbUsb::log(const QString &message, const LogLevel loglevel) {
@@ -16,9 +16,9 @@ void MtbUsb::log(const QString &message, const LogLevel loglevel) {
 		onLog(message, loglevel);
 }
 
-void MtbUsb::sp_about_to_close() {
-	m_hist_timer.stop();
-	m_out_timer.stop();
+void MtbUsb::spAboutToClose() {
+	m_histTimer.stop();
+	m_outTimer.stop();
 	/*while (!m_hist.empty()) {
 		if (nullptr != m_hist.front().callback_err)
 			m_hist.front().callback_err->func(this, m_hist.front().callback_err->data);
@@ -33,7 +33,7 @@ void MtbUsb::sp_about_to_close() {
 	log("Disconnected", LogLevel::Info);
 }
 
-void MtbUsb::sp_handle_error(QSerialPort::SerialPortError serialPortError) {
+void MtbUsb::spHandleError(QSerialPort::SerialPortError serialPortError) {
 	if (serialPortError != QSerialPort::NoError) {
 		// Serial port error is considered as fatal → close device immediately
 		if (this->connected())
@@ -65,7 +65,7 @@ void MtbUsb::connect(const QString &portname, int32_t br, QSerialPort::FlowContr
 	if (!m_serialPort.open(QIODevice::ReadWrite))
 		throw EOpenError(m_serialPort.errorString());
 
-	m_hist_timer.start(_HIST_CHECK_INTERVAL);
+	m_histTimer.start(_HIST_CHECK_INTERVAL);
 	log("Connected", LogLevel::Info);
 	onConnect();
 }
