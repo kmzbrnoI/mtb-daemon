@@ -214,7 +214,7 @@ Command types:
 
 ```json
 {
-    "command": "module_set_config",
+    "command": "module_upgrade_fw",
     "type": "response",
     "id": int,
     "status": "ok",
@@ -223,17 +223,32 @@ Command types:
 
 ## Events
 
-### Input changed
+### Module input changed
 
 ```json
 {
-    "command": "input_changed",
+    "command": "module_input_changed",
     "type": "event",
-    "inputChanged": {
+    "module_input_changed": {
         "address": int,
         "type": "MTB-UNI",
         "type_code": int,
         "inputs": [...]
+    }
+}
+```
+
+### Module output changed
+
+```json
+{
+    "command": "module_output_changed",
+    "type": "event",
+    "module_output_changed": {
+        "address": int,
+        "type": "MTB-UNI",
+        "type_code": int,
+        "outputs": [...]
     }
 }
 ```
