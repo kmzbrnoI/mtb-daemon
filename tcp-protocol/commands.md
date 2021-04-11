@@ -28,9 +28,9 @@ Command types:
  * `type`: `event`
 
 
-## Client → server
+## Commands
 
-### Daemon status request
+### Daemon status
 
 ```json
 {
@@ -39,64 +39,6 @@ Command types:
     "id": int
 }
 ```
-
-### Modules request
-
-```json
-{
-    "command": "modules",
-    "type": "request",
-    "id": int,
-    "data": bool,
-    "state": bool
-}
-```
-
-### Module request
-
-```json
-{
-    "command": "module",
-    "type": "request",
-    "id": int,
-    "address: int,
-    "data": bool,
-    "state": bool
-}
-```
-
-### Set module config
-
-```json
-{
-    "command": "module_set_config",
-    "type": "request",
-    "id": int,
-    "address": int,
-    "config": {
-        // Config specific for module
-    }
-}
-```
-
-### Firmware upgrade request
-
-```json
-{
-    "command": "module_upgrade_fw",
-    "type": "request",
-    "id": int,
-    "address": int,
-    "firmware": str (large string of bytes TODO)
-}
-```
-
-
-
-
-## Server → client
-
-### Daemon status response
 
 ```json
 {
@@ -120,22 +62,18 @@ Command types:
 * When daemon connects to MTB-USB, this message is sent as event.
 * "mtb-usb" section is present if and only if daemon is connected to MTB-USB.
 
-### Modules
+### Module
 
 ```json
 {
-    "command": "modules",
-    "type": "response",
+    "command": "module",
+    "type": "request",
     "id": int,
-    "status": "ok",
-    "modules": {
-        "1": {},
-        "132": {}
-    }
+    "address: int,
+    "data": bool,
+    "state": bool
 }
 ```
-
-### Module
 
 ```json
 {
@@ -179,6 +117,77 @@ Command types:
 * Flicker value: number of ticks in minute. Allowed values: 60, 120, 180, 240,
   320, 600, 33, 66.
 * Inputs delay: 0–1.5 (including limits), step=0.1.
+
+### Modules
+
+```json
+{
+    "command": "modules",
+    "type": "request",
+    "id": int,
+    "data": bool,
+    "state": bool
+}
+```
+
+```json
+{
+    "command": "modules",
+    "type": "response",
+    "id": int,
+    "status": "ok",
+    "modules": {
+        "1": {},
+        "132": {}
+    }
+}
+```
+
+### Set module configuration
+
+```json
+{
+    "command": "module_set_config",
+    "type": "request",
+    "id": int,
+    "address": int,
+    "config": {
+        // Config specific for module
+    }
+}
+```
+
+```json
+{
+    "command": "module_set_config",
+    "type": "response",
+    "id": int,
+    "status": "ok",
+}
+```
+
+### Firmware upgrade request
+
+```json
+{
+    "command": "module_upgrade_fw",
+    "type": "request",
+    "id": int,
+    "address": int,
+    "firmware": str (large string of bytes TODO)
+}
+```
+
+```json
+{
+    "command": "module_set_config",
+    "type": "response",
+    "id": int,
+    "status": "ok",
+}
+```
+
+## Events
 
 ### Input changed
 
