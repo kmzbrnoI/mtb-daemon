@@ -1,6 +1,9 @@
 #include <QDebug>
+#include "mtbusb.h"
 
 int main(int argc, char *argv[]) {
-	qDebug() << "hello beautiful world!" << endl << endl;
+	(void)argc;
+	(void)argv;
+	qDebug() << "hello beautiful world!";
 	return 0;
 }

@@ -4,8 +4,15 @@ CONFIG += console
 CONFIG -= app_bundle
 
 SOURCES += \
-	src/main.cpp
-HEADERS +=
+	src/main.cpp \
+	src/mtbusb.cpp \
+	src/mtbusb-send.cpp \
+	src/mtbusb-receive.cpp \
+	src/mtbusb-hist.cpp
+
+HEADERS += \
+	src/mtbusb.h \
+	src/mtbusb-commands.h
 
 CONFIG += c++14
 QMAKE_CXXFLAGS += -Wall -Wextra -pedantic
