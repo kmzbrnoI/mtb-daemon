@@ -143,7 +143,41 @@ Command types:
 }
 ```
 
-### Set module configuration
+### Module set output/s
+
+```json
+{
+    "command": "module_set_outputs",
+    "type": "request",
+    "id": int,
+    "address": int,
+    "outputs": {
+        // Outputs specific for module, e.g.:
+        "1": {"type": "plain", "value": 0},
+        "2": {"type": "s-com", "value": 10},
+        "12": {"type": "flicker", "value": 60},
+        ...
+    }
+}
+```
+
+```json
+{
+    "command": "module_set_outputs",
+    "type": "response",
+    "id": int,
+    "status": ok,
+    "outputs": {
+        // Outputs specific for module, e.g.:
+        "1": {"type": "plain", "value": 0},
+        "2": {"type": "s-com", "value": 10},
+        "12": {"type": "flicker", "value": 60},
+        ...
+    }
+}
+```
+
+### Module set configuration
 
 ```json
 {
