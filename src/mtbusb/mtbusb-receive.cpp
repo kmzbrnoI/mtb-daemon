@@ -30,12 +30,12 @@ void MtbUsb::spHandleReadyRead() {
 		++begin;
 
 		std::vector<uint8_t> message(begin, begin + length);
-		parseMessage(message);
+		parseMessage(message); // without 0x2A 0x42 length; just command code & data
 		m_readData.remove(0, static_cast<int>(length+3));
 	}
 }
 
-void MtbUsb::parseMessage(MsgType &msg) {
+void MtbUsb::parseMessage(std::vector<uint8_t> &msg) {
 }
 
 }; // namespace Mtb

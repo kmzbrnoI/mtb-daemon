@@ -106,9 +106,8 @@ private:
 
 	void log(const QString &message, LogLevel loglevel);
 
-	using MsgType = std::vector<uint8_t>;
-	void parseMessage(MsgType &msg);
-	void send(MsgType);
+	void parseMessage(std::vector<uint8_t> &msg);
+	void send(std::vector<uint8_t>);
 	void sendNextOut();
 
 	void write(std::unique_ptr<const Cmd> cmd);

@@ -2,12 +2,12 @@
 
 namespace Mtb {
 
-void MtbUsb::send(MsgType data) {
+void MtbUsb::send(std::vector<uint8_t> data) {
 	data.emplace(data.begin(), data.size());
 	data.emplace(data.begin(), 0x42);
 	data.emplace(data.begin(), 0x2A);
 
-	log("PUT: " + dataToStr<MsgType, uint8_t>(data), LogLevel::RawData);
+	log("PUT: " + dataToStr<std::vector<uint8_t>, uint8_t>(data), LogLevel::RawData);
 	QByteArray qdata(reinterpret_cast<const char *>(data.data()), data.size());
 
 	qint64 sent = m_serialPort.write(qdata);
