@@ -19,16 +19,14 @@ void MtbUsb::log(const QString &message, const LogLevel loglevel) {
 void MtbUsb::spAboutToClose() {
 	m_histTimer.stop();
 	m_outTimer.stop();
-	/*while (!m_hist.empty()) {
-		if (nullptr != m_hist.front().callback_err)
-			m_hist.front().callback_err->func(this, m_hist.front().callback_err->data);
+	while (!m_hist.empty()) {
+		m_hist.front().cmd->callError();
 		m_hist.pop_front();
 	}
 	while (!m_out.empty()) {
-		if (nullptr != m_out.front().callback_err)
-			m_out.front().callback_err->func(this, m_out.front().callback_err->data);
+		m_out.front()->callError();
 		m_out.pop_front();
-	}*/
+	}
 
 	log("Disconnected", LogLevel::Info);
 }

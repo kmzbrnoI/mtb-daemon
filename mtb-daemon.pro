@@ -12,6 +12,7 @@ SOURCES += \
 	src/mtbusb/mtbusb-common.cpp
 
 HEADERS += \
+	src/main.h \
 	src/mtbusb/mtbusb.h \
 	src/mtbusb/mtbusb-commands.h
 	src/mtbusb/mtbusb-common.h

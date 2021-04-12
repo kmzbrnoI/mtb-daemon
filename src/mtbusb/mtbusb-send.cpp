@@ -55,21 +55,25 @@ void MtbUsb::send(std::unique_ptr<const Cmd> &cmd, bool bypass_m_out_emptiness) 
 }
 
 void MtbUsb::outTimerTick() {
-	// TODO
+	if (m_out.empty())
+		m_outTimer.stop();
+	else
+		sendNextOut();
 }
 
-bool MtbUsb::conflictWithHistory(const Cmd &cmd) const {
-	for (const HistoryItem &hist : m_hist)
-		if (hist.cmd->conflict(cmd) || cmd.conflict(*(hist.cmd)))
-			return true;
-	return false;
+void MtbUsb::sendNextOut() {
+	if (m_lastSent.addMSecs(_OUT_TIMER_INTERVAL) > QDateTime::currentDateTime()) {
+		if (!m_outTimer.isActive())
+			m_outTimer.start();
+		return;
+	}
+
+	std::unique_ptr<const Cmd> out = std::move(m_out.front());
+	log("DEQUEUE: " + out->msg(), LogLevel::Debug);
+	m_out.pop_front();
+	send(out, true);
 }
 
-bool MtbUsb::conflictWithOut(const Cmd &cmd) const {
-	for (const auto &out : m_out)
-		if (out->conflict(cmd) || cmd.conflict(*out))
-			return true;
-	return false;
-}
+
 
 }; // namespace Mtb

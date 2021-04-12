@@ -54,19 +54,6 @@ QString dataToStr(DataT data, size_t len = 0) {
 	return out.trimmed();
 }
 
-/*using CommandCallbackFunc = std::function<void(void *sender, void *data)>;
-
-struct CommandCallback {
-	CommandCallbackFunc const func;
-	void *const data;
-
-	CommandCallback(CommandCallbackFunc const func, void *const data = nullptr)
-	    : func(func), data(data) {}
-};
-
-using Cb = CommandCallback;
-using UPCb = std::unique_ptr<CommandCallback>;*/
-
 struct HistoryItem {
 	HistoryItem(std::unique_ptr<const Cmd> &cmd, QDateTime timeout)
 	    : cmd(std::move(cmd))
@@ -122,6 +109,7 @@ private:
 	using MsgType = std::vector<uint8_t>;
 	void parseMessage(MsgType &msg);
 	void send(MsgType);
+	void sendNextOut();
 
 	void write(std::unique_ptr<const Cmd> cmd);
 	void send(std::unique_ptr<const Cmd> &cmd, bool bypass_m_out_emptiness = false);
