@@ -27,6 +27,7 @@ void MtbUsb::spAboutToClose() {
 		m_out.front()->callError();
 		m_out.pop_front();
 	}
+	m_mtbUsbInfo.reset();
 
 	log("Disconnected", LogLevel::Info);
 }

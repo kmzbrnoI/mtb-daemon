@@ -17,8 +17,8 @@ HEADERS += \
 	src/mtbusb/mtbusb-commands.h
 	src/mtbusb/mtbusb-common.h
 
-CONFIG += c++14
-QMAKE_CXXFLAGS += -Wall -Wextra -pedantic
+CONFIG += c++17
+QMAKE_CXXFLAGS += -Wall -Wextra -pedantic -std=c++17
 
 win32 {
 	QMAKE_LFLAGS += -Wl,--kill-at

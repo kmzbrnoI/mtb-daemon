@@ -88,9 +88,11 @@ struct CmdMtbUsbActiveModulesRequest : public Cmd {
 struct CmdMtbUsbForward : public Cmd {
 	static constexpr uint8_t usbCommandCode = 0x10;
 	const uint8_t module;
+	const uint8_t busCommandCode;
 
-	CmdMtbUsbForward(uint8_t module, const CommandCallback<StdCallbackFunc>& onError = {})
-	 : Cmd(onError), module(module) {
+	CmdMtbUsbForward(uint8_t module, uint8_t busCommandCode,
+	                 const CommandCallback<StdCallbackFunc>& onError = {})
+	 : Cmd(onError), module(module), busCommandCode(busCommandCode) {
 		if (module == 0)
 			throw EInvalidAddress(module);
 	}
@@ -111,12 +113,13 @@ struct ModuleInfo {
 using ModuleInfoCallbackFunc = std::function<void(ModuleInfo info, void *data)>;
 
 struct CmdMtbModuleInfoRequest : public CmdMtbUsbForward {
+	static constexpr uint8_t _busCommandCode = 0x20;
 	const CommandCallback<ModuleInfoCallbackFunc> onInfo;
 
 	CmdMtbModuleInfoRequest(uint8_t module, const CommandCallback<ModuleInfoCallbackFunc> onInfo,
 	                        const CommandCallback<StdCallbackFunc> onError)
-	 : CmdMtbUsbForward(module, onError), onInfo(onInfo) {}
-	std::vector<uint8_t> getBytes() const override { return {usbCommandCode, module, 0x20}; }
+	 : CmdMtbUsbForward(module, _busCommandCode, onError), onInfo(onInfo) {}
+	std::vector<uint8_t> getBytes() const override { return {usbCommandCode, module, _busCommandCode}; }
 	QString msg() const override { return "Module "+QString(module)+" Information Request"; }
 };
 

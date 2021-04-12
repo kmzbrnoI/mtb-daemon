@@ -10,6 +10,7 @@
 #include <queue>
 #include <functional>
 #include <memory>
+#include <optional>
 
 #include "mtbusb-commands.h"
 
@@ -61,9 +62,41 @@ struct HistoryItem {
 	HistoryItem(HistoryItem &&hist) noexcept
 	    : cmd(std::move(hist.cmd))
 	    , timeout(hist.timeout) {}
+	HistoryItem& operator=(HistoryItem &&hist) {
+		cmd = std::move(hist.cmd);
+		timeout = hist.timeout;
+		return *this;
+	}
 
 	std::unique_ptr<const Cmd> cmd;
 	QDateTime timeout;
+};
+
+enum class MtbUsbRecvCommand {
+	Ack = 0x01,
+	Error = 0x02,
+	MtbBusForward = 0x10,
+	MtbUsbInfo = 0x20,
+	ActiveModules = 0x22,
+	NewModule = 0x23,
+	ModuleFailed = 0x24,
+};
+
+enum class MtbUsbRecvError {
+	NoResponse = 0x01,
+	FullBuffer = 0x02,
+};
+
+struct MtbUsbInfo {
+	uint8_t type;
+	MtbBusSpeed speed;
+	uint8_t fw_major;
+	uint8_t fw_minor;
+	uint8_t proto_major;
+	uint8_t proto_minor;
+
+	QString fw_version() const { return QString(fw_major)+"."+QString(fw_minor); }
+	QString proto_version() const { return QString(proto_major)+"."+QString(proto_minor); }
 };
 
 
@@ -81,6 +114,8 @@ public:
 
 	template <typename T>
 	void send(const T &&cmd);
+
+	std::optional<MtbUsbInfo> mtbUsbInfo() const { return m_mtbUsbInfo; }
 
 private slots:
 	void spHandleReadyRead();
@@ -103,10 +138,12 @@ private:
 	std::deque<std::unique_ptr<const Cmd>> m_out;
 	QDateTime m_lastSent;
 	QDateTime m_receiveTimeout;
+	std::optional<MtbUsbInfo> m_mtbUsbInfo;
 
 	void log(const QString &message, LogLevel loglevel);
 
-	void parseMessage(std::vector<uint8_t> &msg);
+	void parseMtbUsbMessage(uint8_t command_code, std::vector<uint8_t> &data);
+	void parseMtbBusMessage(uint8_t module, uint8_t command_code, std::vector<uint8_t> &data);
 	void send(std::vector<uint8_t>);
 	void sendNextOut();
 
@@ -115,6 +152,9 @@ private:
 
 	bool conflictWithHistory(const Cmd &) const;
 	bool conflictWithOut(const Cmd &) const;
+
+	void handleMtbUsbError(uint8_t code, uint8_t out_command_code, uint8_t addr);
+	void histTimeoutError(size_t i);
 };
 
 // Templated functions must be in header file to compile
