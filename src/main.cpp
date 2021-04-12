@@ -12,9 +12,12 @@ DaemonCoreApplication::DaemonCoreApplication(int &argc, char **argv)
 
 	mtbusb.loglevel = Mtb::LogLevel::Debug;
 	mtbusb.connect(argv[1], 115200, QSerialPort::FlowControl::NoFlowControl);
+
+	mtbusb.send(Mtb::CmdMtbUsbInfoRequest());
 }
 
 void DaemonCoreApplication::mtbUsbLog(QString message, Mtb::LogLevel loglevel) {
+	(void)loglevel;
 	std::cout << message.toStdString() << std::endl;
 }
 

@@ -57,6 +57,10 @@ struct CmdMtbUsbInfoRequest : public Cmd {
 
 	std::vector<uint8_t> getBytes() const override { return {0x20}; }
 	QString msg() const override { return "MTB-USB Information Request"; }
+
+	bool processResponse(uint8_t usbCommandCode, std::vector<uint8_t> data) const override {
+		return true;
+	}
 };
 
 struct CmdMtbUsbChangeSpeed : public Cmd {
