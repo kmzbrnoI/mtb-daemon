@@ -23,7 +23,6 @@ struct CommandCallback {
 	    : func([](void*) {}), data(nullptr) {}
 	CommandCallback(F const func, void *const data = nullptr)
 	    : func(func), data(data) {}
-	void call() const { func(data); }
 };
 
 struct Cmd {
@@ -63,7 +62,7 @@ struct CmdMtbUsbInfoRequest : public Cmd {
 
 	bool processUsbResponse(MtbUsbRecvCommand usbCommand, const std::vector<uint8_t>&) const override {
 		if (usbCommand == MtbUsbRecvCommand::MtbUsbInfo) {
-			onOk.call();
+			onOk.func(onOk.data);
 			return true;
 		}
 		return false;
@@ -88,7 +87,7 @@ struct CmdMtbUsbChangeSpeed : public Cmd {
 
 	bool processUsbResponse(MtbUsbRecvCommand usbCommand, const std::vector<uint8_t>&) const override {
 		if (usbCommand == MtbUsbRecvCommand::Ack) {
-			onOk.call();
+			onOk.func(onOk.data);
 			return true;
 		}
 		return false;
@@ -107,7 +106,7 @@ struct CmdMtbUsbActiveModulesRequest : public Cmd {
 
 	bool processUsbResponse(MtbUsbRecvCommand usbCommand, const std::vector<uint8_t>&) const override {
 		if (usbCommand == MtbUsbRecvCommand::ActiveModules) {
-			onOk.call();
+			onOk.func(onOk.data);
 			return true;
 		}
 		return false;
@@ -141,6 +140,9 @@ struct ModuleInfo {
 	uint8_t fw_minor;
 	uint8_t proto_major;
 	uint8_t proto_minor;
+
+	QString fw_version() const { return QString::number(fw_major)+"."+QString::number(fw_minor); }
+	QString proto_version() const { return QString::number(proto_major)+"."+QString::number(proto_minor); }
 };
 
 using ModuleInfoCallbackFunc = std::function<void(ModuleInfo info, void *data)>;
@@ -154,6 +156,22 @@ struct CmdMtbModuleInfoRequest : public CmdMtbUsbForward {
 	 : CmdMtbUsbForward(module, _busCommandCode, onError), onInfo(onInfo) {}
 	std::vector<uint8_t> getBytes() const override { return {usbCommandCode, module, _busCommandCode}; }
 	QString msg() const override { return "Module "+QString(module)+" Information Request"; }
+
+	bool processBusResponse(MtbBusRecvCommand busCommand, const std::vector<uint8_t>& data) const override {
+		if ((busCommand == MtbBusRecvCommand::ModuleInfo) && (data.size() >= 6)) {
+			ModuleInfo info;
+			info.type = data[0];
+			info.bootloader_int = data[1] & 1;
+			info.bootloader_unint = (data[1] >> 1) & 1;
+			info.fw_major = data[2];
+			info.fw_minor = data[3];
+			info.proto_major = data[4];
+			info.proto_minor = data[5];
+			onInfo.func(info, onInfo.data);
+			return true;
+		}
+		return false;
+	}
 };
 
 }; // namespace Mtb
