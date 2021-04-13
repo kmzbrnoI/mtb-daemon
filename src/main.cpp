@@ -14,7 +14,10 @@ DaemonCoreApplication::DaemonCoreApplication(int &argc, char **argv)
 	mtbusb.connect(argv[1], 115200, QSerialPort::FlowControl::NoFlowControl);
 
 	mtbusb.send(
-		Mtb::CmdMtbUsbInfoRequest({[](void*) { std::cout << "MTB-USB got info" << std::endl; }})
+		Mtb::CmdMtbUsbInfoRequest(
+			{[](void*) { std::cout << "MTB-USB got info" << std::endl; }},
+			{[](void*) { std::cout << "MTB-USB did not get info" << std::endl; }}
+		)
 	);
 }
 

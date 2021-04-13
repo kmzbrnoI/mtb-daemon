@@ -139,7 +139,7 @@ private:
 	bool conflictWithOut(const Cmd &) const;
 
 	void handleMtbUsbError(uint8_t code, uint8_t out_command_code, uint8_t addr);
-	void histTimeoutError(size_t i);
+	void histTimeoutError(size_t i = 0);
 };
 
 // Templated functions must be in header file to compile

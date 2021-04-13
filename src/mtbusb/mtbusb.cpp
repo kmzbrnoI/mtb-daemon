@@ -9,6 +9,10 @@ MtbUsb::MtbUsb(QObject *parent) : QObject(parent) {
 	QObject::connect(&m_serialPort, SIGNAL(errorOccurred(QSerialPort::SerialPortError)), this,
 	                 SLOT(spHandleError(QSerialPort::SerialPortError)));
 	QObject::connect(&m_serialPort, SIGNAL(aboutToClose()), this, SLOT(spAboutToClose()));
+
+	QObject::connect(&m_histTimer, SIGNAL(timeout()), this, SLOT(histTimerTick()));
+	m_outTimer.setInterval(_OUT_TIMER_INTERVAL);
+	QObject::connect(&m_outTimer, SIGNAL(timeout()), this, SLOT(outTimerTick()));
 }
 
 void MtbUsb::log(const QString &message, const LogLevel loglevel) {

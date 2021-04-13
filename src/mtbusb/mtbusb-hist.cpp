@@ -3,7 +3,17 @@
 namespace Mtb {
 
 void MtbUsb::histTimerTick() {
-	// TODO
+	if (!m_serialPort.isOpen()) {
+		for (const auto& hist : m_hist)
+			hist.cmd->callError();
+		m_hist.clear();
+	}
+
+	if (m_hist.empty())
+		return;
+
+	if (m_hist.front().timeout < QDateTime::currentDateTime())
+		histTimeoutError();
 }
 
 bool MtbUsb::conflictWithHistory(const Cmd &cmd) const {
