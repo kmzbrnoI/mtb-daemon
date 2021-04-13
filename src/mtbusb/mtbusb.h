@@ -16,6 +16,7 @@
 
 namespace Mtb {
 
+constexpr size_t _MAX_MODULES = 256;
 constexpr size_t _MAX_HISTORY_LEN = 32;
 constexpr size_t _HIST_CHECK_INTERVAL = 100; // ms
 constexpr size_t _HIST_TIMEOUT = 300; // ms
@@ -80,8 +81,8 @@ struct MtbUsbInfo {
 	uint8_t proto_major;
 	uint8_t proto_minor;
 
-	QString fw_version() const { return QString(fw_major)+"."+QString(fw_minor); }
-	QString proto_version() const { return QString(proto_major)+"."+QString(proto_minor); }
+	QString fw_version() const { return QString::number(fw_major)+"."+QString::number(fw_minor); }
+	QString proto_version() const { return QString::number(proto_major)+"."+QString::number(proto_minor); }
 };
 
 
@@ -101,6 +102,7 @@ public:
 	void send(const T &&cmd);
 
 	std::optional<MtbUsbInfo> mtbUsbInfo() const { return m_mtbUsbInfo; }
+	std::optional<std::array<bool, _MAX_MODULES>> activeModules() const { return m_activeModules; }
 
 private slots:
 	void spHandleReadyRead();
@@ -113,6 +115,8 @@ signals:
 	void onLog(QString message, Mtb::LogLevel loglevel);
 	void onConnect();
 	void onDisconnect();
+	void onNewModule(uint8_t addr);
+	void onModuleFail(uint8_t addr);
 
 private:
 	QSerialPort m_serialPort;
@@ -124,6 +128,7 @@ private:
 	QDateTime m_lastSent;
 	QDateTime m_receiveTimeout;
 	std::optional<MtbUsbInfo> m_mtbUsbInfo;
+	std::optional<std::array<bool, _MAX_MODULES>> m_activeModules;
 
 	void log(const QString &message, LogLevel loglevel);
 

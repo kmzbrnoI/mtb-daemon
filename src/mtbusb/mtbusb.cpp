@@ -32,6 +32,7 @@ void MtbUsb::spAboutToClose() {
 		m_out.pop_front();
 	}
 	m_mtbUsbInfo.reset();
+	m_activeModules.reset();
 
 	log("Disconnected", LogLevel::Info);
 }

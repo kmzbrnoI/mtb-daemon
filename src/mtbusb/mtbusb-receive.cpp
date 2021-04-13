@@ -38,6 +38,10 @@ void MtbUsb::spHandleReadyRead() {
 
 void MtbUsb::parseMtbUsbMessage(uint8_t command_code, const std::vector<uint8_t> &data) {
 	switch (static_cast<MtbUsbRecvCommand>(command_code)) {
+	case MtbUsbRecvCommand::Ack:
+		log("GET: ACK", LogLevel::Commands);
+		break;
+
 	case MtbUsbRecvCommand::Error:
 		if (data.size() >= 3)
 			handleMtbUsbError(data[0], data[1], data[2]);
@@ -60,7 +64,46 @@ void MtbUsb::parseMtbUsbMessage(uint8_t command_code, const std::vector<uint8_t>
 			info.proto_major = data[4];
 			info.proto_minor = data[5];
 			m_mtbUsbInfo = info;
+			log("GET: MTB-USB info: type 0x"+QString::number(info.type, 16)+", fw: "+info.fw_version()+
+			    ", speed: "+QString::number(mtbBusSpeedToInt(info.speed))+", protocol: "+info.proto_version(),
+			    LogLevel::Commands);
 		}
+		break;
+
+	case MtbUsbRecvCommand::ActiveModules:
+		if (data.size() >= 32) {
+			std::array<bool, _MAX_MODULES> activeModules;
+			for (size_t i = 0; i < _MAX_MODULES; i++)
+				activeModules[i] = (data[i/8] >> (i%8)) & 0x1;
+			m_activeModules = activeModules;
+			log("GET: active modules list", LogLevel::Commands);
+		}
+
+	case MtbUsbRecvCommand::NewModule:
+		if (data.size() >= 1) {
+			log("GET: new module "+QString::number(data[0]), LogLevel::Commands);
+			if (m_activeModules.has_value()) {
+				m_activeModules.value()[data[0]] = true;
+				onNewModule(data[0]);
+			}
+		}
+		return; // event cannot be response to command
+
+	case MtbUsbRecvCommand::ModuleFailed:
+		if (data.size() >= 2) {
+			log("GET: module "+QString::number(data[0])+" no response, remaining attempts: "+
+			    QString::number(data[1]), LogLevel::Commands);
+			if (data[1] == 0) {
+				log("GET: module "+QString::number(data[0])+" failed", LogLevel::Commands);
+				if (m_activeModules.has_value()) {
+					m_activeModules.value()[data[0]] = false;
+					onModuleFail(data[0]);
+				}
+			}
+		}
+		return; // event cannot be response to command
+
+	default:
 		break;
 	}
 
@@ -73,17 +116,17 @@ void MtbUsb::parseMtbUsbMessage(uint8_t command_code, const std::vector<uint8_t>
 		}
 	}
 
-	log("GET: unknown MTB-USB command "+QString(command_code), LogLevel::Warning);
+	log("GET: unknown MTB-USB command "+QString::number(command_code), LogLevel::Warning);
 }
 
 void MtbUsb::parseMtbBusMessage(uint8_t module, uint8_t command_code, const std::vector<uint8_t> &data) {
-
 	// Find appropriate history item & call it's ok callback
 	auto it = m_hist.begin();
 	for (size_t i = 0; i < m_hist.size(); i++, ++it) {
 		if (is<CmdMtbUsbForward>(*m_hist[i].cmd)) {
 			const CmdMtbUsbForward& forward = dynamic_cast<const CmdMtbUsbForward&>(*m_hist[i].cmd);
-			if (forward.processBusResponse(static_cast<MtbBusRecvCommand>(command_code), data)) {
+			if ((forward.module == module) &&
+			    (forward.processBusResponse(static_cast<MtbBusRecvCommand>(command_code), data))) {
 				m_hist.erase(it);
 				return;
 			}

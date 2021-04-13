@@ -34,7 +34,7 @@ struct Cmd {
 	virtual QString msg() const = 0;
 	virtual ~Cmd() = default;
 	virtual bool conflict(const Cmd &) const { return false; }
-	virtual bool processUsbResponse(MtbUsbRecvCommand usbCommand, const std::vector<uint8_t> &data) const {
+	virtual bool processUsbResponse(MtbUsbRecvCommand, const std::vector<uint8_t>&) const {
 		return false;
 	}
 		// returns true iff response processed
@@ -61,12 +61,12 @@ struct CmdMtbUsbInfoRequest : public Cmd {
 	std::vector<uint8_t> getBytes() const override { return {0x20}; }
 	QString msg() const override { return "MTB-USB Information Request"; }
 
-	bool processUsbResponse(MtbUsbRecvCommand usbCommand, const std::vector<uint8_t> &data) const override {
+	bool processUsbResponse(MtbUsbRecvCommand usbCommand, const std::vector<uint8_t>&) const override {
 		if (usbCommand == MtbUsbRecvCommand::MtbUsbInfo) {
 			onOk.call();
 			return true;
-		} else
-			return false;
+		}
+		return false;
 	}
 };
 
@@ -85,11 +85,33 @@ struct CmdMtbUsbChangeSpeed : public Cmd {
 		return "MTB-USB Change MTBbus Speed to "+QString(mtbBusSpeedToInt(speed))+" baud/s";
 	}
 	bool conflict(const Cmd &cmd) const override { return is<CmdMtbUsbChangeSpeed>(cmd); }
+
+	bool processUsbResponse(MtbUsbRecvCommand usbCommand, const std::vector<uint8_t>&) const override {
+		if (usbCommand == MtbUsbRecvCommand::Ack) {
+			onOk.call();
+			return true;
+		}
+		return false;
+	}
 };
 
 struct CmdMtbUsbActiveModulesRequest : public Cmd {
+	const CommandCallback<StdCallbackFunc> onOk;
+
+	CmdMtbUsbActiveModulesRequest(const CommandCallback<StdCallbackFunc>& onOk = {},
+	                              const CommandCallback<StdCallbackFunc>& onError = {})
+	  : Cmd(onError), onOk(onOk) {}
+
 	std::vector<uint8_t> getBytes() const override { return {0x22}; }
 	QString msg() const override { return "MTB-USB Active Modules Requst"; }
+
+	bool processUsbResponse(MtbUsbRecvCommand usbCommand, const std::vector<uint8_t>&) const override {
+		if (usbCommand == MtbUsbRecvCommand::ActiveModules) {
+			onOk.call();
+			return true;
+		}
+		return false;
+	}
 };
 
 struct CmdMtbUsbForward : public Cmd {
@@ -104,7 +126,7 @@ struct CmdMtbUsbForward : public Cmd {
 			throw EInvalidAddress(module);
 	}
 
-	virtual bool processBusResponse(MtbBusRecvCommand busCommand, const std::vector<uint8_t> &data) const {
+	virtual bool processBusResponse(MtbBusRecvCommand, const std::vector<uint8_t>&) const {
 		return false;
 	}
 };
