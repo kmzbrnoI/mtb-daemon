@@ -72,21 +72,6 @@ struct HistoryItem {
 	QDateTime timeout;
 };
 
-enum class MtbUsbRecvCommand {
-	Ack = 0x01,
-	Error = 0x02,
-	MtbBusForward = 0x10,
-	MtbUsbInfo = 0x20,
-	ActiveModules = 0x22,
-	NewModule = 0x23,
-	ModuleFailed = 0x24,
-};
-
-enum class MtbUsbRecvError {
-	NoResponse = 0x01,
-	FullBuffer = 0x02,
-};
-
 struct MtbUsbInfo {
 	uint8_t type;
 	MtbBusSpeed speed;
@@ -142,8 +127,8 @@ private:
 
 	void log(const QString &message, LogLevel loglevel);
 
-	void parseMtbUsbMessage(uint8_t command_code, std::vector<uint8_t> &data);
-	void parseMtbBusMessage(uint8_t module, uint8_t command_code, std::vector<uint8_t> &data);
+	void parseMtbUsbMessage(uint8_t command_code, const std::vector<uint8_t> &data);
+	void parseMtbBusMessage(uint8_t module, uint8_t command_code, const std::vector<uint8_t> &data);
 	void send(std::vector<uint8_t>);
 	void sendNextOut();
 

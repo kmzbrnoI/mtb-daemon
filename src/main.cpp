@@ -13,7 +13,9 @@ DaemonCoreApplication::DaemonCoreApplication(int &argc, char **argv)
 	mtbusb.loglevel = Mtb::LogLevel::Debug;
 	mtbusb.connect(argv[1], 115200, QSerialPort::FlowControl::NoFlowControl);
 
-	mtbusb.send(Mtb::CmdMtbUsbInfoRequest());
+	mtbusb.send(
+		Mtb::CmdMtbUsbInfoRequest({[](void*) { std::cout << "MTB-USB got info" << std::endl; }})
+	);
 }
 
 void DaemonCoreApplication::mtbUsbLog(QString message, Mtb::LogLevel loglevel) {

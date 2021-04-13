@@ -33,6 +33,33 @@ struct EInvalidAddress : public MtbUsbError {
 bool isValidModuleAddress(size_t addr);
 void checkValidModuleAddress(size_t addr);
 
+enum class MtbUsbRecvCommand {
+	Ack = 0x01,
+	Error = 0x02,
+	MtbBusForward = 0x10,
+	MtbUsbInfo = 0x20,
+	ActiveModules = 0x22,
+	NewModule = 0x23,
+	ModuleFailed = 0x24,
+};
+
+enum class MtbBusRecvCommand {
+	Acknowledgement = 0x01,
+	Error = 0x02,
+	ModuleInfo = 0x03,
+	ModuleConfig = 0x04,
+	InputChanged = 0x10,
+	InputState = 0x11,
+	OutputSet = 0x12,
+	FWWriteFlashStatus = 0xF2,
+	ModuleSpecific = 0xFE,
+};
+
+enum class MtbUsbRecvError {
+	NoResponse = 0x01,
+	FullBuffer = 0x02,
+};
+
 }; // namespace Mtb
 
 #endif

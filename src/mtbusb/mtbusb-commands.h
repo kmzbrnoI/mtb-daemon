@@ -23,6 +23,7 @@ struct CommandCallback {
 	    : func([](void*) {}), data(nullptr) {}
 	CommandCallback(F const func, void *const data = nullptr)
 	    : func(func), data(data) {}
+	void call() const { func(data); }
 };
 
 struct Cmd {
@@ -33,7 +34,9 @@ struct Cmd {
 	virtual QString msg() const = 0;
 	virtual ~Cmd() = default;
 	virtual bool conflict(const Cmd &) const { return false; }
-	virtual bool processResponse(uint8_t usbCommandCode, std::vector<uint8_t> data) const = 0;
+	virtual bool processUsbResponse(MtbUsbRecvCommand usbCommand, const std::vector<uint8_t> &data) const {
+		return false;
+	}
 		// returns true iff response processed
 	virtual void callError() const {
 		if (nullptr != onError.func)
@@ -58,8 +61,12 @@ struct CmdMtbUsbInfoRequest : public Cmd {
 	std::vector<uint8_t> getBytes() const override { return {0x20}; }
 	QString msg() const override { return "MTB-USB Information Request"; }
 
-	bool processResponse(uint8_t usbCommandCode, std::vector<uint8_t> data) const override {
-		return true;
+	bool processUsbResponse(MtbUsbRecvCommand usbCommand, const std::vector<uint8_t> &data) const override {
+		if (usbCommand == MtbUsbRecvCommand::MtbUsbInfo) {
+			onOk.call();
+			return true;
+		} else
+			return false;
 	}
 };
 
@@ -95,6 +102,10 @@ struct CmdMtbUsbForward : public Cmd {
 	 : Cmd(onError), module(module), busCommandCode(busCommandCode) {
 		if (module == 0)
 			throw EInvalidAddress(module);
+	}
+
+	virtual bool processBusResponse(MtbBusRecvCommand busCommand, const std::vector<uint8_t> &data) const {
+		return false;
 	}
 };
 
