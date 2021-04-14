@@ -175,6 +175,30 @@ struct CmdMtbModuleInfoRequest : public CmdMtbUsbForward {
 	}
 };
 
+struct CmdMtbModuleSetConfig : public CmdMtbUsbForward {
+	static constexpr uint8_t _busCommandCode = 0x03;
+	std::vector<uint8_t> data;
+	const CommandCallback<StdCallbackFunc> onOk;
+
+	CmdMtbModuleSetConfig(uint8_t module, const std::vector<uint8_t>& data,
+	                      const CommandCallback<StdCallbackFunc> onOk,
+	                      const CommandCallback<ErrCallbackFunc> onError)
+	 : CmdMtbUsbForward(module, _busCommandCode, onError), onOk(onOk) {
+		this->data = {usbCommandCode, module, _busCommandCode};
+		std::copy(data.begin(), data.end(), std::back_inserter(this->data));
+	}
+	std::vector<uint8_t> getBytes() const override { return data; }
+	QString msg() const override { return "Module "+QString::number(module)+" set config"; }
+
+	bool processBusResponse(MtbBusRecvCommand busCommand, const std::vector<uint8_t>&) const override {
+		if (busCommand == MtbBusRecvCommand::Acknowledgement) {
+			onOk.func(onOk.data);
+			return true;
+		}
+		return false;
+	}
+};
+
 struct CmdMtbModuleBeacon : public CmdMtbUsbForward {
 	static constexpr uint8_t _busCommandCode = 0x05;
 	const bool state;
