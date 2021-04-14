@@ -55,6 +55,8 @@ enum class MtbBusRecvCommand {
 	ModuleSpecific = 0xFE,
 };
 
+bool isBusEvent(const MtbBusRecvCommand&);
+
 enum class MtbUsbRecvError {
 	NoResponse = 0x01,
 	FullBuffer = 0x02,

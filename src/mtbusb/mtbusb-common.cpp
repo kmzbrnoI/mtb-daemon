@@ -21,4 +21,8 @@ void checkValidModuleAddress(size_t addr) {
 		throw EInvalidAddress(addr);
 }
 
+bool isBusEvent(const MtbBusRecvCommand& command) {
+	return (command == MtbBusRecvCommand::InputChanged);
+}
+
 }; // namespace Mtb

@@ -133,7 +133,7 @@ private:
 	void log(const QString &message, LogLevel loglevel);
 
 	void parseMtbUsbMessage(uint8_t command_code, const std::vector<uint8_t> &data);
-	void parseMtbBusMessage(uint8_t module, uint8_t command_code, const std::vector<uint8_t> &data);
+	void parseMtbBusMessage(uint8_t module, uint8_t attempts, uint8_t command_code, const std::vector<uint8_t> &data);
 	void send(std::vector<uint8_t>);
 	void sendNextOut();
 

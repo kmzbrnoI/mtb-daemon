@@ -1,4 +1,5 @@
 #include "mtbusb.h"
+#include "mtbusb-common.h"
 
 namespace Mtb {
 
@@ -50,7 +51,7 @@ void MtbUsb::parseMtbUsbMessage(uint8_t command_code, const std::vector<uint8_t>
 	case MtbUsbRecvCommand::MtbBusForward:
 		if (data.size() >= 2) {
 			std::vector<uint8_t> mtbBusData(data.begin()+3, data.end());
-			parseMtbBusMessage(data[1], data[2], mtbBusData);
+			parseMtbBusMessage(data[1], data[0], data[2], mtbBusData);
 		}
 		return; // fully processes in parseMtbBusMessage
 
@@ -119,7 +120,18 @@ void MtbUsb::parseMtbUsbMessage(uint8_t command_code, const std::vector<uint8_t>
 	log("GET: unknown MTB-USB command "+QString::number(command_code), LogLevel::Warning);
 }
 
-void MtbUsb::parseMtbBusMessage(uint8_t module, uint8_t command_code, const std::vector<uint8_t> &data) {
+void MtbUsb::parseMtbBusMessage(uint8_t module, uint8_t attempts, uint8_t command_code, const std::vector<uint8_t> &data) {
+	if (isBusEvent(static_cast<MtbBusRecvCommand>(command_code))) {
+		if (attempts != 0)
+			log("Got attempts="+QString::number(attempts)+" for event!", LogLevel::Warning);
+	} else {
+		if (attempts != 1)
+			log("Got attempts="+QString::number(attempts)+" for non-event!", LogLevel::Warning);
+	}
+
+	switch (static_cast<MtbBusRecvCommand>(command_code)) {
+	}
+
 	// Find appropriate history item & call it's ok callback
 	auto it = m_hist.begin();
 	for (size_t i = 0; i < m_hist.size(); i++, ++it) {

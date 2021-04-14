@@ -148,7 +148,7 @@ struct ModuleInfo {
 using ModuleInfoCallbackFunc = std::function<void(ModuleInfo info, void *data)>;
 
 struct CmdMtbModuleInfoRequest : public CmdMtbUsbForward {
-	static constexpr uint8_t _busCommandCode = 0x20;
+	static constexpr uint8_t _busCommandCode = 0x02;
 	const CommandCallback<ModuleInfoCallbackFunc> onInfo;
 
 	CmdMtbModuleInfoRequest(uint8_t module, const CommandCallback<ModuleInfoCallbackFunc> onInfo,
