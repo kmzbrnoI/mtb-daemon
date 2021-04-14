@@ -17,7 +17,9 @@ DaemonCoreApplication::DaemonCoreApplication(int &argc, char **argv)
 		Mtb::CmdMtbModuleInfoRequest(
 			1,
 			{[](Mtb::ModuleInfo, void*) { std::cout << "Ok callback" << std::endl; }},
-			{[](void*) { std::cout << "Error callback!" << std::endl; }}
+			{[](Mtb::CmdError cmdError, void*) {
+				std::cout << "Error callback: "+Mtb::cmdErrorToStr(cmdError).toStdString()+"!" << std::endl;
+			}}
 		)
 	);
 }

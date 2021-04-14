@@ -24,11 +24,11 @@ void MtbUsb::spAboutToClose() {
 	m_histTimer.stop();
 	m_outTimer.stop();
 	while (!m_hist.empty()) {
-		m_hist.front().cmd->callError();
+		m_hist.front().cmd->callError(CmdError::SerialPortClosed);
 		m_hist.pop_front();
 	}
 	while (!m_out.empty()) {
-		m_out.front()->callError();
+		m_out.front()->callError(CmdError::SerialPortClosed);
 		m_out.pop_front();
 	}
 	m_mtbUsbInfo.reset();

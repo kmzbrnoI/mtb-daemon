@@ -28,7 +28,7 @@ void MtbUsb::write(std::unique_ptr<const Cmd> cmd) {
 		);
 	} catch (std::exception &) {
 		log("Fatal error when writing command: " + cmd->msg(), LogLevel::Error);
-		cmd->callError();
+		cmd->callError(CmdError::SerialPortClosed);
 	}
 }
 

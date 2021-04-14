@@ -13,6 +13,7 @@ See mtbusb.h or README for more documentation.
 namespace Mtb {
 
 using StdCallbackFunc = std::function<void(void *data)>;
+using ErrCallbackFunc = std::function<void(CmdError, void *data)>;
 
 template <typename F>
 struct CommandCallback {
@@ -26,9 +27,9 @@ struct CommandCallback {
 };
 
 struct Cmd {
-	const CommandCallback<StdCallbackFunc> onError;
+	const CommandCallback<ErrCallbackFunc> onError;
 
-	Cmd(const CommandCallback<StdCallbackFunc>& onError = {}) : onError(onError) {}
+	Cmd(const CommandCallback<ErrCallbackFunc>& onError = {}) : onError(onError) {}
 	virtual std::vector<uint8_t> getBytes() const = 0;
 	virtual QString msg() const = 0;
 	virtual ~Cmd() = default;
@@ -37,9 +38,9 @@ struct Cmd {
 		return false;
 	}
 		// returns true iff response processed
-	virtual void callError() const {
+	virtual void callError(CmdError error) const {
 		if (nullptr != onError.func)
-			onError.func(onError.data);
+			onError.func(error, onError.data);
 	}
 };
 
@@ -54,7 +55,7 @@ struct CmdMtbUsbInfoRequest : public Cmd {
 	const CommandCallback<StdCallbackFunc> onOk; // no special callback here, data could be read from MtbUsb class directly
 
 	CmdMtbUsbInfoRequest(const CommandCallback<StdCallbackFunc>& onOk = {},
-	                     const CommandCallback<StdCallbackFunc>& onError = {})
+	                     const CommandCallback<ErrCallbackFunc>& onError = {})
 	 : Cmd(onError), onOk(onOk) {}
 
 	std::vector<uint8_t> getBytes() const override { return {0x20}; }
@@ -74,7 +75,7 @@ struct CmdMtbUsbChangeSpeed : public Cmd {
 	const CommandCallback<StdCallbackFunc> onOk;
 
 	CmdMtbUsbChangeSpeed(const MtbBusSpeed speed, const CommandCallback<StdCallbackFunc>& onOk = {},
-	                     const CommandCallback<StdCallbackFunc>& onError = {})
+	                     const CommandCallback<ErrCallbackFunc>& onError = {})
 	  : Cmd(onError), speed(speed), onOk(onOk) {}
 
 	std::vector<uint8_t> getBytes() const override {
@@ -98,7 +99,7 @@ struct CmdMtbUsbActiveModulesRequest : public Cmd {
 	const CommandCallback<StdCallbackFunc> onOk;
 
 	CmdMtbUsbActiveModulesRequest(const CommandCallback<StdCallbackFunc>& onOk = {},
-	                              const CommandCallback<StdCallbackFunc>& onError = {})
+	                              const CommandCallback<ErrCallbackFunc>& onError = {})
 	  : Cmd(onError), onOk(onOk) {}
 
 	std::vector<uint8_t> getBytes() const override { return {0x22}; }
@@ -119,7 +120,7 @@ struct CmdMtbUsbForward : public Cmd {
 	const uint8_t busCommandCode;
 
 	CmdMtbUsbForward(uint8_t module, uint8_t busCommandCode,
-	                 const CommandCallback<StdCallbackFunc>& onError = {})
+	                 const CommandCallback<ErrCallbackFunc>& onError = {})
 	 : Cmd(onError), module(module), busCommandCode(busCommandCode) {
 		if (module == 0)
 			throw EInvalidAddress(module);
@@ -152,7 +153,7 @@ struct CmdMtbModuleInfoRequest : public CmdMtbUsbForward {
 	const CommandCallback<ModuleInfoCallbackFunc> onInfo;
 
 	CmdMtbModuleInfoRequest(uint8_t module, const CommandCallback<ModuleInfoCallbackFunc> onInfo,
-	                        const CommandCallback<StdCallbackFunc> onError)
+	                        const CommandCallback<ErrCallbackFunc> onError)
 	 : CmdMtbUsbForward(module, _busCommandCode, onError), onInfo(onInfo) {}
 	std::vector<uint8_t> getBytes() const override { return {usbCommandCode, module, _busCommandCode}; }
 	QString msg() const override { return "Module "+QString::number(module)+" Information Request"; }

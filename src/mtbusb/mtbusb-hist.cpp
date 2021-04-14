@@ -5,7 +5,7 @@ namespace Mtb {
 void MtbUsb::histTimerTick() {
 	if (!m_serialPort.isOpen()) {
 		for (const auto& hist : m_hist)
-			hist.cmd->callError();
+			hist.cmd->callError(CmdError::SerialPortClosed);
 		m_hist.clear();
 	}
 
@@ -13,7 +13,7 @@ void MtbUsb::histTimerTick() {
 		return;
 
 	if (m_hist.front().timeout < QDateTime::currentDateTime())
-		histTimeoutError();
+		histTimeoutError(CmdError::UsbNoResponse);
 }
 
 bool MtbUsb::conflictWithHistory(const Cmd &cmd) const {

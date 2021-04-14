@@ -130,6 +130,8 @@ void MtbUsb::parseMtbBusMessage(uint8_t module, uint8_t attempts, uint8_t comman
 	}
 
 	switch (static_cast<MtbBusRecvCommand>(command_code)) {
+	case MtbBusRecvCommand::Error:
+		break;
 	}
 
 	// Find appropriate history item & call it's ok callback
@@ -157,7 +159,7 @@ void MtbUsb::handleMtbUsbError(uint8_t code, uint8_t out_command_code, uint8_t a
 				if ((out_command_code == forward.busCommandCode) && (addr == forward.module)) {
 					log("GET: error: no response from module "+QString::number(addr)+" to command "+forward.msg(),
 					    LogLevel::Warning);
-					histTimeoutError(i);
+					histTimeoutError(CmdError::BusNoResponse, i);
 					return;
 				}
 			}
@@ -178,7 +180,7 @@ void MtbUsb::handleMtbUsbError(uint8_t code, uint8_t out_command_code, uint8_t a
 	}
 }
 
-void MtbUsb::histTimeoutError(size_t i) {
+void MtbUsb::histTimeoutError(CmdError cmdError, size_t i) {
 	auto it = m_hist.begin();
 	for (size_t j = 0; j < i; j++) {
 		++it;
@@ -187,7 +189,7 @@ void MtbUsb::histTimeoutError(size_t i) {
 	}
 
 	assert(m_hist[i].cmd != nullptr);
-	m_hist[i].cmd->callError();
+	m_hist[i].cmd->callError(cmdError);
 	m_hist.erase(it);
 
 	if (!m_out.empty())

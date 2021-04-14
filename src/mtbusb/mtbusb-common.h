@@ -62,6 +62,22 @@ enum class MtbUsbRecvError {
 	FullBuffer = 0x02,
 };
 
+enum class MtbBusRecvError {
+	UnknownCommand = 0x01,
+	UnsupportedCommand = 0x02,
+	BadAddress = 0x03,
+};
+
+enum class CmdError {
+	SerialPortClosed,
+	UsbNoResponse,
+	BusNoResponse,
+	UnknownCommand,
+	UnsupportedCommand,
+};
+
+QString cmdErrorToStr(CmdError);
+
 }; // namespace Mtb
 
 #endif
