@@ -22,11 +22,22 @@ DaemonCoreApplication::DaemonCoreApplication(int &argc, char **argv)
 			}}
 		)
 	);
+
+	mtbusb.send(
+		Mtb::CmdMtbModuleBeacon(
+			1, false,
+			{[](void*) { std::cout << "Beacon set" << std::endl; }},
+			{[](Mtb::CmdError cmdError, void*) {
+				std::cout << "Beacon error callback: "+Mtb::cmdErrorToStr(cmdError).toStdString()+"!" << std::endl;
+			}}
+		)
+	);
 }
 
 void DaemonCoreApplication::mtbUsbLog(QString message, Mtb::LogLevel loglevel) {
 	(void)loglevel;
-	std::cout << message.toStdString() << std::endl;
+	std::cout << "[" << QTime::currentTime().toString("hh:mm:ss,zzz").toStdString()
+	          << "] " << message.toStdString() << std::endl;
 }
 
 int main(int argc, char *argv[]) {
