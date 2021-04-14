@@ -202,17 +202,13 @@ struct CmdMtbModuleSetConfig : public CmdMtbUsbForward {
 
 struct CmdMtbModuleGetConfig : public CmdMtbUsbForward {
 	static constexpr uint8_t _busCommandCode = 0x04;
-	std::vector<uint8_t> data;
 	const CommandCallback<DataCallbackFunc> onGet;
 
 	CmdMtbModuleGetConfig(uint8_t module,
 	                      const CommandCallback<DataCallbackFunc> onGet,
 	                      const CommandCallback<ErrCallbackFunc> onError)
-	 : CmdMtbUsbForward(module, _busCommandCode, onError), onGet(onGet) {
-		this->data = {usbCommandCode, module, _busCommandCode};
-		std::copy(data.begin(), data.end(), std::back_inserter(this->data));
-	}
-	std::vector<uint8_t> getBytes() const override { return data; }
+	 : CmdMtbUsbForward(module, _busCommandCode, onError), onGet(onGet) {}
+	std::vector<uint8_t> getBytes() const override { return {usbCommandCode, module, _busCommandCode}; }
 	QString msg() const override { return "Module "+QString::number(module)+" get configuration"; }
 
 	bool processBusResponse(MtbBusRecvCommand busCommand, const std::vector<uint8_t>& data) const override {
@@ -243,6 +239,26 @@ struct CmdMtbModuleBeacon : public CmdMtbUsbForward {
 	bool processBusResponse(MtbBusRecvCommand busCommand, const std::vector<uint8_t>&) const override {
 		if (busCommand == MtbBusRecvCommand::Acknowledgement) {
 			onOk.func(onOk.data);
+			return true;
+		}
+		return false;
+	}
+};
+
+struct CmdMtbModuleGetInputs : public CmdMtbUsbForward {
+	static constexpr uint8_t _busCommandCode = 0x10;
+	const CommandCallback<DataCallbackFunc> onGet;
+
+	CmdMtbModuleGetInputs(uint8_t module,
+	                      const CommandCallback<DataCallbackFunc> onGet,
+	                      const CommandCallback<ErrCallbackFunc> onError)
+	 : CmdMtbUsbForward(module, _busCommandCode, onError), onGet(onGet) {}
+	std::vector<uint8_t> getBytes() const override { return {usbCommandCode, module, _busCommandCode}; }
+	QString msg() const override { return "Module "+QString::number(module)+" get inputs"; }
+
+	bool processBusResponse(MtbBusRecvCommand busCommand, const std::vector<uint8_t>& data) const override {
+		if (busCommand == MtbBusRecvCommand::InputState) {
+			onGet.func(data, onGet.data);
 			return true;
 		}
 		return false;

@@ -24,9 +24,9 @@ DaemonCoreApplication::DaemonCoreApplication(int &argc, char **argv)
 	);
 
 	mtbusb.send(
-		Mtb::CmdMtbModuleGetConfig(
+		Mtb::CmdMtbModuleGetInputs(
 			1,
-			{[](const std::vector<uint8_t>&, void*) { std::cout << "Config got" << std::endl; }},
+			{[](const std::vector<uint8_t>&, void*) { std::cout << "Got inputs" << std::endl; }},
 			{[](Mtb::CmdError cmdError, void*) {
 				std::cout << "Error callback: "+Mtb::cmdErrorToStr(cmdError).toStdString()+"!" << std::endl;
 			}}
