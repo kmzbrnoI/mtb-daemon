@@ -28,7 +28,7 @@ DaemonCoreApplication::DaemonCoreApplication(int &argc, char **argv)
 
 	mtbusb.send(
 		Mtb::CmdMtbModuleChangeSpeed(
-			1, Mtb::MtbBusSpeed::br115200,
+			Mtb::MtbBusSpeed::br115200,
 			{[](void*) { std::cout << "Speed changed" << std::endl; }},
 			{[](Mtb::CmdError cmdError, void*) {
 				std::cout << "Error callback: "+Mtb::cmdErrorToStr(cmdError).toStdString()+"!" << std::endl;

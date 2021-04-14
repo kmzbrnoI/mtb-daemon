@@ -127,10 +127,15 @@ struct CmdMtbUsbForward : public Cmd {
 		if (module == 0)
 			throw EInvalidAddress(module);
 	}
+	CmdMtbUsbForward(uint8_t busCommandCode,
+	                 const CommandCallback<ErrCallbackFunc>& onError = {})
+	 : Cmd(onError), module(0), busCommandCode(busCommandCode) {} // broadcat
 
 	virtual bool processBusResponse(MtbBusRecvCommand, const std::vector<uint8_t>&) const {
 		return false;
 	}
+
+	bool broadcast() const { return this->module == 0; }
 };
 
 /* MTBbus commands -----------------------------------------------------------*/
@@ -336,23 +341,37 @@ struct CmdMtbModuleChangeAddr : public CmdMtbUsbForward {
 struct CmdMtbModuleChangeSpeed : public CmdMtbUsbForward {
 	static constexpr uint8_t _busCommandCode = 0xE0;
 	const MtbBusSpeed speed;
-	const CommandCallback<StdCallbackFunc> onOk;
+	const CommandCallback<StdModuleCallbackFunc> onOkModule = {[](uint8_t, void*) {}};
+	const CommandCallback<StdCallbackFunc> onOkBroadcast;
 
 	CmdMtbModuleChangeSpeed(uint8_t module, MtbBusSpeed speed,
+	                        const CommandCallback<StdModuleCallbackFunc> onOk,
+	                        const CommandCallback<ErrCallbackFunc> onError)
+	 : CmdMtbUsbForward(module, _busCommandCode, onError), speed(speed), onOkModule(onOk) {}
+	CmdMtbModuleChangeSpeed(MtbBusSpeed speed,
 	                        const CommandCallback<StdCallbackFunc> onOk,
 	                        const CommandCallback<ErrCallbackFunc> onError)
-	 : CmdMtbUsbForward(module, _busCommandCode, onError), speed(speed), onOk(onOk) {}
+	 : CmdMtbUsbForward(_busCommandCode, onError), speed(speed), onOkBroadcast(onOk) {}
 	std::vector<uint8_t> getBytes() const override {
 		return {usbCommandCode, module, _busCommandCode, static_cast<uint8_t>(speed)};
 	}
 	QString msg() const override {
+		if (this->broadcast())
+			return "All modules change speed to "+QString::number(mtbBusSpeedToInt(speed));
 		return "Module "+QString::number(module)+" change speed to "+QString::number(mtbBusSpeedToInt(speed));
 	}
 
 	bool processBusResponse(MtbBusRecvCommand busCommand, const std::vector<uint8_t>&) const override {
-		if (busCommand == MtbBusRecvCommand::Acknowledgement) {
-			onOk.func(onOk.data);
-			return true;
+		if (this->broadcast()) {
+			if (busCommand == MtbBusRecvCommand::Acknowledgement) {
+				onOkBroadcast.func(onOkBroadcast.data);
+				return true;
+			}
+		} else {
+			if (busCommand == MtbBusRecvCommand::Acknowledgement) {
+				onOkModule.func(module, onOkModule.data);
+				return true;
+			}
 		}
 		return false;
 	}
