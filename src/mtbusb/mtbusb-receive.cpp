@@ -91,7 +91,7 @@ void MtbUsb::parseMtbUsbMessage(uint8_t command_code, const std::vector<uint8_t>
 
 	case MtbUsbRecvCommand::ModuleFailed:
 		if (data.size() >= 2) {
-			log("GET: module "+QString::number(data[0])+" no response, remaining attempts: "+
+			log("GET: module "+QString::number(data[0])+" no response for inquiry, remaining attempts: "+
 			    QString::number(data[1]), LogLevel::Commands);
 			if (data[1] == 0) {
 				log("GET: module "+QString::number(data[0])+" failed", LogLevel::Commands);
@@ -133,7 +133,7 @@ void MtbUsb::parseMtbBusMessage(uint8_t module, uint8_t command_code, const std:
 		}
 	}
 
-	log("GET: unknown MTBbus command "+QString(command_code), LogLevel::Warning);
+	log("GET: unknown MTBbus command 0x"+QString::number(command_code, 16), LogLevel::Warning);
 }
 
 void MtbUsb::handleMtbUsbError(uint8_t code, uint8_t out_command_code, uint8_t addr) {
@@ -143,7 +143,7 @@ void MtbUsb::handleMtbUsbError(uint8_t code, uint8_t out_command_code, uint8_t a
 			if (is<CmdMtbUsbForward>(*m_hist[i].cmd)) {
 				const CmdMtbUsbForward& forward = dynamic_cast<const CmdMtbUsbForward&>(*m_hist[i].cmd);
 				if ((out_command_code == forward.busCommandCode) && (addr == forward.module)) {
-					log("GET: error: no response from module "+QString(addr)+" to command "+forward.msg(),
+					log("GET: error: no response from module "+QString::number(addr)+" to command "+forward.msg(),
 					    LogLevel::Warning);
 					histTimeoutError(i);
 					return;
@@ -151,18 +151,18 @@ void MtbUsb::handleMtbUsbError(uint8_t code, uint8_t out_command_code, uint8_t a
 			}
 		}
 
-		log("GET: error not paired with outgoing command (code "+QString(code)+", out command code: "+
-		    QString(out_command_code)+", addr "+QString(addr)+")", LogLevel::Warning);
+		log("GET: error not paired with outgoing command (code "+QString::number(code)+", out command code: 0x"+
+		    QString::number(out_command_code, 16)+", addr "+QString::number(addr)+")", LogLevel::Warning);
 
 	} else if (error == MtbUsbRecvError::NoResponse) {
-		log("GET: error: full buffer (code "+QString(code)+", out command code: "+
-		    QString(out_command_code)+", addr "+QString(addr)+")", LogLevel::Warning);
+		log("GET: error: full buffer (code "+QString::number(code)+", out command code: 0x"+
+		    QString::number(out_command_code, 16)+", addr "+QString::number(addr)+")", LogLevel::Warning);
 		// TODO: resend? report as error?
 		// currently: error event will be called on timeout
 
 	} else {
-		log("GET: unknown error (code "+QString(code)+", out command code: "+
-		    QString(out_command_code)+", addr "+QString(addr)+")", LogLevel::Warning);
+		log("GET: unknown error (code "+QString::number(code)+", out command code: 0x"+
+		    QString::number(out_command_code, 16)+", addr "+QString::number(addr)+")", LogLevel::Warning);
 	}
 }
 

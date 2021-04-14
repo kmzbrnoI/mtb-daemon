@@ -155,7 +155,7 @@ struct CmdMtbModuleInfoRequest : public CmdMtbUsbForward {
 	                        const CommandCallback<StdCallbackFunc> onError)
 	 : CmdMtbUsbForward(module, _busCommandCode, onError), onInfo(onInfo) {}
 	std::vector<uint8_t> getBytes() const override { return {usbCommandCode, module, _busCommandCode}; }
-	QString msg() const override { return "Module "+QString(module)+" Information Request"; }
+	QString msg() const override { return "Module "+QString::number(module)+" Information Request"; }
 
 	bool processBusResponse(MtbBusRecvCommand busCommand, const std::vector<uint8_t>& data) const override {
 		if ((busCommand == MtbBusRecvCommand::ModuleInfo) && (data.size() >= 6)) {
