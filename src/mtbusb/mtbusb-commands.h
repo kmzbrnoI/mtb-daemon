@@ -14,6 +14,7 @@ namespace Mtb {
 
 using StdCallbackFunc = std::function<void(void *data)>;
 using ErrCallbackFunc = std::function<void(CmdError, void *data)>;
+using DataCallbackFunc = std::function<void(const std::vector<uint8_t>& outputs, void *data)>;
 
 template <typename F>
 struct CommandCallback {
@@ -188,11 +189,35 @@ struct CmdMtbModuleSetConfig : public CmdMtbUsbForward {
 		std::copy(data.begin(), data.end(), std::back_inserter(this->data));
 	}
 	std::vector<uint8_t> getBytes() const override { return data; }
-	QString msg() const override { return "Module "+QString::number(module)+" set config"; }
+	QString msg() const override { return "Module "+QString::number(module)+" set configuration"; }
 
 	bool processBusResponse(MtbBusRecvCommand busCommand, const std::vector<uint8_t>&) const override {
 		if (busCommand == MtbBusRecvCommand::Acknowledgement) {
 			onOk.func(onOk.data);
+			return true;
+		}
+		return false;
+	}
+};
+
+struct CmdMtbModuleGetConfig : public CmdMtbUsbForward {
+	static constexpr uint8_t _busCommandCode = 0x04;
+	std::vector<uint8_t> data;
+	const CommandCallback<DataCallbackFunc> onGet;
+
+	CmdMtbModuleGetConfig(uint8_t module,
+	                      const CommandCallback<DataCallbackFunc> onGet,
+	                      const CommandCallback<ErrCallbackFunc> onError)
+	 : CmdMtbUsbForward(module, _busCommandCode, onError), onGet(onGet) {
+		this->data = {usbCommandCode, module, _busCommandCode};
+		std::copy(data.begin(), data.end(), std::back_inserter(this->data));
+	}
+	std::vector<uint8_t> getBytes() const override { return data; }
+	QString msg() const override { return "Module "+QString::number(module)+" get configuration"; }
+
+	bool processBusResponse(MtbBusRecvCommand busCommand, const std::vector<uint8_t>& data) const override {
+		if (busCommand == MtbBusRecvCommand::ModuleConfig) {
+			onGet.func(data, onGet.data);
 			return true;
 		}
 		return false;
@@ -224,15 +249,13 @@ struct CmdMtbModuleBeacon : public CmdMtbUsbForward {
 	}
 };
 
-using OutputSetCallbackFunc = std::function<void(const std::vector<uint8_t>& outputs, void *data)>;
-
 struct CmdMtbModuleSetOutput : public CmdMtbUsbForward {
 	static constexpr uint8_t _busCommandCode = 0x11;
 	std::vector<uint8_t> data;
-	const CommandCallback<OutputSetCallbackFunc> onSet;
+	const CommandCallback<DataCallbackFunc> onSet;
 
 	CmdMtbModuleSetOutput(uint8_t module, const std::vector<uint8_t>& data,
-	                      const CommandCallback<OutputSetCallbackFunc> onSet,
+	                      const CommandCallback<DataCallbackFunc> onSet,
 	                      const CommandCallback<ErrCallbackFunc> onError)
 	 : CmdMtbUsbForward(module, _busCommandCode, onError), onSet(onSet) {
 		this->data = {usbCommandCode, module, _busCommandCode};
