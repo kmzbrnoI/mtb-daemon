@@ -309,6 +309,29 @@ struct CmdMtbModuleResetOutputs : public CmdMtbUsbForward {
 	}
 };
 
+struct CmdMtbModuleChangeAddr : public CmdMtbUsbForward {
+	static constexpr uint8_t _busCommandCode = 0x20;
+	const uint8_t newAddr;
+	const CommandCallback<StdCallbackFunc> onOk;
+
+	CmdMtbModuleChangeAddr(uint8_t module, uint8_t newAddr,
+	                       const CommandCallback<StdCallbackFunc> onOk,
+	                       const CommandCallback<ErrCallbackFunc> onError)
+	 : CmdMtbUsbForward(module, _busCommandCode, onError), newAddr(newAddr), onOk(onOk) {}
+	std::vector<uint8_t> getBytes() const override { return {usbCommandCode, module, _busCommandCode, newAddr}; }
+	QString msg() const override {
+		return "Module "+QString::number(module)+" change address to "+QString::number(newAddr);
+	}
+
+	bool processBusResponse(MtbBusRecvCommand busCommand, const std::vector<uint8_t>&) const override {
+		if (busCommand == MtbBusRecvCommand::Acknowledgement) {
+			onOk.func(onOk.data);
+			return true;
+		}
+		return false;
+	}
+};
+
 }; // namespace Mtb
 
 #endif
