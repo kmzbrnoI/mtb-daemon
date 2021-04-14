@@ -200,6 +200,32 @@ struct CmdMtbModuleBeacon : public CmdMtbUsbForward {
 	}
 };
 
+using OutputSetCallbackFunc = std::function<void(const std::vector<uint8_t>& outputs, void *data)>;
+
+struct CmdMtbModuleSetOutput : public CmdMtbUsbForward {
+	static constexpr uint8_t _busCommandCode = 0x11;
+	std::vector<uint8_t> data;
+	const CommandCallback<OutputSetCallbackFunc> onSet;
+
+	CmdMtbModuleSetOutput(uint8_t module, const std::vector<uint8_t>& data,
+	                      const CommandCallback<OutputSetCallbackFunc> onSet,
+	                      const CommandCallback<ErrCallbackFunc> onError)
+	 : CmdMtbUsbForward(module, _busCommandCode, onError), onSet(onSet) {
+		this->data = {usbCommandCode, module, _busCommandCode};
+		std::copy(data.begin(), data.end(), std::back_inserter(this->data));
+	}
+	std::vector<uint8_t> getBytes() const override { return data; }
+	QString msg() const override { return "Module "+QString::number(module)+" set output"; }
+
+	bool processBusResponse(MtbBusRecvCommand busCommand, const std::vector<uint8_t>& data) const override {
+		if (busCommand == MtbBusRecvCommand::OutputSet) {
+			onSet.func(data, onSet.data);
+			return true;
+		}
+		return false;
+	}
+};
+
 }; // namespace Mtb
 
 #endif

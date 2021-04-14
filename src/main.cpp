@@ -24,11 +24,11 @@ DaemonCoreApplication::DaemonCoreApplication(int &argc, char **argv)
 	);
 
 	mtbusb.send(
-		Mtb::CmdMtbModuleBeacon(
-			1, false,
-			{[](void*) { std::cout << "Beacon set" << std::endl; }},
+		Mtb::CmdMtbModuleSetOutput(
+			1, {0, 0, 0, 1},
+			{[](const std::vector<uint8_t>&, void*) { std::cout << "Output set" << std::endl; }},
 			{[](Mtb::CmdError cmdError, void*) {
-				std::cout << "Beacon error callback: "+Mtb::cmdErrorToStr(cmdError).toStdString()+"!" << std::endl;
+				std::cout << "Output set error callback: "+Mtb::cmdErrorToStr(cmdError).toStdString()+"!" << std::endl;
 			}}
 		)
 	);
