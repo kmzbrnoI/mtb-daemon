@@ -1,6 +1,7 @@
 #include <QSerialPort>
 #include <iostream>
 #include "main.h"
+#include "mtbusb/mtbusb-common.h"
 
 DaemonCoreApplication::DaemonCoreApplication(int &argc, char **argv)
      : QCoreApplication(argc, argv) {
@@ -16,7 +17,9 @@ DaemonCoreApplication::DaemonCoreApplication(int &argc, char **argv)
 	mtbusb.send(
 		Mtb::CmdMtbModuleInfoRequest(
 			1,
-			{[](Mtb::ModuleInfo, void*) { std::cout << "Ok callback" << std::endl; }},
+			{[](uint8_t module, Mtb::ModuleInfo, void*) {
+				std::cout << "Got module " << module << " info" << std::endl;
+			}},
 			{[](Mtb::CmdError cmdError, void*) {
 				std::cout << "Error callback: "+Mtb::cmdErrorToStr(cmdError).toStdString()+"!" << std::endl;
 			}}
@@ -24,9 +27,9 @@ DaemonCoreApplication::DaemonCoreApplication(int &argc, char **argv)
 	);
 
 	mtbusb.send(
-		Mtb::CmdMtbModuleGetInputs(
-			1,
-			{[](const std::vector<uint8_t>&, void*) { std::cout << "Got inputs" << std::endl; }},
+		Mtb::CmdMtbModuleChangeSpeed(
+			1, Mtb::MtbBusSpeed::br115200,
+			{[](void*) { std::cout << "Speed changed" << std::endl; }},
 			{[](Mtb::CmdError cmdError, void*) {
 				std::cout << "Error callback: "+Mtb::cmdErrorToStr(cmdError).toStdString()+"!" << std::endl;
 			}}

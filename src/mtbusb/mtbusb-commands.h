@@ -13,8 +13,9 @@ See mtbusb.h or README for more documentation.
 namespace Mtb {
 
 using StdCallbackFunc = std::function<void(void *data)>;
+using StdModuleCallbackFunc = std::function<void(uint8_t addr, void *data)>;
 using ErrCallbackFunc = std::function<void(CmdError, void *data)>;
-using DataCallbackFunc = std::function<void(const std::vector<uint8_t>& outputs, void *data)>;
+using DataCallbackFunc = std::function<void(uint8_t addr, const std::vector<uint8_t>& outputs, void *data)>;
 
 template <typename F>
 struct CommandCallback {
@@ -147,7 +148,7 @@ struct ModuleInfo {
 	QString proto_version() const { return QString::number(proto_major)+"."+QString::number(proto_minor); }
 };
 
-using ModuleInfoCallbackFunc = std::function<void(ModuleInfo info, void *data)>;
+using ModuleInfoCallbackFunc = std::function<void(uint8_t module, ModuleInfo info, void *data)>;
 
 struct CmdMtbModuleInfoRequest : public CmdMtbUsbForward {
 	static constexpr uint8_t _busCommandCode = 0x02;
@@ -169,7 +170,7 @@ struct CmdMtbModuleInfoRequest : public CmdMtbUsbForward {
 			info.fw_minor = data[3];
 			info.proto_major = data[4];
 			info.proto_minor = data[5];
-			onInfo.func(info, onInfo.data);
+			onInfo.func(module, info, onInfo.data);
 			return true;
 		}
 		return false;
@@ -179,10 +180,10 @@ struct CmdMtbModuleInfoRequest : public CmdMtbUsbForward {
 struct CmdMtbModuleSetConfig : public CmdMtbUsbForward {
 	static constexpr uint8_t _busCommandCode = 0x03;
 	std::vector<uint8_t> data;
-	const CommandCallback<StdCallbackFunc> onOk;
+	const CommandCallback<StdModuleCallbackFunc> onOk;
 
 	CmdMtbModuleSetConfig(uint8_t module, const std::vector<uint8_t>& data,
-	                      const CommandCallback<StdCallbackFunc> onOk,
+	                      const CommandCallback<StdModuleCallbackFunc> onOk,
 	                      const CommandCallback<ErrCallbackFunc> onError)
 	 : CmdMtbUsbForward(module, _busCommandCode, onError), onOk(onOk) {
 		this->data = {usbCommandCode, module, _busCommandCode};
@@ -193,7 +194,7 @@ struct CmdMtbModuleSetConfig : public CmdMtbUsbForward {
 
 	bool processBusResponse(MtbBusRecvCommand busCommand, const std::vector<uint8_t>&) const override {
 		if (busCommand == MtbBusRecvCommand::Acknowledgement) {
-			onOk.func(onOk.data);
+			onOk.func(module, onOk.data);
 			return true;
 		}
 		return false;
@@ -213,7 +214,7 @@ struct CmdMtbModuleGetConfig : public CmdMtbUsbForward {
 
 	bool processBusResponse(MtbBusRecvCommand busCommand, const std::vector<uint8_t>& data) const override {
 		if (busCommand == MtbBusRecvCommand::ModuleConfig) {
-			onGet.func(data, onGet.data);
+			onGet.func(module, data, onGet.data);
 			return true;
 		}
 		return false;
@@ -223,10 +224,10 @@ struct CmdMtbModuleGetConfig : public CmdMtbUsbForward {
 struct CmdMtbModuleBeacon : public CmdMtbUsbForward {
 	static constexpr uint8_t _busCommandCode = 0x05;
 	const bool state;
-	const CommandCallback<StdCallbackFunc> onOk;
+	const CommandCallback<StdModuleCallbackFunc> onOk;
 
 	CmdMtbModuleBeacon(uint8_t module, bool state,
-	                   const CommandCallback<StdCallbackFunc> onOk,
+	                   const CommandCallback<StdModuleCallbackFunc> onOk,
 	                   const CommandCallback<ErrCallbackFunc> onError)
 	 : CmdMtbUsbForward(module, _busCommandCode, onError), state(state), onOk(onOk) {}
 	std::vector<uint8_t> getBytes() const override {
@@ -238,7 +239,7 @@ struct CmdMtbModuleBeacon : public CmdMtbUsbForward {
 
 	bool processBusResponse(MtbBusRecvCommand busCommand, const std::vector<uint8_t>&) const override {
 		if (busCommand == MtbBusRecvCommand::Acknowledgement) {
-			onOk.func(onOk.data);
+			onOk.func(module, onOk.data);
 			return true;
 		}
 		return false;
@@ -258,7 +259,7 @@ struct CmdMtbModuleGetInputs : public CmdMtbUsbForward {
 
 	bool processBusResponse(MtbBusRecvCommand busCommand, const std::vector<uint8_t>& data) const override {
 		if (busCommand == MtbBusRecvCommand::InputState) {
-			onGet.func(data, onGet.data);
+			onGet.func(module, data, onGet.data);
 			return true;
 		}
 		return false;
@@ -282,7 +283,7 @@ struct CmdMtbModuleSetOutput : public CmdMtbUsbForward {
 
 	bool processBusResponse(MtbBusRecvCommand busCommand, const std::vector<uint8_t>& data) const override {
 		if (busCommand == MtbBusRecvCommand::OutputSet) {
-			onSet.func(data, onSet.data);
+			onSet.func(module, data, onSet.data);
 			return true;
 		}
 		return false;
@@ -291,10 +292,10 @@ struct CmdMtbModuleSetOutput : public CmdMtbUsbForward {
 
 struct CmdMtbModuleResetOutputs : public CmdMtbUsbForward {
 	static constexpr uint8_t _busCommandCode = 0x12;
-	const CommandCallback<StdCallbackFunc> onOk;
+	const CommandCallback<StdModuleCallbackFunc> onOk;
 
 	CmdMtbModuleResetOutputs(uint8_t module,
-	                         const CommandCallback<StdCallbackFunc> onOk,
+	                         const CommandCallback<StdModuleCallbackFunc> onOk,
 	                         const CommandCallback<ErrCallbackFunc> onError)
 	 : CmdMtbUsbForward(module, _busCommandCode, onError), onOk(onOk) {}
 	std::vector<uint8_t> getBytes() const override { return {usbCommandCode, module, _busCommandCode}; }
@@ -302,7 +303,7 @@ struct CmdMtbModuleResetOutputs : public CmdMtbUsbForward {
 
 	bool processBusResponse(MtbBusRecvCommand busCommand, const std::vector<uint8_t>&) const override {
 		if (busCommand == MtbBusRecvCommand::Acknowledgement) {
-			onOk.func(onOk.data);
+			onOk.func(module, onOk.data);
 			return true;
 		}
 		return false;
@@ -321,6 +322,31 @@ struct CmdMtbModuleChangeAddr : public CmdMtbUsbForward {
 	std::vector<uint8_t> getBytes() const override { return {usbCommandCode, module, _busCommandCode, newAddr}; }
 	QString msg() const override {
 		return "Module "+QString::number(module)+" change address to "+QString::number(newAddr);
+	}
+
+	bool processBusResponse(MtbBusRecvCommand busCommand, const std::vector<uint8_t>&) const override {
+		if (busCommand == MtbBusRecvCommand::Acknowledgement) {
+			onOk.func(onOk.data);
+			return true;
+		}
+		return false;
+	}
+};
+
+struct CmdMtbModuleChangeSpeed : public CmdMtbUsbForward {
+	static constexpr uint8_t _busCommandCode = 0xE0;
+	const MtbBusSpeed speed;
+	const CommandCallback<StdCallbackFunc> onOk;
+
+	CmdMtbModuleChangeSpeed(uint8_t module, MtbBusSpeed speed,
+	                        const CommandCallback<StdCallbackFunc> onOk,
+	                        const CommandCallback<ErrCallbackFunc> onError)
+	 : CmdMtbUsbForward(module, _busCommandCode, onError), speed(speed), onOk(onOk) {}
+	std::vector<uint8_t> getBytes() const override {
+		return {usbCommandCode, module, _busCommandCode, static_cast<uint8_t>(speed)};
+	}
+	QString msg() const override {
+		return "Module "+QString::number(module)+" change speed to "+QString::number(mtbBusSpeedToInt(speed));
 	}
 
 	bool processBusResponse(MtbBusRecvCommand busCommand, const std::vector<uint8_t>&) const override {
