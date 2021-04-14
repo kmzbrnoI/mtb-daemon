@@ -25,6 +25,19 @@ bool isBusEvent(const MtbBusRecvCommand& command) {
 	return (command == MtbBusRecvCommand::InputChanged);
 }
 
+QString mtbBusRecvErrorToStr(MtbBusRecvError error) {
+	switch (error) {
+		case MtbBusRecvError::UnknownCommand:
+			return "unknown command";
+		case MtbBusRecvError::UnsupportedCommand:
+			return "unsupported command";
+		case MtbBusRecvError::BadAddress:
+			return "bad address";
+		default:
+			return "unknown error";
+	}
+}
+
 QString cmdErrorToStr(CmdError cmdError) {
 	switch (cmdError) {
 		case CmdError::SerialPortClosed:

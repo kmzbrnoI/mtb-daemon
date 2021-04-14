@@ -131,7 +131,8 @@ void MtbUsb::parseMtbBusMessage(uint8_t module, uint8_t attempts, uint8_t comman
 
 	switch (static_cast<MtbBusRecvCommand>(command_code)) {
 	case MtbBusRecvCommand::Error:
-		break;
+		handleMtbBusError(data[0], module);
+		return;
 	}
 
 	// Find appropriate history item & call it's ok callback
@@ -158,7 +159,7 @@ void MtbUsb::handleMtbUsbError(uint8_t code, uint8_t out_command_code, uint8_t a
 				const CmdMtbUsbForward& forward = dynamic_cast<const CmdMtbUsbForward&>(*m_hist[i].cmd);
 				if ((out_command_code == forward.busCommandCode) && (addr == forward.module)) {
 					log("GET: error: no response from module "+QString::number(addr)+" to command "+forward.msg(),
-					    LogLevel::Warning);
+					    LogLevel::Error);
 					histTimeoutError(CmdError::BusNoResponse, i);
 					return;
 				}
@@ -166,18 +167,37 @@ void MtbUsb::handleMtbUsbError(uint8_t code, uint8_t out_command_code, uint8_t a
 		}
 
 		log("GET: error not paired with outgoing command (code "+QString::number(code)+", out command code: 0x"+
-		    QString::number(out_command_code, 16)+", addr "+QString::number(addr)+")", LogLevel::Warning);
+		    QString::number(out_command_code, 16)+", addr "+QString::number(addr)+")", LogLevel::Error);
 
 	} else if (error == MtbUsbRecvError::NoResponse) {
 		log("GET: error: full buffer (code "+QString::number(code)+", out command code: 0x"+
-		    QString::number(out_command_code, 16)+", addr "+QString::number(addr)+")", LogLevel::Warning);
+		    QString::number(out_command_code, 16)+", addr "+QString::number(addr)+")", LogLevel::Error);
 		// TODO: resend? report as error?
 		// currently: error event will be called on timeout
 
 	} else {
 		log("GET: unknown error (code "+QString::number(code)+", out command code: 0x"+
-		    QString::number(out_command_code, 16)+", addr "+QString::number(addr)+")", LogLevel::Warning);
+		    QString::number(out_command_code, 16)+", addr "+QString::number(addr)+")", LogLevel::Error);
 	}
+}
+
+void MtbUsb::handleMtbBusError(uint8_t errorCode, uint8_t addr) {
+	MtbBusRecvError error = static_cast<MtbBusRecvError>(errorCode);
+
+	for (size_t i = 0; i < m_hist.size(); i++) {
+		if (is<CmdMtbUsbForward>(*m_hist[i].cmd)) {
+			const CmdMtbUsbForward& forward = dynamic_cast<const CmdMtbUsbForward&>(*m_hist[i].cmd);
+			if (addr == forward.module) {
+				log("GET: error: "+mtbBusRecvErrorToStr(error)+", module: "+QString::number(addr)+
+				    ", command: "+forward.msg(), LogLevel::Error);
+				histTimeoutError(static_cast<CmdError>(errorCode), i);
+				return;
+			}
+		}
+	}
+
+	log("GET: error: "+mtbBusRecvErrorToStr(error)+", module: "+QString::number(addr)+
+		", unable to pair with outgoing command", LogLevel::Error);
 }
 
 void MtbUsb::histTimeoutError(CmdError cmdError, size_t i) {

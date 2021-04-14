@@ -144,6 +144,7 @@ private:
 	bool conflictWithOut(const Cmd &) const;
 
 	void handleMtbUsbError(uint8_t code, uint8_t out_command_code, uint8_t addr);
+	void handleMtbBusError(uint8_t errorCode, uint8_t addr);
 	void histTimeoutError(CmdError, size_t i = 0);
 };
 
