@@ -27,9 +27,9 @@ DaemonCoreApplication::DaemonCoreApplication(int &argc, char **argv)
 	);
 
 	mtbusb.send(
-		Mtb::CmdMtbModuleChangeSpeed(
-			Mtb::MtbBusSpeed::br115200,
-			{[](void*) { std::cout << "Speed changed" << std::endl; }},
+		Mtb::CmdMtbModuleFwWriteFlashStatusRequest(
+			1,
+			{[](uint8_t addr, Mtb::FwWriteFlashStatus, void*) { std::cout << "Ok" << std::endl; }},
 			{[](Mtb::CmdError cmdError, void*) {
 				std::cout << "Error callback: "+Mtb::cmdErrorToStr(cmdError).toStdString()+"!" << std::endl;
 			}}

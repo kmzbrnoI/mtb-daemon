@@ -9,13 +9,17 @@ SOURCES += \
 	src/mtbusb/mtbusb-send.cpp \
 	src/mtbusb/mtbusb-receive.cpp \
 	src/mtbusb/mtbusb-hist.cpp \
-	src/mtbusb/mtbusb-common.cpp
+	src/mtbusb/mtbusb-common.cpp \
+	src/server.cpp
 
 HEADERS += \
 	src/main.h \
 	src/mtbusb/mtbusb.h \
-	src/mtbusb/mtbusb-commands.h
-	src/mtbusb/mtbusb-common.h
+	src/mtbusb/mtbusb-commands.h \
+	src/mtbusb/mtbusb-common.h \
+	src/server.h \
+	src/modules/module.h \
+	src/modules/uni.h
 
 CONFIG += c++17
 QMAKE_CXXFLAGS += -Wall -Wextra -pedantic -std=c++17
@@ -30,7 +34,7 @@ win64 {
 }
 
 QT -= gui
-QT += core serialport
+QT += core serialport network
 
 VERSION_MAJOR = 0
 VERSION_MINOR = 1
