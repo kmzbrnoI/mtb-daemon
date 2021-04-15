@@ -401,12 +401,42 @@ struct CmdMtbModuleFwUpgradeReq : public CmdMtbUsbForward {
 	 : CmdMtbUsbForward(module, _busCommandCode, onError),  onOk(onOk) {}
 	std::vector<uint8_t> getBytes() const override { return {usbCommandCode, module, _busCommandCode}; }
 	QString msg() const override {
-		return "Module "+QString::number(module)+" firware upgrade request";
+		return "Module "+QString::number(module)+" firmware upgrade request";
 	}
 
 	bool processBusResponse(MtbBusRecvCommand busCommand, const std::vector<uint8_t>&) const override {
 		if (busCommand == MtbBusRecvCommand::Acknowledgement) {
 			onOk.func(module, onOk.data);
+			return true;
+		}
+		return false;
+	}
+};
+
+enum class FwWriteFlashStatus {
+	FlashWriten = 0x00,
+	WritingFlash = 0x01,
+};
+
+using FwWriteFlashStatusCallbackFunc = std::function<void(uint8_t addr, FwWriteFlashStatus, void *data)>;
+
+struct CmdMtbModuleFwWriteFlashStatusRequest : public CmdMtbUsbForward {
+	static constexpr uint8_t _busCommandCode = 0xF2;
+	const CommandCallback<FwWriteFlashStatusCallbackFunc> onResponse;
+
+	CmdMtbModuleFwWriteFlashStatusRequest(
+		uint8_t module,
+		const CommandCallback<FwWriteFlashStatusCallbackFunc> onResponse = {[](uint8_t, FwWriteFlashStatus, void*) {}},
+		const CommandCallback<ErrCallbackFunc> onError = {[](CmdError, void*) {}}
+	) : CmdMtbUsbForward(module, _busCommandCode, onError),  onResponse(onResponse) {}
+	std::vector<uint8_t> getBytes() const override { return {usbCommandCode, module, _busCommandCode}; }
+	QString msg() const override {
+		return "Module "+QString::number(module)+" firmware write flash status request";
+	}
+
+	bool processBusResponse(MtbBusRecvCommand busCommand, const std::vector<uint8_t>& data) const override {
+		if ((busCommand == MtbBusRecvCommand::FWWriteFlashStatus) && (data.size() >= 1)) {
+			onResponse.func(module, static_cast<FwWriteFlashStatus>(data[0]), onResponse.data);
 			return true;
 		}
 		return false;
