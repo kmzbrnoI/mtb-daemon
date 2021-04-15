@@ -297,19 +297,34 @@ struct CmdMtbModuleSetOutput : public CmdMtbUsbForward {
 
 struct CmdMtbModuleResetOutputs : public CmdMtbUsbForward {
 	static constexpr uint8_t _busCommandCode = 0x12;
-	const CommandCallback<StdModuleCallbackFunc> onOk;
+	const CommandCallback<StdModuleCallbackFunc> onOkModule = {[](uint8_t, void*) {}};
+	const CommandCallback<StdCallbackFunc> onOkBroadcast;
 
 	CmdMtbModuleResetOutputs(uint8_t module,
 	                         const CommandCallback<StdModuleCallbackFunc> onOk,
 	                         const CommandCallback<ErrCallbackFunc> onError)
-	 : CmdMtbUsbForward(module, _busCommandCode, onError), onOk(onOk) {}
+	 : CmdMtbUsbForward(module, _busCommandCode, onError), onOkModule(onOk) {}
+	CmdMtbModuleResetOutputs(const CommandCallback<StdCallbackFunc> onOk,
+	                         const CommandCallback<ErrCallbackFunc> onError)
+	 : CmdMtbUsbForward(_busCommandCode, onError), onOkBroadcast(onOk) {}
 	std::vector<uint8_t> getBytes() const override { return {usbCommandCode, module, _busCommandCode}; }
-	QString msg() const override { return "Module "+QString::number(module)+" reset outputs"; }
+	QString msg() const override {
+		if (this->broadcast())
+			return "Module "+QString::number(module)+" reset outputs";
+		return "Reset outputs of all modules";
+	}
 
 	bool processBusResponse(MtbBusRecvCommand busCommand, const std::vector<uint8_t>&) const override {
-		if (busCommand == MtbBusRecvCommand::Acknowledgement) {
-			onOk.func(module, onOk.data);
-			return true;
+		if (this->broadcast()) {
+			if (busCommand == MtbBusRecvCommand::Acknowledgement) {
+				onOkBroadcast.func(onOkBroadcast.data);
+				return true;
+			}
+		} else {
+			if (busCommand == MtbBusRecvCommand::Acknowledgement) {
+				onOkModule.func(module, onOkModule.data);
+				return true;
+			}
 		}
 		return false;
 	}
