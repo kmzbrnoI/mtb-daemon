@@ -10,7 +10,9 @@ SOURCES += \
 	src/mtbusb/mtbusb-receive.cpp \
 	src/mtbusb/mtbusb-hist.cpp \
 	src/mtbusb/mtbusb-common.cpp \
-	src/server.cpp
+	src/server.cpp \
+	src/modules/module.cpp \
+	src/modules/uni.cpp
 
 HEADERS += \
 	src/main.h \

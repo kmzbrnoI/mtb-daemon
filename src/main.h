@@ -4,11 +4,11 @@
 #include <QCoreApplication>
 #include "mtbusb/mtbusb.h"
 
+extern Mtb::MtbUsb mtbusb;
+
 class DaemonCoreApplication : public QCoreApplication {
 	Q_OBJECT
 public:
-	Mtb::MtbUsb mtbusb;
-
 	DaemonCoreApplication(int &argc, char **argv);
 	virtual ~DaemonCoreApplication() {};
 

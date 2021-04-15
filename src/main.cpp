@@ -2,6 +2,9 @@
 #include <iostream>
 #include "main.h"
 #include "mtbusb/mtbusb-common.h"
+#include "modules/uni.h"
+
+Mtb::MtbUsb mtbusb;
 
 DaemonCoreApplication::DaemonCoreApplication(int &argc, char **argv)
      : QCoreApplication(argc, argv) {
