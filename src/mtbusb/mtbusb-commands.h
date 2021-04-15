@@ -443,6 +443,53 @@ struct CmdMtbModuleFwWriteFlashStatusRequest : public CmdMtbUsbForward {
 	}
 };
 
+// Shoul return true iff response if valid.
+using SpecificCallbackFunc = std::function<bool(uint8_t addr, MtbBusRecvCommand busCommand, const std::vector<uint8_t>& outputs, void *data)>;
+
+struct CmdMtbModuleSpecific : public CmdMtbUsbForward {
+	static constexpr uint8_t _busCommandCode = 0xFE;
+	std::vector<uint8_t> data;
+	const CommandCallback<SpecificCallbackFunc> onResponse = {[](uint8_t, MtbBusRecvCommand, const std::vector<uint8_t>&, void*) { return true; }};
+	const CommandCallback<StdCallbackFunc> onOkBroadcast = {[](void*) {}};
+
+	CmdMtbModuleSpecific(
+		uint8_t module,
+		const std::vector<uint8_t>& data,
+		const CommandCallback<SpecificCallbackFunc> onResponse = {[](uint8_t, MtbBusRecvCommand, const std::vector<uint8_t>&, void*) { return true; }},
+		const CommandCallback<ErrCallbackFunc> onError = {[](CmdError, void*) {}}
+	) : CmdMtbUsbForward(module, _busCommandCode, onError), onResponse(onResponse) {
+		this->data = {usbCommandCode, module, _busCommandCode};
+		std::copy(data.begin(), data.end(), std::back_inserter(this->data));
+	}
+
+	CmdMtbModuleSpecific(
+		const std::vector<uint8_t>& data,
+		const CommandCallback<StdCallbackFunc> onOk = {[](void*) {}},
+		const CommandCallback<ErrCallbackFunc> onError = {[](CmdError, void*) {}}
+	) : CmdMtbUsbForward(_busCommandCode, onError), onOkBroadcast(onOk) {
+		this->data = {usbCommandCode, 0, _busCommandCode};
+		std::copy(data.begin(), data.end(), std::back_inserter(this->data));
+	}
+
+	std::vector<uint8_t> getBytes() const override { return this->data; }
+
+	QString msg() const override {
+		return "Module "+QString::number(module)+" specific command";
+	}
+
+	bool processBusResponse(MtbBusRecvCommand busCommand, const std::vector<uint8_t>& data) const override {
+		if (this->broadcast()) {
+			if (busCommand == MtbBusRecvCommand::Acknowledgement) {
+				onOkBroadcast.func(onOkBroadcast.data);
+				return true;
+			}
+			return false;
+		} else {
+			return onResponse.func(module, busCommand, data, onResponse.data);
+		}
+	}
+};
+
 }; // namespace Mtb
 
 #endif
