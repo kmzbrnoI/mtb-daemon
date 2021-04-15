@@ -22,8 +22,6 @@ struct CommandCallback {
 	F const func;
 	void *const data;
 
-	CommandCallback()
-	    : func([](void*) {}), data(nullptr) {}
 	CommandCallback(F const func, void *const data = nullptr)
 	    : func(func), data(data) {}
 };
@@ -31,7 +29,7 @@ struct CommandCallback {
 struct Cmd {
 	const CommandCallback<ErrCallbackFunc> onError;
 
-	Cmd(const CommandCallback<ErrCallbackFunc>& onError = {}) : onError(onError) {}
+	Cmd(const CommandCallback<ErrCallbackFunc>& onError = {[](CmdError, void*){}}) : onError(onError) {}
 	virtual std::vector<uint8_t> getBytes() const = 0;
 	virtual QString msg() const = 0;
 	virtual ~Cmd() = default;
@@ -56,8 +54,8 @@ bool is(const Cmd &x) {
 struct CmdMtbUsbInfoRequest : public Cmd {
 	const CommandCallback<StdCallbackFunc> onOk; // no special callback here, data could be read from MtbUsb class directly
 
-	CmdMtbUsbInfoRequest(const CommandCallback<StdCallbackFunc>& onOk = {},
-	                     const CommandCallback<ErrCallbackFunc>& onError = {})
+	CmdMtbUsbInfoRequest(const CommandCallback<StdCallbackFunc>& onOk = {[](void*){}},
+	                     const CommandCallback<ErrCallbackFunc>& onError = {[](CmdError, void*){}})
 	 : Cmd(onError), onOk(onOk) {}
 
 	std::vector<uint8_t> getBytes() const override { return {0x20}; }
@@ -76,15 +74,15 @@ struct CmdMtbUsbChangeSpeed : public Cmd {
 	const MtbBusSpeed speed;
 	const CommandCallback<StdCallbackFunc> onOk;
 
-	CmdMtbUsbChangeSpeed(const MtbBusSpeed speed, const CommandCallback<StdCallbackFunc>& onOk = {},
-	                     const CommandCallback<ErrCallbackFunc>& onError = {})
+	CmdMtbUsbChangeSpeed(const MtbBusSpeed speed, const CommandCallback<StdCallbackFunc>& onOk = {[](void*){}},
+	                     const CommandCallback<ErrCallbackFunc>& onError = {[](CmdError, void*){}})
 	  : Cmd(onError), speed(speed), onOk(onOk) {}
 
 	std::vector<uint8_t> getBytes() const override {
 		return {0x21, static_cast<uint8_t>(speed)};
 	}
 	QString msg() const override {
-		return "MTB-USB Change MTBbus Speed to "+QString(mtbBusSpeedToInt(speed))+" baud/s";
+		return "MTB-USB Change MTBbus Speed to "+QString::number(mtbBusSpeedToInt(speed))+" baud/s";
 	}
 	bool conflict(const Cmd &cmd) const override { return is<CmdMtbUsbChangeSpeed>(cmd); }
 
@@ -100,8 +98,8 @@ struct CmdMtbUsbChangeSpeed : public Cmd {
 struct CmdMtbUsbActiveModulesRequest : public Cmd {
 	const CommandCallback<StdCallbackFunc> onOk;
 
-	CmdMtbUsbActiveModulesRequest(const CommandCallback<StdCallbackFunc>& onOk = {},
-	                              const CommandCallback<ErrCallbackFunc>& onError = {})
+	CmdMtbUsbActiveModulesRequest(const CommandCallback<StdCallbackFunc>& onOk = {[](void*){}},
+	                              const CommandCallback<ErrCallbackFunc>& onError = {[](CmdError, void*){}})
 	  : Cmd(onError), onOk(onOk) {}
 
 	std::vector<uint8_t> getBytes() const override { return {0x22}; }
@@ -122,13 +120,13 @@ struct CmdMtbUsbForward : public Cmd {
 	const uint8_t busCommandCode;
 
 	CmdMtbUsbForward(uint8_t module, uint8_t busCommandCode,
-	                 const CommandCallback<ErrCallbackFunc>& onError = {})
+	                 const CommandCallback<ErrCallbackFunc>& onError = {[](CmdError, void*){}})
 	 : Cmd(onError), module(module), busCommandCode(busCommandCode) {
 		if (module == 0)
 			throw EInvalidAddress(module);
 	}
 	CmdMtbUsbForward(uint8_t busCommandCode,
-	                 const CommandCallback<ErrCallbackFunc>& onError = {})
+	                 const CommandCallback<ErrCallbackFunc>& onError = {[](CmdError, void*){}})
 	 : Cmd(onError), module(0), busCommandCode(busCommandCode) {} // broadcat
 
 	virtual bool processBusResponse(MtbBusRecvCommand, const std::vector<uint8_t>&) const {
@@ -159,8 +157,9 @@ struct CmdMtbModuleInfoRequest : public CmdMtbUsbForward {
 	static constexpr uint8_t _busCommandCode = 0x02;
 	const CommandCallback<ModuleInfoCallbackFunc> onInfo;
 
-	CmdMtbModuleInfoRequest(uint8_t module, const CommandCallback<ModuleInfoCallbackFunc> onInfo,
-	                        const CommandCallback<ErrCallbackFunc> onError)
+	CmdMtbModuleInfoRequest(uint8_t module,
+	                        const CommandCallback<ModuleInfoCallbackFunc> onInfo = {[](uint8_t, ModuleInfo, void*) {}},
+	                        const CommandCallback<ErrCallbackFunc> onError = {[](CmdError, void*) {}})
 	 : CmdMtbUsbForward(module, _busCommandCode, onError), onInfo(onInfo) {}
 	std::vector<uint8_t> getBytes() const override { return {usbCommandCode, module, _busCommandCode}; }
 	QString msg() const override { return "Module "+QString::number(module)+" Information Request"; }
@@ -188,8 +187,8 @@ struct CmdMtbModuleSetConfig : public CmdMtbUsbForward {
 	const CommandCallback<StdModuleCallbackFunc> onOk;
 
 	CmdMtbModuleSetConfig(uint8_t module, const std::vector<uint8_t>& data,
-	                      const CommandCallback<StdModuleCallbackFunc> onOk,
-	                      const CommandCallback<ErrCallbackFunc> onError)
+	                      const CommandCallback<StdModuleCallbackFunc> onOk = {[](uint8_t, void*) {}},
+	                      const CommandCallback<ErrCallbackFunc> onError = {[](CmdError, void*) {}})
 	 : CmdMtbUsbForward(module, _busCommandCode, onError), onOk(onOk) {
 		this->data = {usbCommandCode, module, _busCommandCode};
 		std::copy(data.begin(), data.end(), std::back_inserter(this->data));
@@ -211,8 +210,8 @@ struct CmdMtbModuleGetConfig : public CmdMtbUsbForward {
 	const CommandCallback<DataCallbackFunc> onGet;
 
 	CmdMtbModuleGetConfig(uint8_t module,
-	                      const CommandCallback<DataCallbackFunc> onGet,
-	                      const CommandCallback<ErrCallbackFunc> onError)
+	                      const CommandCallback<DataCallbackFunc> onGet = {[](uint8_t, const std::vector<uint8_t>&, void*) {}},
+	                      const CommandCallback<ErrCallbackFunc> onError = {[](CmdError, void*) {}})
 	 : CmdMtbUsbForward(module, _busCommandCode, onError), onGet(onGet) {}
 	std::vector<uint8_t> getBytes() const override { return {usbCommandCode, module, _busCommandCode}; }
 	QString msg() const override { return "Module "+QString::number(module)+" get configuration"; }
@@ -232,8 +231,8 @@ struct CmdMtbModuleBeacon : public CmdMtbUsbForward {
 	const CommandCallback<StdModuleCallbackFunc> onOk;
 
 	CmdMtbModuleBeacon(uint8_t module, bool state,
-	                   const CommandCallback<StdModuleCallbackFunc> onOk,
-	                   const CommandCallback<ErrCallbackFunc> onError)
+	                   const CommandCallback<StdModuleCallbackFunc> onOk = {[](uint8_t, void*) {}},
+	                   const CommandCallback<ErrCallbackFunc> onError = {[](CmdError, void*) {}})
 	 : CmdMtbUsbForward(module, _busCommandCode, onError), state(state), onOk(onOk) {}
 	std::vector<uint8_t> getBytes() const override {
 		return {usbCommandCode, module, _busCommandCode, state};
@@ -256,8 +255,8 @@ struct CmdMtbModuleGetInputs : public CmdMtbUsbForward {
 	const CommandCallback<DataCallbackFunc> onGet;
 
 	CmdMtbModuleGetInputs(uint8_t module,
-	                      const CommandCallback<DataCallbackFunc> onGet,
-	                      const CommandCallback<ErrCallbackFunc> onError)
+	                      const CommandCallback<DataCallbackFunc> onGet = {[](uint8_t, const std::vector<uint8_t>&, void*) {}},
+	                      const CommandCallback<ErrCallbackFunc> onError = {[](CmdError, void*) {}})
 	 : CmdMtbUsbForward(module, _busCommandCode, onError), onGet(onGet) {}
 	std::vector<uint8_t> getBytes() const override { return {usbCommandCode, module, _busCommandCode}; }
 	QString msg() const override { return "Module "+QString::number(module)+" get inputs"; }
@@ -277,8 +276,8 @@ struct CmdMtbModuleSetOutput : public CmdMtbUsbForward {
 	const CommandCallback<DataCallbackFunc> onSet;
 
 	CmdMtbModuleSetOutput(uint8_t module, const std::vector<uint8_t>& data,
-	                      const CommandCallback<DataCallbackFunc> onSet,
-	                      const CommandCallback<ErrCallbackFunc> onError)
+	                      const CommandCallback<DataCallbackFunc> onSet = {[](uint8_t, const std::vector<uint8_t>&, void*) {}},
+	                      const CommandCallback<ErrCallbackFunc> onError = {[](CmdError, void*) {}})
 	 : CmdMtbUsbForward(module, _busCommandCode, onError), onSet(onSet) {
 		this->data = {usbCommandCode, module, _busCommandCode};
 		std::copy(data.begin(), data.end(), std::back_inserter(this->data));
@@ -298,14 +297,14 @@ struct CmdMtbModuleSetOutput : public CmdMtbUsbForward {
 struct CmdMtbModuleResetOutputs : public CmdMtbUsbForward {
 	static constexpr uint8_t _busCommandCode = 0x12;
 	const CommandCallback<StdModuleCallbackFunc> onOkModule = {[](uint8_t, void*) {}};
-	const CommandCallback<StdCallbackFunc> onOkBroadcast;
+	const CommandCallback<StdCallbackFunc> onOkBroadcast = {[](void*){}};
 
 	CmdMtbModuleResetOutputs(uint8_t module,
-	                         const CommandCallback<StdModuleCallbackFunc> onOk,
-	                         const CommandCallback<ErrCallbackFunc> onError)
+	                         const CommandCallback<StdModuleCallbackFunc> onOk = {[](uint8_t, void*){}},
+	                         const CommandCallback<ErrCallbackFunc> onError = {[](CmdError, void*){}})
 	 : CmdMtbUsbForward(module, _busCommandCode, onError), onOkModule(onOk) {}
-	CmdMtbModuleResetOutputs(const CommandCallback<StdCallbackFunc> onOk,
-	                         const CommandCallback<ErrCallbackFunc> onError)
+	CmdMtbModuleResetOutputs(const CommandCallback<StdCallbackFunc> onOk = {[](void*){}},
+	                         const CommandCallback<ErrCallbackFunc> onError = {[](CmdError, void*){}})
 	 : CmdMtbUsbForward(_busCommandCode, onError), onOkBroadcast(onOk) {}
 	std::vector<uint8_t> getBytes() const override { return {usbCommandCode, module, _busCommandCode}; }
 	QString msg() const override {
@@ -336,8 +335,8 @@ struct CmdMtbModuleChangeAddr : public CmdMtbUsbForward {
 	const CommandCallback<StdCallbackFunc> onOk;
 
 	CmdMtbModuleChangeAddr(uint8_t module, uint8_t newAddr,
-	                       const CommandCallback<StdCallbackFunc> onOk,
-	                       const CommandCallback<ErrCallbackFunc> onError)
+	                       const CommandCallback<StdCallbackFunc> onOk = {[](void*) {}},
+	                       const CommandCallback<ErrCallbackFunc> onError = {[](CmdError, void*) {}})
 	 : CmdMtbUsbForward(module, _busCommandCode, onError), newAddr(newAddr), onOk(onOk) {}
 	std::vector<uint8_t> getBytes() const override { return {usbCommandCode, module, _busCommandCode, newAddr}; }
 	QString msg() const override {
@@ -357,15 +356,15 @@ struct CmdMtbModuleChangeSpeed : public CmdMtbUsbForward {
 	static constexpr uint8_t _busCommandCode = 0xE0;
 	const MtbBusSpeed speed;
 	const CommandCallback<StdModuleCallbackFunc> onOkModule = {[](uint8_t, void*) {}};
-	const CommandCallback<StdCallbackFunc> onOkBroadcast;
+	const CommandCallback<StdCallbackFunc> onOkBroadcast = {[](void*){}};
 
 	CmdMtbModuleChangeSpeed(uint8_t module, MtbBusSpeed speed,
-	                        const CommandCallback<StdModuleCallbackFunc> onOk,
-	                        const CommandCallback<ErrCallbackFunc> onError)
+	                        const CommandCallback<StdModuleCallbackFunc> onOk = {[](uint8_t, void*) {}},
+	                        const CommandCallback<ErrCallbackFunc> onError = {[](CmdError, void*) {}})
 	 : CmdMtbUsbForward(module, _busCommandCode, onError), speed(speed), onOkModule(onOk) {}
 	CmdMtbModuleChangeSpeed(MtbBusSpeed speed,
-	                        const CommandCallback<StdCallbackFunc> onOk,
-	                        const CommandCallback<ErrCallbackFunc> onError)
+	                        const CommandCallback<StdCallbackFunc> onOk = {[](void*) {}},
+	                        const CommandCallback<ErrCallbackFunc> onError = {[](CmdError, void*) {}})
 	 : CmdMtbUsbForward(_busCommandCode, onError), speed(speed), onOkBroadcast(onOk) {}
 	std::vector<uint8_t> getBytes() const override {
 		return {usbCommandCode, module, _busCommandCode, static_cast<uint8_t>(speed)};
@@ -387,6 +386,28 @@ struct CmdMtbModuleChangeSpeed : public CmdMtbUsbForward {
 				onOkModule.func(module, onOkModule.data);
 				return true;
 			}
+		}
+		return false;
+	}
+};
+
+struct CmdMtbModuleFwUpgradeReq : public CmdMtbUsbForward {
+	static constexpr uint8_t _busCommandCode = 0xF0;
+	const CommandCallback<StdModuleCallbackFunc> onOk;
+
+	CmdMtbModuleFwUpgradeReq(uint8_t module,
+	                         const CommandCallback<StdModuleCallbackFunc> onOk = {[](uint8_t, void*) {}},
+	                         const CommandCallback<ErrCallbackFunc> onError = {[](CmdError, void*) {}})
+	 : CmdMtbUsbForward(module, _busCommandCode, onError),  onOk(onOk) {}
+	std::vector<uint8_t> getBytes() const override { return {usbCommandCode, module, _busCommandCode}; }
+	QString msg() const override {
+		return "Module "+QString::number(module)+" firware upgrade request";
+	}
+
+	bool processBusResponse(MtbBusRecvCommand busCommand, const std::vector<uint8_t>&) const override {
+		if (busCommand == MtbBusRecvCommand::Acknowledgement) {
+			onOk.func(module, onOk.data);
+			return true;
 		}
 		return false;
 	}
