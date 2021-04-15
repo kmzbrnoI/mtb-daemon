@@ -115,8 +115,10 @@ signals:
 	void onLog(QString message, Mtb::LogLevel loglevel);
 	void onConnect();
 	void onDisconnect();
+
 	void onNewModule(uint8_t addr);
 	void onModuleFail(uint8_t addr);
+	void onModuleInputsChange(uint8_t addr, const std::vector<uint8_t> data);
 
 private:
 	QSerialPort m_serialPort;

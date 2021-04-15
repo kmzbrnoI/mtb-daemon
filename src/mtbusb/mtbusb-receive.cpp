@@ -133,6 +133,39 @@ void MtbUsb::parseMtbBusMessage(uint8_t module, uint8_t attempts, uint8_t comman
 	case MtbBusRecvCommand::Error:
 		handleMtbBusError(data[0], module);
 		return;
+
+	case MtbBusRecvCommand::Acknowledgement:
+		log("GET: module "+QString::number(module)+" acknowldgement", LogLevel::Commands);
+		break;
+
+	case MtbBusRecvCommand::ModuleInfo:
+		log("GET: module "+QString::number(module)+" information", LogLevel::Commands);
+		break;
+
+	case MtbBusRecvCommand::ModuleConfig:
+		log("GET: module "+QString::number(module)+" configuration", LogLevel::Commands);
+		break;
+
+	case MtbBusRecvCommand::InputChanged:
+		log("GET: module "+QString::number(module)+" inputs changed", LogLevel::Commands);
+		onModuleInputsChange(module, data);
+		return; // event = return
+
+	case MtbBusRecvCommand::InputState:
+		log("GET: module "+QString::number(module)+" inputs state", LogLevel::Commands);
+		break;
+
+	case MtbBusRecvCommand::OutputSet:
+		log("GET: module "+QString::number(module)+" outputs set", LogLevel::Commands);
+		break;
+
+	case MtbBusRecvCommand::FWWriteFlashStatus:
+		log("GET: module "+QString::number(module)+" firmware write flash status", LogLevel::Commands);
+		break;
+
+	case MtbBusRecvCommand::ModuleSpecific:
+		log("GET: module "+QString::number(module)+" specific command", LogLevel::Commands);
+		break;
 	}
 
 	// Find appropriate history item & call it's ok callback
