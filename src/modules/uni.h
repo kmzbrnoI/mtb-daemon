@@ -10,6 +10,10 @@ protected:
 public:
 	virtual ~MtbUni() {}
 	QJsonObject moduleInfo(bool state) const override;
+
+	void jsonSetOutput(QTcpSocket&, const QJsonObject&) override;
+	void jsonSetConfig(QTcpSocket&, const QJsonObject&) override;
+	void jsonUpgradeFw(QTcpSocket&, const QJsonObject&) override;
 };
 
 #endif

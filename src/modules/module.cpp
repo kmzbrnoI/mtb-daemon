@@ -46,3 +46,18 @@ void MtbModule::mtbBusGotInfo(uint8_t addr, Mtb::ModuleInfo moduleInfo, void*) {
 	assert(addr == this->address);
 	this->busModuleInfo = moduleInfo;
 }
+
+void MtbModule::jsonCommand(QTcpSocket& socket, const QJsonObject& request) {
+	QString command = request["command"].toString();
+
+	if (command == "module_set_output")
+		this->jsonSetOutput(socket, request);
+	else if (command == "module_set_config")
+		this->jsonSetConfig(socket, request);
+	else if (command == "module_uprade_fw")
+		this->jsonUpgradeFw(socket, request);
+}
+
+void MtbModule::jsonSetOutput(QTcpSocket&, const QJsonObject&) {}
+void MtbModule::jsonSetConfig(QTcpSocket&, const QJsonObject&) {}
+void MtbModule::jsonUpgradeFw(QTcpSocket&, const QJsonObject&) {}

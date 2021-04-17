@@ -55,14 +55,15 @@ void DaemonCoreApplication::mtbUsbLog(QString message, Mtb::LogLevel loglevel) {
 }
 
 void DaemonCoreApplication::serverReceived(QTcpSocket& socket, const QJsonObject& request) {
+	QString command = request["command"].toString();
 	std::optional<size_t> id;
 	if (request.contains("id"))
 		id = request["id"].toInt();
 
-	if (request["command"] == "status") {
+	if (command == "status") {
 		this->sendStatus(socket, id);
 
-	} else if (request["command"] == "module") {
+	} else if (command == "module") {
 		QJsonObject response;
 		if (id)
 			response["id"] = static_cast<int>(id.value());
@@ -80,7 +81,7 @@ void DaemonCoreApplication::serverReceived(QTcpSocket& socket, const QJsonObject
 
 		server.send(socket, response);
 
-	} else if (request["command"] == "modules") {
+	} else if (command == "modules") {
 		QJsonObject response;
 		if (id)
 			response["id"] = static_cast<int>(id.value());
@@ -90,6 +91,19 @@ void DaemonCoreApplication::serverReceived(QTcpSocket& socket, const QJsonObject
 		for (size_t i = 0; i < Mtb::_MAX_MODULES; i++) {
 			if (modules[i] != nullptr)
 				response[QString::number(i)] = modules[i]->moduleInfo(request["state"].toBool());
+		}
+
+		server.send(socket, response);
+
+	} else if (command.startsWith("module_")) {
+		size_t addr = request["address"].toInt();
+		if ((Mtb::isValidModuleAddress(addr)) && (modules[addr] != nullptr)) {
+			modules[addr]->jsonCommand(socket, request);
+		} else {
+			QJsonObject response;
+			response["status"] = "error";
+			response["error"] = DaemonServer::error(MTB_MODULE_INVALID_ADDR, "Invalid module address");
+			server.send(socket, response);
 		}
 	}
 }
