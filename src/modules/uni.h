@@ -5,6 +5,7 @@
 
 class MtbUni : public MtbModule {
 protected:
+	uint16_t inputs;
 
 public:
 	QJsonObject moduleInfo() const override;

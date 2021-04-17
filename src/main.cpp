@@ -3,19 +3,23 @@
 #include "main.h"
 #include "mtbusb/mtbusb-common.h"
 #include "modules/uni.h"
+#include "server.h"
 
 Mtb::MtbUsb mtbusb;
+DaemonServer server;
 
 DaemonCoreApplication::DaemonCoreApplication(int &argc, char **argv)
      : QCoreApplication(argc, argv) {
-	if (argc < 2)
-		throw std::logic_error("No port specified!");
+	//if (argc < 2)
+	//	throw std::logic_error("No port specified!");
+
+	server.listen(QHostAddress::Any, 3000);
 
 	QObject::connect(&mtbusb, SIGNAL(onLog(QString, Mtb::LogLevel)),
 	                 this, SLOT(mtbUsbLog(QString, Mtb::LogLevel)));
 
 	mtbusb.loglevel = Mtb::LogLevel::Debug;
-	mtbusb.connect(argv[1], 115200, QSerialPort::FlowControl::NoFlowControl);
+	/*mtbusb.connect(argv[1], 115200, QSerialPort::FlowControl::NoFlowControl);
 
 	mtbusb.send(
 		Mtb::CmdMtbModuleInfoRequest(
@@ -37,7 +41,7 @@ DaemonCoreApplication::DaemonCoreApplication(int &argc, char **argv)
 				std::cout << "Error callback: "+Mtb::cmdErrorToStr(cmdError).toStdString()+"!" << std::endl;
 			}}
 		)
-	);
+	);*/
 }
 
 void DaemonCoreApplication::mtbUsbLog(QString message, Mtb::LogLevel loglevel) {

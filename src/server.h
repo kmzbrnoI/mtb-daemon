@@ -10,9 +10,12 @@ class DaemonServer : public QObject {
 public:
 	DaemonServer(QObject *parent = nullptr);
 	void listen(const QHostAddress&, quint16 port);
+	void send(QTcpSocket&, const QJsonObject&);
 
 private slots:
 	void serverNewConnection();
+	void clientDisconnected();
+	void clientReadyRead();
 
 private:
 	QTcpServer m_server;
