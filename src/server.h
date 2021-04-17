@@ -12,6 +12,8 @@ public:
 	void listen(const QHostAddress&, quint16 port);
 	void send(QTcpSocket&, const QJsonObject&);
 
+	static QJsonObject error(size_t code, const QString& message);
+
 private slots:
 	void serverNewConnection();
 	void clientDisconnected();

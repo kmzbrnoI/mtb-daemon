@@ -4,10 +4,11 @@
 #include "main.h"
 #include "mtbusb/mtbusb-common.h"
 #include "modules/uni.h"
-#include "server.h"
+#include "errors.h"
 
 Mtb::MtbUsb mtbusb;
 DaemonServer server;
+std::array<std::unique_ptr<MtbModule>, Mtb::_MAX_MODULES> modules;
 
 DaemonCoreApplication::DaemonCoreApplication(int &argc, char **argv)
      : QCoreApplication(argc, argv) {
@@ -60,6 +61,24 @@ void DaemonCoreApplication::serverReceived(QTcpSocket& socket, const QJsonObject
 
 	if (json["command"] == "status") {
 		this->sendStatus(socket, id);
+
+	} else if (json["command"] == "module") {
+		QJsonObject response;
+		if (id)
+			response["id"] = static_cast<int>(id.value());
+		response["command"] = "module";
+		response["type"] = "response";
+
+		size_t addr = json["address"].toInt();
+		if ((Mtb::isValidModuleAddress(addr)) && (modules[addr] != nullptr)) {
+			response["module"] = modules[addr]->moduleInfo();
+			response["status"] = "ok";
+		} else {
+			response["status"] = "error";
+			response["error"] = DaemonServer::error(MTB_MODULE_INVALID_ADDR, "Invalid module address");
+		}
+
+		server.send(socket, response);
 	}
 }
 

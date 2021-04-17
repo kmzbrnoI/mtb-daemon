@@ -8,6 +8,7 @@ protected:
 	uint16_t inputs;
 
 public:
+	virtual ~MtbUni() {}
 	QJsonObject moduleInfo() const override;
 };
 

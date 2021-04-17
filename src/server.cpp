@@ -37,3 +37,7 @@ void DaemonServer::send(QTcpSocket& socket, const QJsonObject& jsonObj) {
 	socket.write(QJsonDocument(jsonObj).toJson(QJsonDocument::Compact));
 	socket.write("\n");
 }
+
+QJsonObject DaemonServer::error(size_t code, const QString& message) {
+	return {{"code", static_cast<int>(code)}, {"message", message}};
+}

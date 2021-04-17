@@ -4,8 +4,12 @@
 #include <QCoreApplication>
 #include <QTcpSocket>
 #include "mtbusb/mtbusb.h"
+#include "server.h"
+#include "modules/module.h"
 
 extern Mtb::MtbUsb mtbusb;
+extern DaemonServer server;
+extern std::array<std::unique_ptr<MtbModule>, Mtb::_MAX_MODULES> modules;
 
 class DaemonCoreApplication : public QCoreApplication {
 	Q_OBJECT

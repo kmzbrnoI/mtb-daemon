@@ -21,7 +21,8 @@ HEADERS += \
 	src/mtbusb/mtbusb-common.h \
 	src/server.h \
 	src/modules/module.h \
-	src/modules/uni.h
+	src/modules/uni.h \
+	src/errors.h
 
 CONFIG += c++17
 QMAKE_CXXFLAGS += -Wall -Wextra -pedantic -std=c++17

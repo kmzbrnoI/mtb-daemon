@@ -19,6 +19,7 @@ protected:
 	Mtb::ModuleInfo busModuleInfo;
 
 public:
+	virtual ~MtbModule() {}
 	virtual QJsonObject moduleInfo() const;
 
 	virtual void mtbBusActivate();
