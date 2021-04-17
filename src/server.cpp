@@ -1,5 +1,3 @@
-#include <iostream> // DEBUG
-#include <QDebug>
 #include <QTcpSocket>
 #include <QJsonDocument>
 #include <QJsonObject>
@@ -17,13 +15,11 @@ void DaemonServer::serverNewConnection() {
 	QTcpSocket* client = m_server.nextPendingConnection();
 	QObject::connect(client, SIGNAL(disconnected()), this, SLOT(clientDisconnected()));
 	QObject::connect(client, SIGNAL(readyRead()), this, SLOT(clientReadyRead()));
-	std::cout << "new connection!" << std::endl;
 }
 
 void DaemonServer::clientDisconnected() {
 	QTcpSocket* client = static_cast<QTcpSocket*>(QObject::sender());
 	client->deleteLater();
-	std::cout << "client disconnected!" << std::endl;
 }
 
 void DaemonServer::clientReadyRead() {
@@ -32,7 +28,7 @@ void DaemonServer::clientReadyRead() {
 		QByteArray data = client->readLine();
 		if (data.size() > 0) {
 			QJsonObject json = QJsonDocument::fromJson(data).object();
-			qDebug() << json;
+			jsonReceived(*client, json);
 		}
 	}
 }

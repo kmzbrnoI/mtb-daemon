@@ -21,6 +21,8 @@ private:
 	QTcpServer m_server;
 
 signals:
+	void jsonReceived(QTcpSocket&, const QJsonObject&);
+
 };
 
 #endif

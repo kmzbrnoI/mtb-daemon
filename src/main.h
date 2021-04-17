@@ -2,6 +2,7 @@
 #define MAIN_H
 
 #include <QCoreApplication>
+#include <QTcpSocket>
 #include "mtbusb/mtbusb.h"
 
 extern Mtb::MtbUsb mtbusb;
@@ -13,9 +14,11 @@ public:
 	virtual ~DaemonCoreApplication() {};
 
 private:
+	void sendStatus(QTcpSocket&, std::optional<size_t> id);
 
 private slots:
 	void mtbUsbLog(QString message, Mtb::LogLevel loglevel);
+	void serverReceived(QTcpSocket&, const QJsonObject&);
 };
 
 #endif

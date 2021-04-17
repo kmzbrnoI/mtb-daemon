@@ -1,4 +1,5 @@
 #include <QSerialPort>
+#include <QJsonArray>
 #include <iostream>
 #include "main.h"
 #include "mtbusb/mtbusb-common.h"
@@ -14,6 +15,8 @@ DaemonCoreApplication::DaemonCoreApplication(int &argc, char **argv)
 	//	throw std::logic_error("No port specified!");
 
 	server.listen(QHostAddress::Any, 3000);
+	QObject::connect(&server, SIGNAL(jsonReceived(QTcpSocket&, const QJsonObject&)),
+	                 this, SLOT(serverReceived(QTcpSocket&, const QJsonObject&)));
 
 	QObject::connect(&mtbusb, SIGNAL(onLog(QString, Mtb::LogLevel)),
 	                 this, SLOT(mtbUsbLog(QString, Mtb::LogLevel)));
@@ -48,6 +51,50 @@ void DaemonCoreApplication::mtbUsbLog(QString message, Mtb::LogLevel loglevel) {
 	(void)loglevel;
 	std::cout << "[" << QTime::currentTime().toString("hh:mm:ss,zzz").toStdString()
 	          << "] " << message.toStdString() << std::endl;
+}
+
+void DaemonCoreApplication::serverReceived(QTcpSocket& socket, const QJsonObject& json) {
+	std::optional<size_t> id;
+	if (json.contains("id"))
+		id = json["id"].toInt();
+
+	if (json["command"] == "status") {
+		this->sendStatus(socket, id);
+	}
+}
+
+void DaemonCoreApplication::sendStatus(QTcpSocket& socket, std::optional<size_t> id) {
+	QJsonObject response;
+	if (id)
+		response["id"] = static_cast<int>(id.value());
+	response["command"] = "status";
+	response["type"] = "response";
+	response["status"] = "ok";
+
+	QJsonObject status;
+	bool connected = (mtbusb.connected() && mtbusb.mtbUsbInfo().has_value() &&
+	                  mtbusb.activeModules().has_value());
+	status["connected"] = connected;
+	if (connected) {
+		const Mtb::MtbUsbInfo& mtbusbinfo = mtbusb.mtbUsbInfo().value();
+		const std::array<bool, Mtb::_MAX_MODULES>& activeModules = mtbusb.activeModules().value();
+		QJsonObject mtbusb;
+		mtbusb["type"] = mtbusbinfo.type;
+		mtbusb["speed"] = Mtb::mtbBusSpeedToInt(mtbusbinfo.speed);
+		mtbusb["firmware_version"] = mtbusbinfo.fw_version();
+		mtbusb["protocol_version"] = mtbusbinfo.proto_version();
+
+		QJsonArray jsonActiveModules;
+		for (size_t i = 0; i < Mtb::_MAX_MODULES; i++)
+			if (activeModules[i])
+				jsonActiveModules.push_back(static_cast<int>(i));
+
+		mtbusb["active_modules"] = jsonActiveModules;
+		status["mtb-usb"] = mtbusb;
+	}
+	response["status"] = status;
+
+	server.send(socket, response);
 }
 
 int main(int argc, char *argv[]) {
