@@ -54,24 +54,24 @@ void DaemonCoreApplication::mtbUsbLog(QString message, Mtb::LogLevel loglevel) {
 	          << "] " << message.toStdString() << std::endl;
 }
 
-void DaemonCoreApplication::serverReceived(QTcpSocket& socket, const QJsonObject& json) {
+void DaemonCoreApplication::serverReceived(QTcpSocket& socket, const QJsonObject& request) {
 	std::optional<size_t> id;
-	if (json.contains("id"))
-		id = json["id"].toInt();
+	if (request.contains("id"))
+		id = request["id"].toInt();
 
-	if (json["command"] == "status") {
+	if (request["command"] == "status") {
 		this->sendStatus(socket, id);
 
-	} else if (json["command"] == "module") {
+	} else if (request["command"] == "module") {
 		QJsonObject response;
 		if (id)
 			response["id"] = static_cast<int>(id.value());
 		response["command"] = "module";
 		response["type"] = "response";
 
-		size_t addr = json["address"].toInt();
+		size_t addr = request["address"].toInt();
 		if ((Mtb::isValidModuleAddress(addr)) && (modules[addr] != nullptr)) {
-			response["module"] = modules[addr]->moduleInfo();
+			response["module"] = modules[addr]->moduleInfo(request["state"].toBool());
 			response["status"] = "ok";
 		} else {
 			response["status"] = "error";
@@ -79,6 +79,18 @@ void DaemonCoreApplication::serverReceived(QTcpSocket& socket, const QJsonObject
 		}
 
 		server.send(socket, response);
+
+	} else if (request["command"] == "modules") {
+		QJsonObject response;
+		if (id)
+			response["id"] = static_cast<int>(id.value());
+		response["command"] = "module";
+		response["type"] = "response";
+
+		for (size_t i = 0; i < Mtb::_MAX_MODULES; i++) {
+			if (modules[i] != nullptr)
+				response[QString::number(i)] = modules[i]->moduleInfo(request["state"].toBool());
+		}
 	}
 }
 

@@ -9,7 +9,7 @@ protected:
 
 public:
 	virtual ~MtbUni() {}
-	QJsonObject moduleInfo() const override;
+	QJsonObject moduleInfo(bool state) const override;
 };
 
 #endif

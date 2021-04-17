@@ -20,7 +20,7 @@ protected:
 
 public:
 	virtual ~MtbModule() {}
-	virtual QJsonObject moduleInfo() const;
+	virtual QJsonObject moduleInfo(bool state) const;
 
 	virtual void mtbBusActivate();
 	virtual void mtbBusLost();

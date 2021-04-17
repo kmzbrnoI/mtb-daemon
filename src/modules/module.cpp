@@ -1,7 +1,7 @@
 #include "module.h"
 #include "../main.h"
 
-QJsonObject MtbModule::moduleInfo() const {
+QJsonObject MtbModule::moduleInfo(bool state) const {
 	QJsonObject obj;
 	obj["address"] = this->address;
 	obj["type_code"] = static_cast<int>(this->type);
