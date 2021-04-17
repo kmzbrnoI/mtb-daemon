@@ -9,6 +9,7 @@
 Mtb::MtbUsb mtbusb;
 DaemonServer server;
 std::array<std::unique_ptr<MtbModule>, Mtb::_MAX_MODULES> modules;
+std::array<std::map<QTcpSocket*, bool>, Mtb::_MAX_MODULES> subscribes;
 
 DaemonCoreApplication::DaemonCoreApplication(int &argc, char **argv)
      : QCoreApplication(argc, argv) {
@@ -16,8 +17,8 @@ DaemonCoreApplication::DaemonCoreApplication(int &argc, char **argv)
 	//	throw std::logic_error("No port specified!");
 
 	server.listen(QHostAddress::Any, 3000);
-	QObject::connect(&server, SIGNAL(jsonReceived(QTcpSocket&, const QJsonObject&)),
-	                 this, SLOT(serverReceived(QTcpSocket&, const QJsonObject&)));
+	QObject::connect(&server, SIGNAL(jsonReceived(QTcpSocket*, const QJsonObject&)),
+	                 this, SLOT(serverReceived(QTcpSocket*, const QJsonObject&)));
 
 	QObject::connect(&mtbusb, SIGNAL(onLog(QString, Mtb::LogLevel)),
 	                 this, SLOT(mtbUsbLog(QString, Mtb::LogLevel)));
@@ -54,14 +55,14 @@ void DaemonCoreApplication::mtbUsbLog(QString message, Mtb::LogLevel loglevel) {
 	          << "] " << message.toStdString() << std::endl;
 }
 
-void DaemonCoreApplication::serverReceived(QTcpSocket& socket, const QJsonObject& request) {
+void DaemonCoreApplication::serverReceived(QTcpSocket* socket, const QJsonObject& request) {
 	QString command = request["command"].toString();
 	std::optional<size_t> id;
 	if (request.contains("id"))
 		id = request["id"].toInt();
 
 	if (command == "status") {
-		this->sendStatus(socket, id);
+		this->sendStatus(*socket, id);
 
 	} else if (command == "module") {
 		QJsonObject response;
@@ -79,7 +80,7 @@ void DaemonCoreApplication::serverReceived(QTcpSocket& socket, const QJsonObject
 			response["error"] = DaemonServer::error(MTB_MODULE_INVALID_ADDR, "Invalid module address");
 		}
 
-		server.send(socket, response);
+		server.send(*socket, response);
 
 	} else if (command == "modules") {
 		QJsonObject response;
@@ -93,17 +94,60 @@ void DaemonCoreApplication::serverReceived(QTcpSocket& socket, const QJsonObject
 				response[QString::number(i)] = modules[i]->moduleInfo(request["state"].toBool());
 		}
 
-		server.send(socket, response);
+		server.send(*socket, response);
+
+	} else if (command == "module_subscribe") {
+		QJsonObject response;
+		if (id)
+			response["id"] = static_cast<int>(id.value());
+		response["command"] = "module_subscribe";
+		response["type"] = "response";
+		response["status"] = "ok";
+
+		for (const auto& value : response["addresses"].toArray()) {
+			size_t addr = value.toInt();
+			if (Mtb::isValidModuleAddress(addr)) {
+				subscribes[addr].insert_or_assign(socket, true);
+			} else {
+				response["status"] = "error";
+				response["error"] = DaemonServer::error(MTB_MODULE_INVALID_ADDR, "Invalid module address");
+				break;
+			}
+		}
+
+		server.send(*socket, response);
+
+	} else if (command == "module_unsubscribe") {
+		QJsonObject response;
+		if (id)
+			response["id"] = static_cast<int>(id.value());
+		response["command"] = "module_unsubscribe";
+		response["type"] = "response";
+		response["status"] = "ok";
+
+		for (const auto& value : response["addresses"].toArray()) {
+			size_t addr = value.toInt();
+			if (Mtb::isValidModuleAddress(addr)) {
+				if (subscribes[addr].find(socket) != subscribes[addr].end())
+					subscribes[addr].erase(socket);
+			} else {
+				response["status"] = "error";
+				response["error"] = DaemonServer::error(MTB_MODULE_INVALID_ADDR, "Invalid module address");
+				break;
+			}
+		}
+
+		server.send(*socket, response);
 
 	} else if (command.startsWith("module_")) {
 		size_t addr = request["address"].toInt();
 		if ((Mtb::isValidModuleAddress(addr)) && (modules[addr] != nullptr)) {
-			modules[addr]->jsonCommand(socket, request);
+			modules[addr]->jsonCommand(*socket, request);
 		} else {
 			QJsonObject response;
 			response["status"] = "error";
 			response["error"] = DaemonServer::error(MTB_MODULE_INVALID_ADDR, "Invalid module address");
-			server.send(socket, response);
+			server.send(*socket, response);
 		}
 	}
 }

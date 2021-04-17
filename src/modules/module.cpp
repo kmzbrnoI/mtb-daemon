@@ -1,3 +1,4 @@
+#include <QJsonArray>
 #include "module.h"
 #include "../main.h"
 
@@ -36,7 +37,14 @@ void MtbModule::mtbBusActivate() {
 
 void MtbModule::mtbBusLost() {
 	this->active = false;
-	// TODO: call event to client
+
+	QJsonObject response;
+	QJsonArray modules{this->address};
+	response["command"] = "module_activated";
+	response["type"] = "event";
+	response["modules"] = modules;
+	for (const auto& pair : subscribes[this->address])
+		server.send(*pair.first, response);
 }
 
 void MtbModule::mtbBusInputsChanged(const std::vector<uint8_t>) {

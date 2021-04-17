@@ -10,6 +10,7 @@
 extern Mtb::MtbUsb mtbusb;
 extern DaemonServer server;
 extern std::array<std::unique_ptr<MtbModule>, Mtb::_MAX_MODULES> modules;
+extern std::array<std::map<QTcpSocket*, bool>, Mtb::_MAX_MODULES> subscribes;
 
 class DaemonCoreApplication : public QCoreApplication {
 	Q_OBJECT
@@ -22,7 +23,7 @@ private:
 
 private slots:
 	void mtbUsbLog(QString message, Mtb::LogLevel loglevel);
-	void serverReceived(QTcpSocket&, const QJsonObject&);
+	void serverReceived(QTcpSocket*, const QJsonObject&);
 };
 
 #endif

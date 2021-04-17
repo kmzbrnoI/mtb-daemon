@@ -28,7 +28,7 @@ void DaemonServer::clientReadyRead() {
 		QByteArray data = client->readLine();
 		if (data.size() > 0) {
 			QJsonObject json = QJsonDocument::fromJson(data).object();
-			jsonReceived(*client, json);
+			jsonReceived(client, json);
 		}
 	}
 }
