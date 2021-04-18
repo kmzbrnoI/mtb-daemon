@@ -2,6 +2,8 @@
 #include <QJsonDocument>
 #include <QJsonObject>
 #include "server.h"
+#include "mtbusb/mtbusb.h"
+#include "main.h"
 
 DaemonServer::DaemonServer(QObject *parent) : QObject(parent) {
 	QObject::connect(&m_server, SIGNAL(newConnection()), this, SLOT(serverNewConnection()));
@@ -20,6 +22,10 @@ void DaemonServer::serverNewConnection() {
 void DaemonServer::clientDisconnected() {
 	QTcpSocket* client = static_cast<QTcpSocket*>(QObject::sender());
 	client->deleteLater();
+
+	for (size_t i = 0; i < Mtb::_MAX_MODULES; i++)
+		if (subscribes[i].find(client) != subscribes[i].end())
+			subscribes[i].erase(client);
 }
 
 void DaemonServer::clientReadyRead() {

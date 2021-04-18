@@ -25,7 +25,8 @@ QJsonObject MtbModule::moduleInfo(bool state) const {
 	return obj;
 }
 
-void MtbModule::mtbBusActivate(Mtb::ModuleInfo) {
+void MtbModule::mtbBusActivate(Mtb::ModuleInfo moduleInfo) {
+	this->busModuleInfo = moduleInfo;
 }
 
 void MtbModule::mtbBusLost() {
@@ -41,11 +42,6 @@ void MtbModule::mtbBusLost() {
 }
 
 void MtbModule::mtbBusInputsChanged(const std::vector<uint8_t>) {
-}
-
-void MtbModule::mtbBusGotInfo(uint8_t addr, Mtb::ModuleInfo moduleInfo, void*) {
-	assert(addr == this->address);
-	this->busModuleInfo = moduleInfo;
 }
 
 void MtbModule::jsonCommand(QTcpSocket& socket, const QJsonObject& request) {

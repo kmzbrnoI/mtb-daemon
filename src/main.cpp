@@ -95,6 +95,7 @@ void DaemonCoreApplication::moduleGotInfo(uint8_t addr, Mtb::ModuleInfo info) {
 		} else {
 			if (dynamic_cast<MtbUni*>(modules[addr].get()) == nullptr)
 				modules[addr] = std::make_unique<MtbUni>();
+				// TODO: read config from module & save to file
 		}
 		modules[addr]->mtbBusActivate(info);
 	} else {

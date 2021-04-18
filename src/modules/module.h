@@ -19,8 +19,6 @@ protected:
 	MtbModuleType type;
 	Mtb::ModuleInfo busModuleInfo;
 
-	virtual void mtbBusGotInfo(uint8_t addr, Mtb::ModuleInfo, void*);
-
 public:
 	virtual ~MtbModule() {}
 	virtual QJsonObject moduleInfo(bool state) const;
