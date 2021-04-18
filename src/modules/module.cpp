@@ -44,7 +44,7 @@ void MtbModule::mtbBusLost() {
 void MtbModule::mtbBusInputsChanged(const std::vector<uint8_t>) {
 }
 
-void MtbModule::jsonCommand(QTcpSocket& socket, const QJsonObject& request) {
+void MtbModule::jsonCommand(QTcpSocket* socket, const QJsonObject& request) {
 	QString command = request["command"].toString();
 
 	if (command == "module_set_output")
@@ -55,6 +55,6 @@ void MtbModule::jsonCommand(QTcpSocket& socket, const QJsonObject& request) {
 		this->jsonUpgradeFw(socket, request);
 }
 
-void MtbModule::jsonSetOutput(QTcpSocket&, const QJsonObject&) {}
-void MtbModule::jsonSetConfig(QTcpSocket&, const QJsonObject&) {}
-void MtbModule::jsonUpgradeFw(QTcpSocket&, const QJsonObject&) {}
+void MtbModule::jsonSetOutput(QTcpSocket*, const QJsonObject&) {}
+void MtbModule::jsonSetConfig(QTcpSocket*, const QJsonObject&) {}
+void MtbModule::jsonUpgradeFw(QTcpSocket*, const QJsonObject&) {}

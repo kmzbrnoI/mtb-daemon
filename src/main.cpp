@@ -212,7 +212,7 @@ void DaemonCoreApplication::serverReceived(QTcpSocket* socket, const QJsonObject
 	} else if (command.startsWith("module_")) {
 		size_t addr = request["address"].toInt();
 		if ((Mtb::isValidModuleAddress(addr)) && (modules[addr] != nullptr)) {
-			modules[addr]->jsonCommand(*socket, request);
+			modules[addr]->jsonCommand(socket, request);
 		} else {
 			QJsonObject response;
 			response["status"] = "error";

@@ -4,6 +4,11 @@
 #include <QObject>
 #include <QTcpServer>
 
+struct ServerRequest {
+	QTcpSocket* socket;
+	std::optional<size_t> id;
+};
+
 class DaemonServer : public QObject {
 	Q_OBJECT
 
@@ -26,5 +31,7 @@ signals:
 	void jsonReceived(QTcpSocket*, const QJsonObject&);
 
 };
+
+QJsonObject jsonError(size_t code, const QString& msg);
 
 #endif

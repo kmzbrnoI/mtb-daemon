@@ -27,10 +27,10 @@ public:
 	virtual void mtbBusLost();
 	virtual void mtbBusInputsChanged(const std::vector<uint8_t>);
 
-	virtual void jsonCommand(QTcpSocket&, const QJsonObject&);
-	virtual void jsonSetOutput(QTcpSocket&, const QJsonObject&);
-	virtual void jsonSetConfig(QTcpSocket&, const QJsonObject&);
-	virtual void jsonUpgradeFw(QTcpSocket&, const QJsonObject&);
+	virtual void jsonCommand(QTcpSocket*, const QJsonObject&);
+	virtual void jsonSetOutput(QTcpSocket*, const QJsonObject&);
+	virtual void jsonSetConfig(QTcpSocket*, const QJsonObject&);
+	virtual void jsonUpgradeFw(QTcpSocket*, const QJsonObject&);
 
 private:
 

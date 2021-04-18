@@ -47,3 +47,10 @@ void DaemonServer::send(QTcpSocket& socket, const QJsonObject& jsonObj) {
 QJsonObject DaemonServer::error(size_t code, const QString& message) {
 	return {{"code", static_cast<int>(code)}, {"message", message}};
 }
+
+QJsonObject jsonError(size_t code, const QString& msg) {
+	QJsonObject error;
+	error["code"] = static_cast<int>(code);
+	error["message"] = msg;
+	return error;
+}
