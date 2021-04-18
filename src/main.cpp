@@ -22,38 +22,107 @@ DaemonCoreApplication::DaemonCoreApplication(int &argc, char **argv)
 
 	QObject::connect(&mtbusb, SIGNAL(onLog(QString, Mtb::LogLevel)),
 	                 this, SLOT(mtbUsbLog(QString, Mtb::LogLevel)));
+	QObject::connect(&mtbusb, SIGNAL(onConnect()), this, SLOT(mtbUsbConnect()));
+	QObject::connect(&mtbusb, SIGNAL(onDisconnect()), this, SLOT(mtbUsbDisconnect()));
+	QObject::connect(&mtbusb, SIGNAL(onNewModule(uint8_t)), this, SLOT(mtbUsbNewModule(uint8_t)));
+	QObject::connect(&mtbusb, SIGNAL(onModuleFail(uint8_t)), this, SLOT(mtbUsbModuleFail(uint8_t)));
+	QObject::connect(&mtbusb, SIGNAL(onModuleInputsChange(uint8_t, const std::vector<uint8_t>&)),
+	                 this, SLOT(mtbUsbInputsChange(uint8_t, const std::vector<uint8_t>&)));
 
 	mtbusb.loglevel = Mtb::LogLevel::Debug;
-	/*mtbusb.connect(argv[1], 115200, QSerialPort::FlowControl::NoFlowControl);
+	//mtbusb.connect(argv[1], 115200, QSerialPort::FlowControl::NoFlowControl);
+}
 
-	mtbusb.send(
-		Mtb::CmdMtbModuleInfoRequest(
-			1,
-			{[](uint8_t module, Mtb::ModuleInfo, void*) {
-				std::cout << "Got module " << module << " info" << std::endl;
-			}},
-			{[](Mtb::CmdError cmdError, void*) {
-				std::cout << "Error callback: "+Mtb::cmdErrorToStr(cmdError).toStdString()+"!" << std::endl;
-			}}
-		)
-	);
+/* MTB-USB handling ----------------------------------------------------------*/
 
-	mtbusb.send(
-		Mtb::CmdMtbModuleFwWriteFlashStatusRequest(
-			1,
-			{[](uint8_t addr, Mtb::FwWriteFlashStatus, void*) { std::cout << "Ok" << std::endl; }},
-			{[](Mtb::CmdError cmdError, void*) {
-				std::cout << "Error callback: "+Mtb::cmdErrorToStr(cmdError).toStdString()+"!" << std::endl;
-			}}
-		)
-	);*/
+void log(const QString& message, Mtb::LogLevel loglevel) {
+	(void)loglevel;
+	qDebug() << "[" << QTime::currentTime().toString("hh:mm:ss,zzz") << "] " << message;
 }
 
 void DaemonCoreApplication::mtbUsbLog(QString message, Mtb::LogLevel loglevel) {
-	(void)loglevel;
-	std::cout << "[" << QTime::currentTime().toString("hh:mm:ss,zzz").toStdString()
-	          << "] " << message.toStdString() << std::endl;
+	log(message, loglevel);
 }
+
+void DaemonCoreApplication::mtbUsbConnect() {
+	mtbusb.send(
+		Mtb::CmdMtbUsbInfoRequest(
+			{[this](void*) { this->mtbUsbGotInfo(); }},
+			{[this](Mtb::CmdError cmdError, void*) { this->mtbUsbDidNotGetInfo(cmdError); }}
+		)
+	);
+}
+
+void DaemonCoreApplication::mtbUsbGotInfo() {
+	mtbusb.send(
+		Mtb::CmdMtbUsbActiveModulesRequest(
+			{[this](void*) { this->mtbUsbGotModules(); }},
+			{[this](Mtb::CmdError cmdError, void*) { this->mtbUsbDidNotGetModules(cmdError); }}
+		)
+	);
+}
+
+void DaemonCoreApplication::mtbUsbDidNotGetInfo(Mtb::CmdError) {
+	log("Did not get info from MTB-USB, disconnecting...", Mtb::LogLevel::Error);
+	mtbusb.disconnect();
+}
+
+void DaemonCoreApplication::mtbUsbGotModules() {
+	const auto activeModules = mtbusb.activeModules().value();
+	for (size_t i = 0; i < Mtb::_MAX_MODULES; i++)
+		if (activeModules[i])
+			this->activateModule(i);
+}
+
+void DaemonCoreApplication::activateModule(uint8_t addr) {
+	log("New module "+QString::number(addr)+" discovered, activating...", Mtb::LogLevel::Info);
+	mtbusb.send(
+		Mtb::CmdMtbModuleInfoRequest(
+			addr,
+			{[this](uint8_t addr, Mtb::ModuleInfo info, void*) { this->moduleGotInfo(addr, info); }},
+			{[](Mtb::CmdError cmdError, void*) {
+				log("Did not get info from newly discovered module, module keeps disabled.",
+				    Mtb::LogLevel::Error);
+			}}
+		)
+	);
+}
+
+void DaemonCoreApplication::moduleGotInfo(uint8_t addr, Mtb::ModuleInfo info) {
+	if ((info.type&0xF0) == 0x10) {
+		if (modules[addr] == nullptr) {
+			modules[addr] = std::make_unique<MtbUni>();
+		} else {
+			if (dynamic_cast<MtbUni*>(modules[addr].get()) == nullptr)
+				modules[addr] = std::make_unique<MtbUni>();
+		}
+		modules[addr]->mtbBusActivate(info);
+	} else {
+		log("Unknown module type: "+QString::number(addr)+": 0x"+
+			QString::number(info.type, 16)+"!", Mtb::LogLevel::Warning);
+	}
+}
+
+
+void DaemonCoreApplication::mtbUsbDidNotGetModules(Mtb::CmdError) {
+	log("Did not get active modules from MTB-USB, disconnecting...", Mtb::LogLevel::Info);
+	mtbusb.disconnect();
+}
+
+void DaemonCoreApplication::mtbUsbDisconnect() {
+}
+
+void DaemonCoreApplication::mtbUsbNewModule(uint8_t addr) {
+	this->activateModule(addr);
+}
+
+void DaemonCoreApplication::mtbUsbModuleFail(uint8_t addr) {
+}
+
+void DaemonCoreApplication::mtbUsbInputsChange(uint8_t addr, const std::vector<uint8_t>& data) {
+}
+
+/* JSON server handling ------------------------------------------------------*/
 
 void DaemonCoreApplication::serverReceived(QTcpSocket* socket, const QJsonObject& request) {
 	QString command = request["command"].toString();

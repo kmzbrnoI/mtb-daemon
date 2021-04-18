@@ -25,14 +25,7 @@ QJsonObject MtbModule::moduleInfo(bool state) const {
 	return obj;
 }
 
-void MtbModule::mtbBusActivate() {
-	mtbusb.send(
-		Mtb::CmdMtbModuleInfoRequest(
-			this->address,
-			{[this](uint8_t addr, Mtb::ModuleInfo moduleInfo, void* data){ this->mtbBusGotInfo(addr, moduleInfo, data); }}
-			// no error handler: module stays disabled
-		)
-	);
+void MtbModule::mtbBusActivate(Mtb::ModuleInfo) {
 }
 
 void MtbModule::mtbBusLost() {

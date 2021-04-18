@@ -19,11 +19,13 @@ protected:
 	MtbModuleType type;
 	Mtb::ModuleInfo busModuleInfo;
 
+	virtual void mtbBusGotInfo(uint8_t addr, Mtb::ModuleInfo, void*);
+
 public:
 	virtual ~MtbModule() {}
 	virtual QJsonObject moduleInfo(bool state) const;
 
-	virtual void mtbBusActivate();
+	virtual void mtbBusActivate(Mtb::ModuleInfo);
 	virtual void mtbBusLost();
 	virtual void mtbBusInputsChanged(const std::vector<uint8_t>);
 
@@ -33,7 +35,6 @@ public:
 	virtual void jsonUpgradeFw(QTcpSocket&, const QJsonObject&);
 
 private:
-	void mtbBusGotInfo(uint8_t addr, Mtb::ModuleInfo, void*);
 
 };
 
