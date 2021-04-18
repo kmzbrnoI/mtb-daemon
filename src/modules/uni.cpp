@@ -22,6 +22,13 @@ void MtbUni::jsonSetConfig(QTcpSocket&, const QJsonObject&) {
 void MtbUni::jsonUpgradeFw(QTcpSocket&, const QJsonObject&) {
 }
 
+/* MTB-UNI activation ---------------------------------------------------------
+ * 1) General information are read
+ * 2) Config is set
+ * 3) Inputs are get
+ * 4) Outputs are reset
+ */
+
 void MtbUni::mtbBusActivate(Mtb::ModuleInfo info) {
 	// Mtb module activated, got info → set config, then get inputs
 	MtbModule::mtbBusActivate(info);
@@ -56,6 +63,27 @@ void MtbUni::inputsRead(const std::vector<uint8_t>& data) {
 	// Mtb module activation: got info & config set & inputs read → mark module as active
 	this->storeInputsState(data);
 
+	mtbusb.send(
+		Mtb::CmdMtbModuleResetOutputs(
+			this->address,
+			{[this](uint8_t, void*) { this->outputsReset(); }},
+			{[](Mtb::CmdError, void*) {
+				log("Unable to reset new module outputs, module keeps disabled.",
+				    Mtb::LogLevel::Error);
+			}}
+		)
+	);
+}
+
+void MtbUni::storeInputsState(const std::vector<uint8_t>& data) {
+	if (data.size() >= 2)
+		this->inputs = (data[0] << 8) | data[1];
+}
+
+void MtbUni::outputsReset() {
+	this->outputsWant = this->config.outputsSafe;
+	this->outputsConfirmed = this->outputsWant;
+
 	QJsonObject json;
 	QJsonArray array{this->address};
 	json["command"] = "module_activated";
@@ -68,10 +96,7 @@ void MtbUni::inputsRead(const std::vector<uint8_t>& data) {
 	}
 }
 
-void MtbUni::storeInputsState(const std::vector<uint8_t>& data) {
-	if (data.size() >= 2)
-		this->inputs = (data[0] << 8) | data[1];
-}
+/* -------------------------------------------------------------------------- */
 
 std::vector<uint8_t> MtbUniConfig::serializeForMtbUsb(bool withIrs) const {
 	std::vector<uint8_t> result;
