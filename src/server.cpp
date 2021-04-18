@@ -54,3 +54,16 @@ QJsonObject jsonError(size_t code, const QString& msg) {
 	error["message"] = msg;
 	return error;
 }
+
+QJsonObject sendError(QTcpSocket* socket, const QJsonObject& request, size_t code,
+                      const QString& message) {
+	QJsonObject response;
+	QJsonObject error;
+	response["command"] = request["command"];
+	response["type"] = "response";
+	if (request.contains("id"))
+		response["id"] = request["id"];
+	response["status"] = "error";
+	response["error"] = jsonError(code, message);
+	server.send(*socket, response);
+}

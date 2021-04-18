@@ -15,6 +15,11 @@ QJsonObject MtbUni::moduleInfo(bool state) const {
 }
 
 void MtbUni::jsonSetOutput(QTcpSocket* socket, const QJsonObject& request) {
+	if (!this->active) {
+		sendError(socket, request, MTB_MODULE_FAILED, "Cannot set output of inactive module!");
+		return;
+	}
+
 	QJsonObject outputs = request["outputs"].toObject();
 	bool send = (this->outputsWant == this->outputsConfirmed);
 
@@ -130,6 +135,10 @@ void MtbUni::jsonSetConfig(QTcpSocket*, const QJsonObject&) {
 }
 
 void MtbUni::jsonUpgradeFw(QTcpSocket*, const QJsonObject&) {
+	if (!this->active) {
+		sendError(socket, request, MTB_MODULE_FAILED, "Cannot upgrade FW of inactive module!");
+		return;
+	}
 }
 
 std::vector<uint8_t> MtbUni::mtbBusOutputsData() const {

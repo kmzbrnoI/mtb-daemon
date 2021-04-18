@@ -33,5 +33,6 @@ signals:
 };
 
 QJsonObject jsonError(size_t code, const QString& msg);
+QJsonObject sendError(QTcpSocket*, const QJsonObject&, size_t code, const QString&);
 
 #endif
