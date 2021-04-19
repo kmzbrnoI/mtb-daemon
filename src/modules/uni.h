@@ -50,6 +50,7 @@ protected:
 	static size_t flickMtbUniToPerMin(uint8_t mtbUniFlick);
 
 public:
+	MtbUni(uint8_t addr);
 	virtual ~MtbUni() {}
 	QJsonObject moduleInfo(bool state) const override;
 

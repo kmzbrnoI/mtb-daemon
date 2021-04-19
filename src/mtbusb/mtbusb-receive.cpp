@@ -79,6 +79,7 @@ void MtbUsb::parseMtbUsbMessage(uint8_t command_code, const std::vector<uint8_t>
 			m_activeModules = activeModules;
 			log("GET: active modules list", LogLevel::Commands);
 		}
+		break;
 
 	case MtbUsbRecvCommand::NewModule:
 		if (data.size() >= 1) {
@@ -242,8 +243,9 @@ void MtbUsb::histTimeoutError(CmdError cmdError, size_t i) {
 	}
 
 	assert(m_hist[i].cmd != nullptr);
-	m_hist[i].cmd->callError(cmdError);
+	std::unique_ptr<const Cmd> cmd = std::move(m_hist[i].cmd);
 	m_hist.erase(it);
+	cmd->callError(cmdError);
 
 	if (!m_out.empty())
 		this->sendNextOut();

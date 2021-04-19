@@ -309,8 +309,8 @@ struct CmdMtbModuleResetOutputs : public CmdMtbUsbForward {
 	std::vector<uint8_t> getBytes() const override { return {usbCommandCode, module, _busCommandCode}; }
 	QString msg() const override {
 		if (this->broadcast())
-			return "Module "+QString::number(module)+" reset outputs";
-		return "Reset outputs of all modules";
+			return "Reset outputs of all modules";
+		return "Module "+QString::number(module)+" reset outputs";
 	}
 
 	bool processBusResponse(MtbBusRecvCommand busCommand, const std::vector<uint8_t>&) const override {

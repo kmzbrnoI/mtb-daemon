@@ -6,6 +6,7 @@
 #include "../mtbusb/mtbusb-commands.h"
 
 enum class MtbModuleType {
+	Uknown = 0x00,
 	Univ2ir = 0x10,
 	Univ2noIr = 0x11,
 	Univ40 = 0x15,
@@ -16,16 +17,17 @@ QString moduleTypeToStr(MtbModuleType);
 
 class MtbModule {
 protected:
-	bool active;
+	bool active = false;
 	uint8_t address;
 	QString name;
-	MtbModuleType type;
+	MtbModuleType type = MtbModuleType::Uknown;
 	Mtb::ModuleInfo busModuleInfo;
 
 	void sendInputsChanged(QJsonArray inputs) const;
 	void sendOutputsChanged(QJsonObject outputs, const std::vector<QTcpSocket*> ignore) const;
 
 public:
+	MtbModule(uint8_t addr);
 	virtual ~MtbModule() {}
 	virtual QJsonObject moduleInfo(bool state) const;
 

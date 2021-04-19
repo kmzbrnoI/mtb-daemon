@@ -146,9 +146,10 @@ void DaemonCoreApplication::mtbUsbDidNotGetInfo(Mtb::CmdError) {
 
 void DaemonCoreApplication::mtbUsbGotModules() {
 	const auto activeModules = mtbusb.activeModules().value();
-	for (size_t i = 0; i < Mtb::_MAX_MODULES; i++)
+	for (size_t i = 0; i < Mtb::_MAX_MODULES; i++) {
 		if (activeModules[i])
 			this->activateModule(i);
+	}
 }
 
 void DaemonCoreApplication::activateModule(uint8_t addr) {
@@ -168,16 +169,16 @@ void DaemonCoreApplication::activateModule(uint8_t addr) {
 void DaemonCoreApplication::moduleGotInfo(uint8_t addr, Mtb::ModuleInfo info) {
 	if ((info.type&0xF0) == 0x10) {
 		if (modules[addr] == nullptr) {
-			modules[addr] = std::make_unique<MtbUni>();
+			modules[addr] = std::make_unique<MtbUni>(addr);
 		} else {
 			if (dynamic_cast<MtbUni*>(modules[addr].get()) == nullptr)
-				modules[addr] = std::make_unique<MtbUni>();
+				modules[addr] = std::make_unique<MtbUni>(addr);
 				// TODO: read config from module & save to file
 		}
 	} else {
 		log("Unknown module type: "+QString::number(addr)+": 0x"+
 			QString::number(info.type, 16)+"!", Mtb::LogLevel::Warning);
-		modules[addr] = std::make_unique<MtbModule>();
+		modules[addr] = std::make_unique<MtbModule>(addr);
 	}
 
 	modules[addr]->mtbBusActivate(info);
@@ -262,7 +263,7 @@ void DaemonCoreApplication::serverReceived(QTcpSocket* socket, const QJsonObject
 		if (id)
 			response["id"] = static_cast<int>(id.value());
 
-		for (const auto& value : response["addresses"].toArray()) {
+		for (const auto& value : request["addresses"].toArray()) {
 			size_t addr = value.toInt();
 			if (Mtb::isValidModuleAddress(addr)) {
 				subscribes[addr].insert_or_assign(socket, true);
@@ -369,9 +370,9 @@ bool DaemonCoreApplication::loadConfig(const QString& filename) {
 			size_t type = module["type"].toInt();
 
 			if ((type&0xF0) == 0x10)
-				modules[addr] = std::make_unique<MtbUni>();
+				modules[addr] = std::make_unique<MtbUni>(addr);
 			else
-				modules[addr] = std::make_unique<MtbModule>();
+				modules[addr] = std::make_unique<MtbModule>(addr);
 
 			modules[addr]->loadConfig(module);
 		}

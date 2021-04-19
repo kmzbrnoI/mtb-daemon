@@ -2,6 +2,9 @@
 #include "module.h"
 #include "../main.h"
 
+MtbModule::MtbModule(uint8_t addr) : address(addr), name("Module "+QString::number(addr))
+{}
+
 QJsonObject MtbModule::moduleInfo(bool) const {
 	QJsonObject obj;
 	obj["active"] = this->active;
@@ -29,19 +32,21 @@ QJsonObject MtbModule::moduleInfo(bool) const {
 
 void MtbModule::mtbBusActivate(Mtb::ModuleInfo moduleInfo) {
 	this->busModuleInfo = moduleInfo;
+	if (this->type == MtbModuleType::Uknown)
+		this->type = static_cast<MtbModuleType>(moduleInfo.type);
 }
 
 void MtbModule::mtbBusLost() {
 	this->active = false;
 
-	QJsonObject response {
-		{"command", "module_activated"},
+	QJsonObject json{
+		{"command", "module_deactivated"},
 		{"type", "event"},
 		{"modules", QJsonArray{this->address}},
 	};
 
 	for (const auto& pair : subscribes[this->address])
-		server.send(*pair.first, response);
+		server.send(*pair.first, json);
 }
 
 void MtbModule::mtbBusInputsChanged(const std::vector<uint8_t>) {

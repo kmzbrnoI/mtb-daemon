@@ -5,6 +5,8 @@
 #include "../main.h"
 #include "../errors.h"
 
+MtbUni::MtbUni(uint8_t addr) : MtbModule(addr) { }
+
 bool MtbUni::isIrSupport() const {
 	return this->type == MtbModuleType::Univ2ir;
 }
@@ -283,8 +285,6 @@ void MtbUni::mtbBusActivate(Mtb::ModuleInfo info) {
 
 void MtbUni::configSet() {
 	// Mtb module activation: got info & config set → read inputs
-	this->active = true;
-
 	mtbusb.send(
 		Mtb::CmdMtbModuleGetInputs(
 			this->address,
@@ -320,6 +320,8 @@ void MtbUni::storeInputsState(const std::vector<uint8_t>& data) {
 void MtbUni::outputsReset() {
 	this->outputsWant = this->config.outputsSafe;
 	this->outputsConfirmed = this->outputsWant;
+	this->active = true;
+	log("Module "+QString::number(this->address)+" activated", Mtb::LogLevel::Info);
 
 	QJsonObject json{
 		{"command", "module_activated"},
@@ -327,10 +329,8 @@ void MtbUni::outputsReset() {
 		{"modules", QJsonArray{this->address}}, // single module
 	};
 
-	for (auto pair : subscribes[this->address]) {
-		QTcpSocket* socket = pair.first;
-		server.send(*socket, json);
-	}
+	for (auto pair : subscribes[this->address])
+		server.send(*pair.first, json);
 }
 
 /* Inputs changed ----------------------------------------------------------- */
