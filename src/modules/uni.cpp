@@ -236,8 +236,14 @@ std::array<uint8_t, UNI_IO_CNT> MtbUni::moduleOutputsData(const std::vector<uint
 }
 
 /* MTB-UNI activation ---------------------------------------------------------
+ A) Module configuration was previously laoded from file:
  * 1) General information are read
- * 2) Config is set
+ * 2) Config is SET
+ * 3) Inputs are get
+ * 4) Outputs are reset
+ B) Module configuration was NOT previously loaded from file:
+ * 1) General information are read
+ * 2) Config is GET
  * 3) Inputs are get
  * 4) Outputs are reset
  */
@@ -246,15 +252,33 @@ void MtbUni::mtbBusActivate(Mtb::ModuleInfo info) {
 	// Mtb module activated, got info → set config, then get inputs
 	MtbModule::mtbBusActivate(info);
 
-	mtbusb.send(
-		Mtb::CmdMtbModuleSetConfig(
-			this->address, this->config.serializeForMtbUsb(this->isIrSupport()),
-			{[this](uint8_t, void*) { this->configSet(); }},
-			{[](Mtb::CmdError, void*) {
-				log("Unable to set module config, module keeps disabled.", Mtb::LogLevel::Error);
-			}}
-		)
-	);
+	if (this->configLoaded) {
+		log("Config previously loaded from file, setting to module...", Mtb::LogLevel::Info);
+		mtbusb.send(
+			Mtb::CmdMtbModuleSetConfig(
+				this->address, this->config.serializeForMtbUsb(this->isIrSupport()),
+				{[this](uint8_t, void*) { this->configSet(); }},
+				{[](Mtb::CmdError, void*) {
+					log("Unable to set module config, module keeps disabled.", Mtb::LogLevel::Error);
+				}}
+			)
+		);
+	} else {
+		log("Config of this module not loaded from file, getting config from module...", Mtb::LogLevel::Info);
+		mtbusb.send(
+			Mtb::CmdMtbModuleGetConfig(
+				this->address,
+				{[this](uint8_t, const std::vector<uint8_t>& data, void*) {
+					this->config.fromMtbUsb(data);
+					this->configLoaded = true;
+					this->configSet();
+				}},
+				{[](Mtb::CmdError, void*) {
+					log("Unable to get module config, module keeps disabled.", Mtb::LogLevel::Error);
+				}}
+			)
+		);
+	}
 }
 
 void MtbUni::configSet() {
@@ -384,7 +408,7 @@ void MtbUniConfig::fromJson(const QJsonObject& json) {
 	}
 }
 
-void MtbUniConfig::fromMtbUsb(const std::vector<size_t>& data) {
+void MtbUniConfig::fromMtbUsb(const std::vector<uint8_t>& data) {
 	if (data.size() < 24)
 		return;
 	for (size_t i = 0; i < UNI_IO_CNT; i++)
@@ -430,8 +454,10 @@ size_t MtbUni::flickMtbUniToPerMin(uint8_t mtbUniFlick) {
 
 void MtbUni::loadConfig(const QJsonObject& json) {
 	this->config.fromJson(json["config"].toObject());
+	this->configLoaded = true;
 }
 
 void MtbUni::saveConfig(QJsonObject& json) const {
-	json["config"] = this->config.json(this->isIrSupport());
+	if (this->configLoaded)
+		json["config"] = this->config.json(this->isIrSupport());
 }

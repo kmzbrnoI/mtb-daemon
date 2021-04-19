@@ -12,7 +12,7 @@ struct MtbUniConfig {
 	uint16_t irs;
 
 	std::vector<uint8_t> serializeForMtbUsb(bool withIrs) const;
-	void fromMtbUsb(const std::vector<size_t>&);
+	void fromMtbUsb(const std::vector<uint8_t>&);
 
 	void fromJson(const QJsonObject&);
 	QJsonObject json(bool withIrs) const;
