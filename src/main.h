@@ -12,6 +12,8 @@ extern DaemonServer server;
 extern std::array<std::unique_ptr<MtbModule>, Mtb::_MAX_MODULES> modules;
 extern std::array<std::map<QTcpSocket*, bool>, Mtb::_MAX_MODULES> subscribes;
 
+const QString DEFAULT_CONFIG_FILENAME = "mtb-daemon.json";
+
 void log(const QString&, Mtb::LogLevel);
 
 class DaemonCoreApplication : public QCoreApplication {
@@ -21,6 +23,8 @@ public:
 	virtual ~DaemonCoreApplication() {};
 
 private:
+	QJsonObject config;
+
 	void sendStatus(QTcpSocket&, std::optional<size_t> id);
 	void mtbUsbGotInfo();
 	void mtbUsbDidNotGetInfo(Mtb::CmdError);
@@ -31,7 +35,7 @@ private:
 	void moduleGotInfo(uint8_t addr, Mtb::ModuleInfo);
 	void moduleDidNotGetInfo();
 
-	void loadConfig(const QString& filename);
+	bool loadConfig(const QString& filename);
 	void saveConfig(const QString& filename);
 
 private slots:

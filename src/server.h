@@ -4,6 +4,8 @@
 #include <QObject>
 #include <QTcpServer>
 
+constexpr size_t SERVER_DEFAULT_PORT = 3841;
+
 struct ServerRequest {
 	QTcpSocket* socket;
 	std::optional<size_t> id;

@@ -16,12 +16,9 @@ std::array<std::map<QTcpSocket*, bool>, Mtb::_MAX_MODULES> subscribes;
 
 DaemonCoreApplication::DaemonCoreApplication(int &argc, char **argv)
      : QCoreApplication(argc, argv) {
-	//if (argc < 2)
-	//	throw std::logic_error("No port specified!");
-
-	server.listen(QHostAddress::Any, 3000);
 	QObject::connect(&server, SIGNAL(jsonReceived(QTcpSocket*, const QJsonObject&)),
 	                 this, SLOT(serverReceived(QTcpSocket*, const QJsonObject&)));
+
 
 	QObject::connect(&mtbusb, SIGNAL(onLog(QString, Mtb::LogLevel)),
 	                 this, SLOT(mtbUsbLog(QString, Mtb::LogLevel)));
@@ -32,6 +29,28 @@ DaemonCoreApplication::DaemonCoreApplication(int &argc, char **argv)
 	QObject::connect(&mtbusb, SIGNAL(onModuleInputsChange(uint8_t, const std::vector<uint8_t>&)),
 	                 this, SLOT(mtbUsbInputsChange(uint8_t, const std::vector<uint8_t>&)));
 
+	const QString configFn = (argc > 1) ? argv[1] : DEFAULT_CONFIG_FILENAME;
+
+	bool configLoaded = this->loadConfig(configFn);
+	if (!configLoaded) {
+		log("Unable to load config file "+configFn+", resetting config, writing new config file...",
+		    Mtb::LogLevel::Info);
+		this->config = QJsonObject{
+			{"server", QJsonObject{
+				{"host", "127.0.0.1"},
+				{"port", static_cast<int>(SERVER_DEFAULT_PORT)},
+			}},
+		};
+		this->saveConfig(configFn);
+	} else {
+		log("Config file "+configFn+" successfully loaded", Mtb::LogLevel::Info);
+	}
+
+	{
+		QJsonObject serverConfig = this->config["server"].toObject();
+		QHostAddress host(serverConfig["host"].toString());
+		server.listen(host, serverConfig["port"].toInt());
+	}
 	mtbusb.loglevel = Mtb::LogLevel::Debug;
 	//mtbusb.connect(argv[1], 115200, QSerialPort::FlowControl::NoFlowControl);
 }
@@ -39,8 +58,17 @@ DaemonCoreApplication::DaemonCoreApplication(int &argc, char **argv)
 /* MTB-USB handling ----------------------------------------------------------*/
 
 void log(const QString& message, Mtb::LogLevel loglevel) {
-	(void)loglevel;
-	qDebug() << "[" << QTime::currentTime().toString("hh:mm:ss,zzz") << "] " << message;
+	std::cout << "[" << QTime::currentTime().toString("hh:mm:ss,zzz").toStdString() << "] ";
+	switch (loglevel) {
+	case Mtb::LogLevel::Error: std::cout << "[ERROR] "; break;
+	case Mtb::LogLevel::Warning: std::cout << "[warning] "; break;
+	case Mtb::LogLevel::Info: std::cout << "[info] "; break;
+	case Mtb::LogLevel::Commands: std::cout << "[command] "; break;
+	case Mtb::LogLevel::RawData: std::cout << "[raw-data] "; break;
+	case Mtb::LogLevel::Debug: std::cout << "[debug] "; break;
+	default: break;
+	}
+	std::cout << message.toStdString() << std::endl;
 }
 
 void DaemonCoreApplication::mtbUsbLog(QString message, Mtb::LogLevel loglevel) {
@@ -283,16 +311,17 @@ int main(int argc, char *argv[]) {
 
 /* Configuration ------------------------------------------------------------ */
 
-void DaemonCoreApplication::loadConfig(const QString& filename) {
+bool DaemonCoreApplication::loadConfig(const QString& filename) {
 	QFile file(filename);
-	file.open(QIODevice::ReadOnly | QIODevice::Text);
+	if (!file.open(QIODevice::ReadOnly | QIODevice::Text))
+		return false;
 	QString content = file.readAll();
 	file.close();
-	QJsonObject root = QJsonDocument::fromJson(content.toUtf8()).object();
+	this->config = QJsonDocument::fromJson(content.toUtf8()).object();
 
 	{
 		// Load modules
-		QJsonObject _modules = root["modules"].toObject();
+		QJsonObject _modules = this->config["modules"].toObject();
 		for (const QString& _addr : _modules.keys()) {
 			size_t addr = _addr.toInt();
 			QJsonObject module = _modules[_addr].toObject();
@@ -306,10 +335,13 @@ void DaemonCoreApplication::loadConfig(const QString& filename) {
 			modules[addr]->loadConfig(module);
 		}
 	}
+
+	this->config.remove("modules");
+	return true;
 }
 
 void DaemonCoreApplication::saveConfig(const QString& filename) {
-	QJsonObject root;
+	QJsonObject root = this->config;
 	for (size_t i = 0; i < Mtb::_MAX_MODULES; i++) {
 		QJsonObject module = root["modules"].toObject()[QString::number(i)].toObject();
 		if (modules[i] != nullptr)

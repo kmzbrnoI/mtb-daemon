@@ -10,7 +10,8 @@ DaemonServer::DaemonServer(QObject *parent) : QObject(parent) {
 }
 
 void DaemonServer::listen(const QHostAddress& addr, quint16 port) {
-	m_server.listen(addr, port);
+	if (!m_server.listen(addr, port))
+		throw std::logic_error(m_server.errorString().toStdString());
 }
 
 void DaemonServer::serverNewConnection() {
