@@ -50,6 +50,7 @@ public:
 	QJsonObject moduleInfo(bool state) const override;
 
 	void mtbBusActivate(Mtb::ModuleInfo) override;
+	void mtbBusInputsChanged(const std::vector<uint8_t>) override;
 
 	void jsonSetOutput(QTcpSocket*, const QJsonObject&) override;
 	void jsonSetConfig(QTcpSocket*, const QJsonObject&) override;

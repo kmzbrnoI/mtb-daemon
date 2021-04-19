@@ -289,6 +289,26 @@ void MtbUni::outputsReset() {
 	}
 }
 
+/* Inputs changed ----------------------------------------------------------- */
+
+void MtbUni::mtbBusInputsChanged(const std::vector<uint8_t> data) {
+	this->storeInputsState(data);
+
+	QJsonObject json;
+	QJsonObject change;
+	QJsonArray array{this->address};
+	json["command"] = "module_input_changed";
+	json["type"] = "event";
+	change["address"] = this->address;
+	change["inputs"] = inputsToJson(this->inputs);
+	json["module_input_changed"] = change;
+
+	for (auto pair : subscribes[this->address]) {
+		QTcpSocket* socket = pair.first;
+		server.send(*socket, json);
+	}
+}
+
 /* -------------------------------------------------------------------------- */
 
 std::vector<uint8_t> MtbUniConfig::serializeForMtbUsb(bool withIrs) const {
