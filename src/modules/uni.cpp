@@ -9,8 +9,23 @@ bool MtbUni::isIrSupport() const {
 	return this->type == MtbModuleType::Univ2ir;
 }
 
+/* JSON request & responses --------------------------------------------------*/
+
 QJsonObject MtbUni::moduleInfo(bool state) const {
 	QJsonObject response = MtbModule::moduleInfo(state);
+	QJsonObject uni;
+
+	uni["ir"] = this->isIrSupport();
+	uni["config"] = this->config.json(this->isIrSupport());
+
+	if (state && this->active) {
+		QJsonObject state;
+		state["outputs"] = outputsToJson(this->outputsConfirmed);
+		state["inputs"] = inputsToJson(this->inputs);
+		uni["state"] = state;
+	}
+
+	response["MTB-UNI"] = uni;
 	return response;
 }
 
@@ -86,7 +101,7 @@ void MtbUni::mtbBusOutputsSet(const std::vector<uint8_t>& data) {
 	this->setOutputsSent.clear();
 
 	// Send next outputs
-	if (this->outputsWant != this->outputsConfirmed)
+	if (!this->setOutputsWaiting.empty())
 		this->mtbBusSetOutputs();
 }
 
@@ -111,6 +126,15 @@ QJsonObject MtbUni::outputsToJson(const std::array<uint8_t, UNI_IO_CNT>& outputs
 	return result;
 }
 
+QJsonArray MtbUni::inputsToJson(uint16_t inputs) {
+	QJsonArray json;
+	for (size_t i = 0; i < UNI_IO_CNT; i++) {
+		json.push_back(static_cast<bool>(inputs&1));
+		inputs >>= 1;
+	}
+	return json;
+}
+
 void MtbUni::mtbBusOutputsNotSet(Mtb::CmdError) {
 	// Report err callback to clients
 	for (const ServerRequest& sr : this->setOutputsSent) {
@@ -131,10 +155,10 @@ void MtbUni::mtbBusOutputsNotSet(Mtb::CmdError) {
 	this->outputsConfirmed = this->outputsWant;
 }
 
-void MtbUni::jsonSetConfig(QTcpSocket*, const QJsonObject&) {
+void MtbUni::jsonSetConfig(QTcpSocket* socket, const QJsonObject& request) {
 }
 
-void MtbUni::jsonUpgradeFw(QTcpSocket*, const QJsonObject&) {
+void MtbUni::jsonUpgradeFw(QTcpSocket* socket, const QJsonObject& request) {
 	if (!this->active) {
 		sendError(socket, request, MTB_MODULE_FAILED, "Cannot upgrade FW of inactive module!");
 		return;

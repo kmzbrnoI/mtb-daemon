@@ -12,6 +12,8 @@ enum class MtbModuleType {
 	Univ42 = 0x16,
 };
 
+QString moduleTypeToStr(MtbModuleType);
+
 class MtbModule {
 protected:
 	bool active;

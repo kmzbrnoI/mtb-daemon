@@ -7,6 +7,7 @@ QJsonObject MtbModule::moduleInfo(bool state) const {
 	obj["address"] = this->address;
 	obj["type_code"] = static_cast<int>(this->type);
 	obj["active"] = this->active;
+	obj["type"] = moduleTypeToStr(this->type);
 
 	if (this->active) {
 		if (this->busModuleInfo.bootloader_unint)
@@ -58,3 +59,13 @@ void MtbModule::jsonCommand(QTcpSocket* socket, const QJsonObject& request) {
 void MtbModule::jsonSetOutput(QTcpSocket*, const QJsonObject&) {}
 void MtbModule::jsonSetConfig(QTcpSocket*, const QJsonObject&) {}
 void MtbModule::jsonUpgradeFw(QTcpSocket*, const QJsonObject&) {}
+
+QString moduleTypeToStr(MtbModuleType type) {
+	switch (type) {
+	case MtbModuleType::Univ2ir: return "MTB-UNI v2 IR";
+	case MtbModuleType::Univ2noIr: return "MTB-UNI v2";
+	case MtbModuleType::Univ40: return "MTB-UNI v4";
+	case MtbModuleType::Univ42: return "MTB-UNI v4";
+	default: return "Unknown type";
+	}
+}
