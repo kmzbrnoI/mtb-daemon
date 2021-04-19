@@ -396,5 +396,10 @@ size_t MtbUni::flickMtbUniToPerMin(uint8_t mtbUniFlick) {
 	}
 }
 
-void MtbModule::loadConfig(const QJsonObject&) {
+/* Configuration ------------------------------------------------------------ */
+
+void MtbUni::loadConfig(const QJsonObject& json) {
+}
+
+void MtbUni::saveConfig(QJsonObject& json) const {
 }

@@ -55,6 +55,9 @@ public:
 	void jsonSetOutput(QTcpSocket*, const QJsonObject&) override;
 	void jsonSetConfig(QTcpSocket*, const QJsonObject&) override;
 	void jsonUpgradeFw(QTcpSocket*, const QJsonObject&) override;
+
+	void loadConfig(const QJsonObject&) override;
+	void saveConfig(QJsonObject&) const override;
 };
 
 #endif

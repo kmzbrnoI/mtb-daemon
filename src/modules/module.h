@@ -39,6 +39,7 @@ public:
 	virtual void jsonUpgradeFw(QTcpSocket*, const QJsonObject&);
 
 	virtual void loadConfig(const QJsonObject&);
+	virtual void saveConfig(QJsonObject&) const;
 
 private:
 

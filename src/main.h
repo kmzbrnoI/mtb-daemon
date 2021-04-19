@@ -31,6 +31,9 @@ private:
 	void moduleGotInfo(uint8_t addr, Mtb::ModuleInfo);
 	void moduleDidNotGetInfo();
 
+	void loadConfig(const QString& filename);
+	void saveConfig(const QString& filename);
+
 private slots:
 	void mtbUsbLog(QString message, Mtb::LogLevel loglevel);
 	void mtbUsbConnect();

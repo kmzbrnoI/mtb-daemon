@@ -105,3 +105,13 @@ void MtbModule::sendOutputsChanged(QJsonObject outputs,
 			server.send(*socket, json);
 	}
 }
+
+void MtbModule::loadConfig(const QJsonObject& json) {
+	this->name = json["name"].toString();
+	this->type = static_cast<MtbModuleType>(json["type"].toInt());
+}
+
+void MtbModule::saveConfig(QJsonObject& json) const {
+	json["name"] = this->name;
+	json["type"] = static_cast<int>(this->type);
+}

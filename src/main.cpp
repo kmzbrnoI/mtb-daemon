@@ -1,5 +1,8 @@
 #include <QSerialPort>
 #include <QJsonArray>
+#include <QFile>
+#include <QIODevice>
+#include <QJsonDocument>
 #include <iostream>
 #include "main.h"
 #include "mtbusb/mtbusb-common.h"
@@ -97,11 +100,13 @@ void DaemonCoreApplication::moduleGotInfo(uint8_t addr, Mtb::ModuleInfo info) {
 				modules[addr] = std::make_unique<MtbUni>();
 				// TODO: read config from module & save to file
 		}
-		modules[addr]->mtbBusActivate(info);
 	} else {
 		log("Unknown module type: "+QString::number(addr)+": 0x"+
 			QString::number(info.type, 16)+"!", Mtb::LogLevel::Warning);
+		modules[addr] = std::make_unique<MtbModule>();
 	}
+
+	modules[addr]->mtbBusActivate(info);
 }
 
 
@@ -274,4 +279,47 @@ void DaemonCoreApplication::sendStatus(QTcpSocket& socket, std::optional<size_t>
 int main(int argc, char *argv[]) {
 	DaemonCoreApplication a(argc, argv);
 	return a.exec();
+}
+
+/* Configuration ------------------------------------------------------------ */
+
+void DaemonCoreApplication::loadConfig(const QString& filename) {
+	QFile file(filename);
+	file.open(QIODevice::ReadOnly | QIODevice::Text);
+	QString content = file.readAll();
+	file.close();
+	QJsonObject root = QJsonDocument::fromJson(content.toUtf8()).object();
+
+	{
+		// Load modules
+		QJsonObject _modules = root["modules"].toObject();
+		for (const QString& _addr : _modules.keys()) {
+			size_t addr = _addr.toInt();
+			QJsonObject module = _modules[_addr].toObject();
+			size_t type = module["type"].toInt();
+
+			if ((type&0xF0) == 0x10)
+				modules[addr] = std::make_unique<MtbUni>();
+			else
+				modules[addr] = std::make_unique<MtbModule>();
+
+			modules[addr]->loadConfig(module);
+		}
+	}
+}
+
+void DaemonCoreApplication::saveConfig(const QString& filename) {
+	QJsonObject root;
+	for (size_t i = 0; i < Mtb::_MAX_MODULES; i++) {
+		QJsonObject module = root["modules"].toObject()[QString::number(i)].toObject();
+		if (modules[i] != nullptr)
+			modules[i]->saveConfig(module);
+	}
+
+	QJsonDocument doc(root);
+
+	QFile file(filename);
+	file.open(QIODevice::WriteOnly | QIODevice::Text);
+	file.write(doc.toJson(QJsonDocument::JsonFormat::Indented));
+	file.close();
 }
