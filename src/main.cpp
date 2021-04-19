@@ -14,6 +14,11 @@ DaemonServer server;
 std::array<std::unique_ptr<MtbModule>, Mtb::_MAX_MODULES> modules;
 std::array<std::map<QTcpSocket*, bool>, Mtb::_MAX_MODULES> subscribes;
 
+int main(int argc, char *argv[]) {
+	DaemonCoreApplication a(argc, argv);
+	return a.exec();
+}
+
 DaemonCoreApplication::DaemonCoreApplication(int &argc, char **argv)
      : QCoreApplication(argc, argv) {
 	QObject::connect(&server, SIGNAL(jsonReceived(QTcpSocket*, const QJsonObject&)),
@@ -29,30 +34,41 @@ DaemonCoreApplication::DaemonCoreApplication(int &argc, char **argv)
 	QObject::connect(&mtbusb, SIGNAL(onModuleInputsChange(uint8_t, const std::vector<uint8_t>&)),
 	                 this, SLOT(mtbUsbInputsChange(uint8_t, const std::vector<uint8_t>&)));
 
-	const QString configFn = (argc > 1) ? argv[1] : DEFAULT_CONFIG_FILENAME;
-
-	bool configLoaded = this->loadConfig(configFn);
-	if (!configLoaded) {
-		log("Unable to load config file "+configFn+", resetting config, writing new config file...",
-		    Mtb::LogLevel::Info);
-		this->config = QJsonObject{
-			{"server", QJsonObject{
-				{"host", "127.0.0.1"},
-				{"port", static_cast<int>(SERVER_DEFAULT_PORT)},
-			}},
-		};
-		this->saveConfig(configFn);
-	} else {
-		log("Config file "+configFn+" successfully loaded", Mtb::LogLevel::Info);
+	{ // Load config file
+		const QString configFn = (argc > 1) ? argv[1] : DEFAULT_CONFIG_FILENAME;
+		bool configLoaded = this->loadConfig(configFn);
+		if (!configLoaded) {
+			log("Unable to load config file "+configFn+", resetting config, writing new config file...",
+				Mtb::LogLevel::Info);
+			this->config = QJsonObject{
+				{"server", QJsonObject{
+					{"host", "127.0.0.1"},
+					{"port", static_cast<int>(SERVER_DEFAULT_PORT)},
+				}},
+				{"mtb-usb", QJsonObject{
+					{"port", "COM1"},
+				}},
+			};
+			this->saveConfig(configFn);
+		} else {
+			log("Config file "+configFn+" successfully loaded.", Mtb::LogLevel::Info);
+		}
 	}
 
-	{
-		QJsonObject serverConfig = this->config["server"].toObject();
+	{ // Start server
+		const QJsonObject serverConfig = this->config["server"].toObject();
+		size_t port = serverConfig["port"].toInt();
 		QHostAddress host(serverConfig["host"].toString());
-		server.listen(host, serverConfig["port"].toInt());
+		log("Starting server: "+host.toString()+":"+QString::number(port)+"...", Mtb::LogLevel::Info);
+		server.listen(host, port);
 	}
-	mtbusb.loglevel = Mtb::LogLevel::Debug;
-	//mtbusb.connect(argv[1], 115200, QSerialPort::FlowControl::NoFlowControl);
+
+	{ // Conntect to MTB-USB
+		const QJsonObject mtbUsbConfig = this->config["mtb-usb"].toObject();
+		const QString port = mtbUsbConfig["port"].toString();
+		mtbusb.loglevel = Mtb::LogLevel::Debug;
+		mtbusb.connect(port, 115200, QSerialPort::FlowControl::NoFlowControl);
+	}
 }
 
 /* MTB-USB handling ----------------------------------------------------------*/
@@ -302,11 +318,6 @@ void DaemonCoreApplication::sendStatus(QTcpSocket& socket, std::optional<size_t>
 	response["status"] = status;
 
 	server.send(socket, response);
-}
-
-int main(int argc, char *argv[]) {
-	DaemonCoreApplication a(argc, argv);
-	return a.exec();
 }
 
 /* Configuration ------------------------------------------------------------ */
