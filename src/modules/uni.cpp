@@ -88,6 +88,7 @@ void MtbUni::mtbBusOutputsSet(const std::vector<uint8_t>& data) {
 	// TODO: check if output really set?
 
 	// Report ok callback to clients
+	std::vector<QTcpSocket*> ignore;
 	for (const ServerRequest& sr : this->setOutputsSent) {
 		QJsonObject response;
 		response["command"] = "module_set_outputs";
@@ -97,8 +98,12 @@ void MtbUni::mtbBusOutputsSet(const std::vector<uint8_t>& data) {
 		response["status"] = "ok";
 		response["outputs"] = this->outputsToJson(this->outputsConfirmed);
 		server.send(*sr.socket, response);
+		ignore.push_back(sr.socket);
 	}
 	this->setOutputsSent.clear();
+
+	// Report outputs changed event to other clients
+	this->sendOutputsChanged(outputsToJson(this->outputsConfirmed), ignore);
 
 	// Send next outputs
 	if (!this->setOutputsWaiting.empty())
@@ -293,20 +298,7 @@ void MtbUni::outputsReset() {
 
 void MtbUni::mtbBusInputsChanged(const std::vector<uint8_t> data) {
 	this->storeInputsState(data);
-
-	QJsonObject json;
-	QJsonObject change;
-	QJsonArray array{this->address};
-	json["command"] = "module_input_changed";
-	json["type"] = "event";
-	change["address"] = this->address;
-	change["inputs"] = inputsToJson(this->inputs);
-	json["module_input_changed"] = change;
-
-	for (auto pair : subscribes[this->address]) {
-		QTcpSocket* socket = pair.first;
-		server.send(*socket, json);
-	}
+	this->sendInputsChanged(inputsToJson(this->inputs));
 }
 
 /* -------------------------------------------------------------------------- */

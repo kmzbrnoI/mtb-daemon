@@ -21,6 +21,9 @@ protected:
 	MtbModuleType type;
 	Mtb::ModuleInfo busModuleInfo;
 
+	void sendInputsChanged(QJsonArray inputs) const;
+	void sendOutputsChanged(QJsonObject outputs, const std::vector<QTcpSocket*> ignore) const;
+
 public:
 	virtual ~MtbModule() {}
 	virtual QJsonObject moduleInfo(bool state) const;

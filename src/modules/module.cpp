@@ -69,3 +69,37 @@ QString moduleTypeToStr(MtbModuleType type) {
 	default: return "Unknown type";
 	}
 }
+
+void MtbModule::sendInputsChanged(QJsonArray inputs) const {
+	QJsonObject json{
+		{"command", "module_inputs_changed"},
+		{"type", "event"},
+		{"module_inputs_changed", QJsonObject{
+			{"address", this->address},
+			{"inputs", inputs},
+		}}
+	};
+
+	for (auto pair : subscribes[this->address]) {
+		QTcpSocket* socket = pair.first;
+		server.send(*socket, json);
+	}
+}
+
+void MtbModule::sendOutputsChanged(QJsonObject outputs,
+                                   const std::vector<QTcpSocket*> ignore) const {
+	QJsonObject json{
+		{"command", "module_outputs_changed"},
+		{"type", "event"},
+		{"module_outputs_changed", QJsonObject{
+			{"address", this->address},
+			{"outputs", outputs},
+		}}
+	};
+
+	for (auto pair : subscribes[this->address]) {
+		QTcpSocket* socket = pair.first;
+		if (std::find(ignore.begin(), ignore.end(), socket) == ignore.end())
+			server.send(*socket, json);
+	}
+}
