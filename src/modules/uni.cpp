@@ -73,13 +73,14 @@ uint8_t MtbUni::jsonOutputToByte(const QJsonObject& json) {
 		uint8_t value = flickPerMinToMtbUniValue(json["value"].toInt());
 		if (value == 0)
 			value = 1;
-		return value;
+		return value | 0x40;
 	}
 	return 0;
 }
 
 void MtbUni::mtbBusSetOutputs() {
 	this->setOutputsSent = this->setOutputsWaiting;
+	this->setOutputsWaiting.clear();
 
 	mtbusb.send(
 		Mtb::CmdMtbModuleSetOutput(

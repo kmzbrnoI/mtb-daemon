@@ -55,7 +55,7 @@ void MtbModule::mtbBusInputsChanged(const std::vector<uint8_t>) {
 void MtbModule::jsonCommand(QTcpSocket* socket, const QJsonObject& request) {
 	QString command = request["command"].toString();
 
-	if (command == "module_set_output")
+	if (command == "module_set_outputs")
 		this->jsonSetOutput(socket, request);
 	else if (command == "module_set_config")
 		this->jsonSetConfig(socket, request);
