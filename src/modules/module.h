@@ -18,6 +18,7 @@ class MtbModule {
 protected:
 	bool active;
 	uint8_t address;
+	QString name;
 	MtbModuleType type;
 	Mtb::ModuleInfo busModuleInfo;
 
@@ -36,6 +37,8 @@ public:
 	virtual void jsonSetOutput(QTcpSocket*, const QJsonObject&);
 	virtual void jsonSetConfig(QTcpSocket*, const QJsonObject&);
 	virtual void jsonUpgradeFw(QTcpSocket*, const QJsonObject&);
+
+	virtual void loadConfig(const QJsonObject&);
 
 private:
 

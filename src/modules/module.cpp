@@ -2,11 +2,12 @@
 #include "module.h"
 #include "../main.h"
 
-QJsonObject MtbModule::moduleInfo(bool state) const {
+QJsonObject MtbModule::moduleInfo(bool) const {
 	QJsonObject obj;
-	obj["address"] = this->address;
-	obj["type_code"] = static_cast<int>(this->type);
 	obj["active"] = this->active;
+	obj["address"] = this->address;
+	obj["name"] = this->name;
+	obj["type_code"] = static_cast<int>(this->type);
 	obj["type"] = moduleTypeToStr(this->type);
 
 	if (this->active) {
@@ -33,11 +34,12 @@ void MtbModule::mtbBusActivate(Mtb::ModuleInfo moduleInfo) {
 void MtbModule::mtbBusLost() {
 	this->active = false;
 
-	QJsonObject response;
-	QJsonArray modules{this->address};
-	response["command"] = "module_activated";
-	response["type"] = "event";
-	response["modules"] = modules;
+	QJsonObject response {
+		{"command", "module_activated"},
+		{"type", "event"},
+		{"modules", QJsonArray{this->address}},
+	};
+
 	for (const auto& pair : subscribes[this->address])
 		server.send(*pair.first, response);
 }

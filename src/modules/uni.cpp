@@ -166,7 +166,7 @@ void MtbUni::mtbBusOutputsNotSet(Mtb::CmdError) {
 
 /* Json Set Config ---------------------------------------------------------- */
 
-void MtbUni::jsonSetConfig(QTcpSocket* socket, const QJsonObject& request) {
+void MtbUni::jsonSetConfig(QTcpSocket*, const QJsonObject&) {
 }
 
 /* Json Upgrade Fw ---------------------------------------------------------- */
@@ -394,4 +394,7 @@ size_t MtbUni::flickMtbUniToPerMin(uint8_t mtbUniFlick) {
 	case 8: return 66;
 	default: return 0;
 	}
+}
+
+void MtbModule::loadConfig(const QJsonObject&) {
 }

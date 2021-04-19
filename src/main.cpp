@@ -80,7 +80,7 @@ void DaemonCoreApplication::activateModule(uint8_t addr) {
 		Mtb::CmdMtbModuleInfoRequest(
 			addr,
 			{[this](uint8_t addr, Mtb::ModuleInfo info, void*) { this->moduleGotInfo(addr, info); }},
-			{[](Mtb::CmdError cmdError, void*) {
+			{[](Mtb::CmdError, void*) {
 				log("Did not get info from newly discovered module, module keeps disabled.",
 				    Mtb::LogLevel::Error);
 			}}
@@ -111,6 +111,7 @@ void DaemonCoreApplication::mtbUsbDidNotGetModules(Mtb::CmdError) {
 }
 
 void DaemonCoreApplication::mtbUsbDisconnect() {
+	// TODO: add disconnect event
 }
 
 void DaemonCoreApplication::mtbUsbNewModule(uint8_t addr) {
@@ -118,9 +119,13 @@ void DaemonCoreApplication::mtbUsbNewModule(uint8_t addr) {
 }
 
 void DaemonCoreApplication::mtbUsbModuleFail(uint8_t addr) {
+	if (modules[addr] != nullptr)
+		modules[addr]->mtbBusLost();
 }
 
 void DaemonCoreApplication::mtbUsbInputsChange(uint8_t addr, const std::vector<uint8_t>& data) {
+	if (modules[addr] != nullptr)
+		modules[addr]->mtbBusInputsChanged(data);
 }
 
 /* JSON server handling ------------------------------------------------------*/
