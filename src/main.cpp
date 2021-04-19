@@ -171,9 +171,11 @@ void DaemonCoreApplication::moduleGotInfo(uint8_t addr, Mtb::ModuleInfo info) {
 		if (modules[addr] == nullptr) {
 			modules[addr] = std::make_unique<MtbUni>(addr);
 		} else {
-			if (dynamic_cast<MtbUni*>(modules[addr].get()) == nullptr)
+			if (static_cast<size_t>(modules[addr]->moduleType()) != info.type) {
+				log("Detected module "+QString::number(addr)+" type & stored module type mismatch! Forgetting config...",
+				    Mtb::LogLevel::Warning);
 				modules[addr] = std::make_unique<MtbUni>(addr);
-				// TODO: read config from module & save to file
+			}
 		}
 	} else {
 		log("Unknown module type: "+QString::number(addr)+": 0x"+
@@ -314,6 +316,34 @@ void DaemonCoreApplication::serverReceived(QTcpSocket* socket, const QJsonObject
 		}
 
 		server.send(*socket, response);
+
+	} else if (command == "module_set_config") {
+		// Set config can change module type
+
+		size_t addr = request["address"].toInt();
+		uint8_t type = request["type"].toInt();
+		if (!Mtb::isValidModuleAddress(addr)) {
+			std::cout << "here" << std::endl;
+			sendError(socket, request, MTB_MODULE_INVALID_ADDR, "Invalid module address");
+			return;
+		}
+
+		if (modules[addr] == nullptr) {
+			if ((type&0xF0) == 0x10)
+				modules[addr] = std::make_unique<MtbUni>(addr);
+			else
+				modules[addr] = std::make_unique<MtbModule>(addr);
+			modules[addr]->jsonSetConfig(socket, request);
+			return;
+		}
+
+		if ((modules[addr]->isActive()) && (type != static_cast<size_t>(modules[addr]->moduleType()))) {
+			sendError(socket, request, MTB_ALREADY_STARTED, "Cannot change type of active module!");
+			return;
+		}
+
+		// Change config of active module
+		modules[addr]->jsonSetConfig(socket, request);
 
 	} else if (command.startsWith("module_")) {
 		size_t addr = request["address"].toInt();

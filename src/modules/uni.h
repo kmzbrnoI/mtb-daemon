@@ -24,7 +24,8 @@ protected:
 	std::array<uint8_t, UNI_IO_CNT> outputsWant;
 	std::array<uint8_t, UNI_IO_CNT> outputsConfirmed;
 	MtbUniConfig config;
-	bool configLoaded;
+	MtbUniConfig configToWrite;
+	bool configLoaded = false;
 
 	std::vector<ServerRequest> setOutputsWaiting;
 	std::vector<ServerRequest> setOutputsSent;
@@ -42,6 +43,8 @@ protected:
 	void mtbBusSetOutputs();
 	void mtbBusOutputsSet(const std::vector<uint8_t>& data);
 	void mtbBusOutputsNotSet(Mtb::CmdError);
+	void mtbBusConfigWritten();
+	void mtbBusConfigNotWritten(Mtb::CmdError);
 
 	std::vector<uint8_t> mtbBusOutputsData() const;
 	static std::array<uint8_t, UNI_IO_CNT> moduleOutputsData(const std::vector<uint8_t> mtbBusData);

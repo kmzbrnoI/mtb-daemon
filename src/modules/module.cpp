@@ -5,6 +5,14 @@
 MtbModule::MtbModule(uint8_t addr) : address(addr), name("Module "+QString::number(addr))
 {}
 
+MtbModuleType MtbModule::moduleType() const {
+	return this->type;
+}
+
+bool MtbModule::isActive() const {
+	return this->active;
+}
+
 QJsonObject MtbModule::moduleInfo(bool) const {
 	QJsonObject obj;
 	obj["active"] = this->active;
@@ -64,7 +72,14 @@ void MtbModule::jsonCommand(QTcpSocket* socket, const QJsonObject& request) {
 }
 
 void MtbModule::jsonSetOutput(QTcpSocket*, const QJsonObject&) {}
-void MtbModule::jsonSetConfig(QTcpSocket*, const QJsonObject&) {}
+
+void MtbModule::jsonSetConfig(QTcpSocket*, const QJsonObject& json) {
+	if (json.contains("type"))
+		this->type = static_cast<MtbModuleType>(json["type"].toInt());
+	if (json.contains("name"))
+		this->name = json["name"].toString();
+}
+
 void MtbModule::jsonUpgradeFw(QTcpSocket*, const QJsonObject&) {}
 
 QString moduleTypeToStr(MtbModuleType type) {
@@ -119,4 +134,20 @@ void MtbModule::loadConfig(const QJsonObject& json) {
 void MtbModule::saveConfig(QJsonObject& json) const {
 	json["name"] = this->name;
 	json["type"] = static_cast<int>(this->type);
+}
+
+void MtbModule::sendChanged(QTcpSocket* ignore) const {
+	QJsonObject json{
+		{"command", "module_changed"},
+		{"type", "event"},
+		{"module_changed", QJsonObject{
+			{"address", this->address},
+		}}
+	};
+
+	for (auto pair : subscribes[this->address]) {
+		QTcpSocket* socket = pair.first;
+		if (socket != ignore)
+			server.send(*socket, json);
+	}
 }

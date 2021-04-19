@@ -174,7 +174,60 @@ void MtbUni::mtbBusOutputsNotSet(Mtb::CmdError) {
 
 /* Json Set Config ---------------------------------------------------------- */
 
-void MtbUni::jsonSetConfig(QTcpSocket*, const QJsonObject&) {
+void MtbUni::jsonSetConfig(QTcpSocket* socket, const QJsonObject& request) {
+	if (this->configWriting.has_value()) {
+		sendError(socket, request, MTB_MODULE_ALREADY_WRITING, "Another client is writing config now!");
+		return;
+	}
+
+	MtbModule::jsonSetConfig(socket, request);
+
+	this->configToWrite.fromJson(request["config"].toObject());
+	this->configWriting = ServerRequest(socket, request);
+
+	if (this->active) {
+		mtbusb.send(
+			Mtb::CmdMtbModuleSetConfig(
+				this->address, this->configToWrite.serializeForMtbUsb(this->isIrSupport()),
+				{[this](uint8_t, void*) { this->mtbBusConfigWritten(); }},
+				{[this](Mtb::CmdError error, void*) { this->mtbBusConfigNotWritten(error); }}
+			)
+		);
+	} else {
+		this->mtbBusConfigWritten();
+	}
+}
+
+void MtbUni::mtbBusConfigWritten() {
+	this->config = this->configToWrite;
+	const ServerRequest request = this->configWriting.value();
+	this->configWriting.reset();
+	this->sendChanged(request.socket);
+
+	QJsonObject response{
+		{"command", "module_set_config"},
+		{"type", "response"},
+		{"status", "ok"},
+	};
+	if (request.id.has_value())
+		response["id"] = static_cast<int>(request.id.value());
+	server.send(*request.socket, response);
+}
+
+void MtbUni::mtbBusConfigNotWritten(Mtb::CmdError) {
+	const ServerRequest request = this->configWriting.value();
+	this->configWriting.reset();
+
+	QJsonObject response{
+		{"command", "module_set_config"},
+		{"type", "response"},
+		{"status", "error"},
+		{"error", jsonError(MTB_MODULE_NOT_ANSWERED_CMD_GIVING_UP,
+		                    "No response to SetConfig command!")},
+	};
+	if (request.id.has_value())
+		response["id"] = static_cast<int>(request.id.value());
+	server.send(*request.socket, response);
 }
 
 /* Json Upgrade Fw ---------------------------------------------------------- */
@@ -454,6 +507,7 @@ size_t MtbUni::flickMtbUniToPerMin(uint8_t mtbUniFlick) {
 /* Configuration ------------------------------------------------------------ */
 
 void MtbUni::loadConfig(const QJsonObject& json) {
+	MtbModule::loadConfig(json);
 	this->config.fromJson(json["config"].toObject());
 	this->configLoaded = true;
 }

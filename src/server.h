@@ -3,12 +3,19 @@
 
 #include <QObject>
 #include <QTcpServer>
+#include <QJsonObject>
 
 constexpr size_t SERVER_DEFAULT_PORT = 3841;
 
 struct ServerRequest {
 	QTcpSocket* socket;
 	std::optional<size_t> id;
+
+	ServerRequest(QTcpSocket* socket, std::optional<size_t> id) : socket(socket), id(id) {}
+	ServerRequest(QTcpSocket* socket, const QJsonObject& request) : socket(socket) {
+		if (request.contains("id"))
+			this->id = request["id"].toInt();
+	}
 };
 
 class DaemonServer : public QObject {
@@ -35,6 +42,6 @@ signals:
 };
 
 QJsonObject jsonError(size_t code, const QString& msg);
-QJsonObject sendError(QTcpSocket*, const QJsonObject&, size_t code, const QString&);
+void sendError(QTcpSocket*, const QJsonObject&, size_t code, const QString&);
 
 #endif

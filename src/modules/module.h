@@ -4,6 +4,7 @@
 #include <QTcpSocket>
 #include <QJsonObject>
 #include "../mtbusb/mtbusb-commands.h"
+#include "../server.h"
 
 enum class MtbModuleType {
 	Uknown = 0x00,
@@ -22,13 +23,19 @@ protected:
 	QString name;
 	MtbModuleType type = MtbModuleType::Uknown;
 	Mtb::ModuleInfo busModuleInfo;
+	std::optional<ServerRequest> configWriting;
 
 	void sendInputsChanged(QJsonArray inputs) const;
 	void sendOutputsChanged(QJsonObject outputs, const std::vector<QTcpSocket*> ignore) const;
+	void sendChanged(QTcpSocket* ignore = nullptr) const;
 
 public:
 	MtbModule(uint8_t addr);
 	virtual ~MtbModule() {}
+
+	MtbModuleType moduleType() const;
+	bool isActive() const;
+
 	virtual QJsonObject moduleInfo(bool state) const;
 
 	virtual void mtbBusActivate(Mtb::ModuleInfo);
