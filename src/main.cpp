@@ -1,4 +1,5 @@
 #include <QSerialPort>
+#include <QSerialPortInfo>
 #include <QJsonArray>
 #include <QFile>
 #include <QIODevice>
@@ -13,6 +14,7 @@ Mtb::MtbUsb mtbusb;
 DaemonServer server;
 std::array<std::unique_ptr<MtbModule>, Mtb::_MAX_MODULES> modules;
 std::array<std::map<QTcpSocket*, bool>, Mtb::_MAX_MODULES> subscribes;
+Mtb::LogLevel DaemonCoreApplication::loglevel = Mtb::LogLevel::Info;
 
 int main(int argc, char *argv[]) {
 	DaemonCoreApplication a(argc, argv);
@@ -26,13 +28,13 @@ DaemonCoreApplication::DaemonCoreApplication(int &argc, char **argv)
 
 
 	QObject::connect(&mtbusb, SIGNAL(onLog(QString, Mtb::LogLevel)),
-	                 this, SLOT(mtbUsbLog(QString, Mtb::LogLevel)));
-	QObject::connect(&mtbusb, SIGNAL(onConnect()), this, SLOT(mtbUsbConnect()));
-	QObject::connect(&mtbusb, SIGNAL(onDisconnect()), this, SLOT(mtbUsbDisconnect()));
-	QObject::connect(&mtbusb, SIGNAL(onNewModule(uint8_t)), this, SLOT(mtbUsbNewModule(uint8_t)));
-	QObject::connect(&mtbusb, SIGNAL(onModuleFail(uint8_t)), this, SLOT(mtbUsbModuleFail(uint8_t)));
+	                 this, SLOT(mtbUsbOnLog(QString, Mtb::LogLevel)));
+	QObject::connect(&mtbusb, SIGNAL(onConnect()), this, SLOT(mtbUsbOnConnect()));
+	QObject::connect(&mtbusb, SIGNAL(onDisconnect()), this, SLOT(mtbUsbOnDisconnect()));
+	QObject::connect(&mtbusb, SIGNAL(onNewModule(uint8_t)), this, SLOT(mtbUsbOnNewModule(uint8_t)));
+	QObject::connect(&mtbusb, SIGNAL(onModuleFail(uint8_t)), this, SLOT(mtbUsbOnModuleFail(uint8_t)));
 	QObject::connect(&mtbusb, SIGNAL(onModuleInputsChange(uint8_t, const std::vector<uint8_t>&)),
-	                 this, SLOT(mtbUsbInputsChange(uint8_t, const std::vector<uint8_t>&)));
+	                 this, SLOT(mtbUsbOnInputsChange(uint8_t, const std::vector<uint8_t>&)));
 
 	{ // Load config file
 		const QString configFn = (argc > 1) ? argv[1] : DEFAULT_CONFIG_FILENAME;
@@ -41,12 +43,13 @@ DaemonCoreApplication::DaemonCoreApplication(int &argc, char **argv)
 			log("Unable to load config file "+configFn+", resetting config, writing new config file...",
 				Mtb::LogLevel::Info);
 			this->config = QJsonObject{
+				{"loglevel", static_cast<int>(Mtb::LogLevel::Info)},
 				{"server", QJsonObject{
 					{"host", "127.0.0.1"},
 					{"port", static_cast<int>(SERVER_DEFAULT_PORT)},
 				}},
 				{"mtb-usb", QJsonObject{
-					{"port", "COM1"},
+					{"port", "auto"},
 				}},
 			};
 			this->saveConfig(configFn);
@@ -54,6 +57,10 @@ DaemonCoreApplication::DaemonCoreApplication(int &argc, char **argv)
 			log("Config file "+configFn+" successfully loaded.", Mtb::LogLevel::Info);
 		}
 	}
+
+	Mtb::LogLevel loglevel = static_cast<Mtb::LogLevel>(this->config["loglevel"].toInt());
+	mtbusb.loglevel = loglevel;
+	DaemonCoreApplication::loglevel = loglevel;
 
 	{ // Start server
 		const QJsonObject serverConfig = this->config["server"].toObject();
@@ -63,35 +70,58 @@ DaemonCoreApplication::DaemonCoreApplication(int &argc, char **argv)
 		server.listen(host, port);
 	}
 
-	{ // Conntect to MTB-USB
-		const QJsonObject mtbUsbConfig = this->config["mtb-usb"].toObject();
-		const QString port = mtbUsbConfig["port"].toString();
-		mtbusb.loglevel = Mtb::LogLevel::Debug;
-		mtbusb.connect(port, 115200, QSerialPort::FlowControl::NoFlowControl);
-	}
+	this->mtbUsbConnect();
 }
 
 /* MTB-USB handling ----------------------------------------------------------*/
 
+void DaemonCoreApplication::mtbUsbConnect() {
+	const QJsonObject mtbUsbConfig = this->config["mtb-usb"].toObject();
+	QString port = mtbUsbConfig["port"].toString();
+
+	if (port == "auto") {
+		const std::vector<QSerialPortInfo>& mtbUsbPorts = Mtb::MtbUsb::ports();
+		log("Automatic MTB-USB port detected", Mtb::LogLevel::Info);
+		if (mtbUsbPorts.size() == 1) {
+			log("Found single port "+mtbUsbPorts[0].portName(), Mtb::LogLevel::Info);
+			port = mtbUsbPorts[0].portName();
+		} else {
+			log("Found "+QString::number(mtbUsbPorts.size())+" MTB-USB modules. Not ocnnecting to any.",
+			    Mtb::LogLevel::Warning);
+		}
+	}
+
+	try {
+		mtbusb.connect(port, 115200, QSerialPort::FlowControl::NoFlowControl);
+	} catch (const Mtb::EOpenError&) {}
+}
+
 void log(const QString& message, Mtb::LogLevel loglevel) {
+	DaemonCoreApplication::log(message, loglevel);
+}
+
+void DaemonCoreApplication::log(const QString& message, Mtb::LogLevel loglevel) {
+	if (loglevel > DaemonCoreApplication::loglevel)
+		return;
+
 	std::cout << "[" << QTime::currentTime().toString("hh:mm:ss,zzz").toStdString() << "] ";
 	switch (loglevel) {
-	case Mtb::LogLevel::Error: std::cout << "[ERROR] "; break;
-	case Mtb::LogLevel::Warning: std::cout << "[warning] "; break;
-	case Mtb::LogLevel::Info: std::cout << "[info] "; break;
-	case Mtb::LogLevel::Commands: std::cout << "[command] "; break;
-	case Mtb::LogLevel::RawData: std::cout << "[raw-data] "; break;
-	case Mtb::LogLevel::Debug: std::cout << "[debug] "; break;
-	default: break;
+		case Mtb::LogLevel::Error: std::cout << "[ERROR] "; break;
+		case Mtb::LogLevel::Warning: std::cout << "[warning] "; break;
+		case Mtb::LogLevel::Info: std::cout << "[info] "; break;
+		case Mtb::LogLevel::Commands: std::cout << "[command] "; break;
+		case Mtb::LogLevel::RawData: std::cout << "[raw-data] "; break;
+		case Mtb::LogLevel::Debug: std::cout << "[debug] "; break;
+		default: break;
 	}
 	std::cout << message.toStdString() << std::endl;
 }
 
-void DaemonCoreApplication::mtbUsbLog(QString message, Mtb::LogLevel loglevel) {
+void DaemonCoreApplication::mtbUsbOnLog(QString message, Mtb::LogLevel loglevel) {
 	log(message, loglevel);
 }
 
-void DaemonCoreApplication::mtbUsbConnect() {
+void DaemonCoreApplication::mtbUsbOnConnect() {
 	mtbusb.send(
 		Mtb::CmdMtbUsbInfoRequest(
 			{[this](void*) { this->mtbUsbGotInfo(); }},
@@ -159,20 +189,20 @@ void DaemonCoreApplication::mtbUsbDidNotGetModules(Mtb::CmdError) {
 	mtbusb.disconnect();
 }
 
-void DaemonCoreApplication::mtbUsbDisconnect() {
+void DaemonCoreApplication::mtbUsbOnDisconnect() {
 	// TODO: add disconnect event
 }
 
-void DaemonCoreApplication::mtbUsbNewModule(uint8_t addr) {
+void DaemonCoreApplication::mtbUsbOnNewModule(uint8_t addr) {
 	this->activateModule(addr);
 }
 
-void DaemonCoreApplication::mtbUsbModuleFail(uint8_t addr) {
+void DaemonCoreApplication::mtbUsbOnModuleFail(uint8_t addr) {
 	if (modules[addr] != nullptr)
 		modules[addr]->mtbBusLost();
 }
 
-void DaemonCoreApplication::mtbUsbInputsChange(uint8_t addr, const std::vector<uint8_t>& data) {
+void DaemonCoreApplication::mtbUsbOnInputsChange(uint8_t addr, const std::vector<uint8_t>& data) {
 	if (modules[addr] != nullptr)
 		modules[addr]->mtbBusInputsChanged(data);
 }

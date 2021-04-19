@@ -19,8 +19,12 @@ void log(const QString&, Mtb::LogLevel);
 class DaemonCoreApplication : public QCoreApplication {
 	Q_OBJECT
 public:
+	static Mtb::LogLevel loglevel;
+
 	DaemonCoreApplication(int &argc, char **argv);
 	virtual ~DaemonCoreApplication() {};
+
+	static void log(const QString&, Mtb::LogLevel);
 
 private:
 	QJsonObject config;
@@ -38,13 +42,15 @@ private:
 	bool loadConfig(const QString& filename);
 	void saveConfig(const QString& filename);
 
-private slots:
-	void mtbUsbLog(QString message, Mtb::LogLevel loglevel);
 	void mtbUsbConnect();
-	void mtbUsbDisconnect();
-	void mtbUsbNewModule(uint8_t addr);
-	void mtbUsbModuleFail(uint8_t addr);
-	void mtbUsbInputsChange(uint8_t addr, const std::vector<uint8_t>& data);
+
+private slots:
+	void mtbUsbOnLog(QString message, Mtb::LogLevel loglevel);
+	void mtbUsbOnConnect();
+	void mtbUsbOnDisconnect();
+	void mtbUsbOnNewModule(uint8_t addr);
+	void mtbUsbOnModuleFail(uint8_t addr);
+	void mtbUsbOnInputsChange(uint8_t addr, const std::vector<uint8_t>& data);
 
 	void serverReceived(QTcpSocket*, const QJsonObject&);
 };

@@ -104,6 +104,8 @@ public:
 	std::optional<MtbUsbInfo> mtbUsbInfo() const { return m_mtbUsbInfo; }
 	std::optional<std::array<bool, _MAX_MODULES>> activeModules() const { return m_activeModules; }
 
+	static std::vector<QSerialPortInfo> ports();
+
 private slots:
 	void spHandleReadyRead();
 	void spHandleError(QSerialPort::SerialPortError);

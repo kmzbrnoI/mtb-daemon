@@ -1,3 +1,4 @@
+#include <QSerialPortInfo>
 #include "mtbusb.h"
 
 namespace Mtb {
@@ -81,5 +82,14 @@ void MtbUsb::disconnect() {
 }
 
 bool MtbUsb::connected() const { return m_serialPort.isOpen(); }
+
+std::vector<QSerialPortInfo> MtbUsb::ports() {
+	std::vector<QSerialPortInfo> result;
+	QList<QSerialPortInfo> ports(QSerialPortInfo::availablePorts());
+	for (const QSerialPortInfo& info : ports)
+		if (info.description() == "MTB-USB v4")
+			result.push_back(info);
+	return result;
+}
 
 }; // namespace Mtb
