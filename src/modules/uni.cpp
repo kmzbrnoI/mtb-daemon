@@ -45,21 +45,7 @@ void MtbUni::jsonSetOutput(QTcpSocket* socket, const QJsonObject& request) {
 		size_t port = key.toInt();
 		if (port > 15)
 			continue;
-
-		QJsonObject output = outputs[key].toObject();
-		if (output["type"] == "plain") {
-			this->outputsWant[port] = (outputs["value"].toInt() > 0) ? 1 : 0;
-		} else if (outputs["type"] == "s-com") {
-			uint8_t value = outputs["value"].toInt();
-			if (value > 127)
-				value = 127;
-			this->outputsWant[port] = value | 0x80;
-		} else if (outputs["type"] == "flicker") {
-			uint8_t value = flickPerMinToMtbUniValue(outputs["value"].toInt());
-			if (value == 0)
-				value = 1;
-			this->outputsWant[port] = value;
-		}
+		this->outputsWant[port] = jsonOutputToByte(outputs[key].toObject());
 	}
 
 	std::optional<size_t> id;
@@ -69,6 +55,25 @@ void MtbUni::jsonSetOutput(QTcpSocket* socket, const QJsonObject& request) {
 
 	if (send)
 		this->mtbBusSetOutputs();
+}
+
+uint8_t MtbUni::jsonOutputToByte(const QJsonObject& json) {
+	if (json["type"] == "plain") {
+		return (json["value"].toInt() > 0) ? 1 : 0;
+	}
+	if (json["type"] == "s-com") {
+		uint8_t value = json["value"].toInt();
+		if (value > 127)
+			value = 127;
+		return value | 0x80;
+	}
+	if (json["type"] == "flicker") {
+		uint8_t value = flickPerMinToMtbUniValue(json["value"].toInt());
+		if (value == 0)
+			value = 1;
+		return value;
+	}
+	return 0;
 }
 
 void MtbUni::mtbBusSetOutputs() {
@@ -368,6 +373,31 @@ QJsonObject MtbUniConfig::json(bool withIrs) const {
 	return result;
 }
 
+void MtbUniConfig::fromJson(const QJsonObject& json) {
+	const QJsonArray& jsonOutputsSafe = json["outputsSafe"].toArray();
+	const QJsonArray& jsonInputsDelay = json["outputsSafe"].toArray();
+	for (size_t i = 0; i < UNI_IO_CNT; i++) {
+		if (i < static_cast<size_t>(jsonOutputsSafe.size()))
+			this->outputsSafe[i] = MtbUni::jsonOutputToByte(jsonOutputsSafe[i].toObject());
+		if (i < static_cast<size_t>(jsonInputsDelay.size()))
+			this->inputsDelay[i] = jsonInputsDelay[i].toDouble()*10;
+	}
+}
+
+void MtbUniConfig::fromMtbUsb(const std::vector<size_t>& data) {
+	if (data.size() < 24)
+		return;
+	for (size_t i = 0; i < UNI_IO_CNT; i++)
+		this->outputsSafe[i] = data[i];
+	for (size_t i = 0; i < UNI_IO_CNT; i++)
+		this->inputsDelay[i] = ((i%2 == 0) ? data[i/2] : data[i/2] >> 4) & 0x0F;
+
+	if (data.size() >= 26)
+		this->irs = (data[24] << 8) | data[25];
+	else
+		this->irs = 0;
+}
+
 uint8_t MtbUni::flickPerMinToMtbUniValue(size_t flickPerMin) {
 	switch (flickPerMin) {
 	case 60: return 1;
@@ -399,7 +429,9 @@ size_t MtbUni::flickMtbUniToPerMin(uint8_t mtbUniFlick) {
 /* Configuration ------------------------------------------------------------ */
 
 void MtbUni::loadConfig(const QJsonObject& json) {
+	this->config.fromJson(json["config"].toObject());
 }
 
 void MtbUni::saveConfig(QJsonObject& json) const {
+	json["config"] = this->config.json(this->isIrSupport());
 }

@@ -12,6 +12,9 @@ struct MtbUniConfig {
 	uint16_t irs;
 
 	std::vector<uint8_t> serializeForMtbUsb(bool withIrs) const;
+	void fromMtbUsb(const std::vector<size_t>&);
+
+	void fromJson(const QJsonObject&);
 	QJsonObject json(bool withIrs) const;
 };
 
@@ -21,6 +24,7 @@ protected:
 	std::array<uint8_t, UNI_IO_CNT> outputsWant;
 	std::array<uint8_t, UNI_IO_CNT> outputsConfirmed;
 	MtbUniConfig config;
+	bool configLoaded;
 
 	std::vector<ServerRequest> setOutputsWaiting;
 	std::vector<ServerRequest> setOutputsSent;
@@ -58,6 +62,8 @@ public:
 
 	void loadConfig(const QJsonObject&) override;
 	void saveConfig(QJsonObject&) const override;
+
+	static uint8_t jsonOutputToByte(const QJsonObject&);
 };
 
 #endif
