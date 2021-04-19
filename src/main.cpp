@@ -135,11 +135,13 @@ void DaemonCoreApplication::serverReceived(QTcpSocket* socket, const QJsonObject
 		this->sendStatus(*socket, id);
 
 	} else if (command == "module") {
-		QJsonObject response;
+		QJsonObject response{
+			{"command", "module"},
+			{"type", "response"},
+		};
 		if (id)
 			response["id"] = static_cast<int>(id.value());
-		response["command"] = "module";
-		response["type"] = "response";
+
 
 		size_t addr = request["address"].toInt();
 		if ((Mtb::isValidModuleAddress(addr)) && (modules[addr] != nullptr)) {
@@ -153,11 +155,12 @@ void DaemonCoreApplication::serverReceived(QTcpSocket* socket, const QJsonObject
 		server.send(*socket, response);
 
 	} else if (command == "modules") {
-		QJsonObject response;
+		QJsonObject response {
+			{"command", "module"},
+			{"type", "response"},
+		};
 		if (id)
 			response["id"] = static_cast<int>(id.value());
-		response["command"] = "module";
-		response["type"] = "response";
 
 		for (size_t i = 0; i < Mtb::_MAX_MODULES; i++) {
 			if (modules[i] != nullptr)
@@ -167,12 +170,13 @@ void DaemonCoreApplication::serverReceived(QTcpSocket* socket, const QJsonObject
 		server.send(*socket, response);
 
 	} else if (command == "module_subscribe") {
-		QJsonObject response;
+		QJsonObject response {
+			{"command", "module_subscribe"},
+			{"type", "response"},
+			{"status", "ok"},
+		};
 		if (id)
 			response["id"] = static_cast<int>(id.value());
-		response["command"] = "module_subscribe";
-		response["type"] = "response";
-		response["status"] = "ok";
 
 		for (const auto& value : response["addresses"].toArray()) {
 			size_t addr = value.toInt();
@@ -188,12 +192,13 @@ void DaemonCoreApplication::serverReceived(QTcpSocket* socket, const QJsonObject
 		server.send(*socket, response);
 
 	} else if (command == "module_unsubscribe") {
-		QJsonObject response;
+		QJsonObject response {
+			{"command", "module_unsubscribe"},
+			{"type", "response"},
+			{"status", "ok"},
+		};
 		if (id)
 			response["id"] = static_cast<int>(id.value());
-		response["command"] = "module_unsubscribe";
-		response["type"] = "response";
-		response["status"] = "ok";
 
 		for (const auto& value : response["addresses"].toArray()) {
 			size_t addr = value.toInt();
@@ -214,21 +219,25 @@ void DaemonCoreApplication::serverReceived(QTcpSocket* socket, const QJsonObject
 		if ((Mtb::isValidModuleAddress(addr)) && (modules[addr] != nullptr)) {
 			modules[addr]->jsonCommand(socket, request);
 		} else {
-			QJsonObject response;
-			response["status"] = "error";
-			response["error"] = DaemonServer::error(MTB_MODULE_INVALID_ADDR, "Invalid module address");
+			QJsonObject response{
+				{"command", command},
+				{"type", "response"},
+				{"status", "error"},
+				{"error", DaemonServer::error(MTB_MODULE_INVALID_ADDR, "Invalid module address")},
+			};
 			server.send(*socket, response);
 		}
 	}
 }
 
 void DaemonCoreApplication::sendStatus(QTcpSocket& socket, std::optional<size_t> id) {
-	QJsonObject response;
+	QJsonObject response {
+		{"command", "status"},
+		{"type", "response"},
+		{"status", "ok"},
+	};
 	if (id)
 		response["id"] = static_cast<int>(id.value());
-	response["command"] = "status";
-	response["type"] = "response";
-	response["status"] = "ok";
 
 	QJsonObject status;
 	bool connected = (mtbusb.connected() && mtbusb.mtbUsbInfo().has_value() &&
@@ -237,11 +246,12 @@ void DaemonCoreApplication::sendStatus(QTcpSocket& socket, std::optional<size_t>
 	if (connected) {
 		const Mtb::MtbUsbInfo& mtbusbinfo = mtbusb.mtbUsbInfo().value();
 		const std::array<bool, Mtb::_MAX_MODULES>& activeModules = mtbusb.activeModules().value();
-		QJsonObject mtbusb;
-		mtbusb["type"] = mtbusbinfo.type;
-		mtbusb["speed"] = Mtb::mtbBusSpeedToInt(mtbusbinfo.speed);
-		mtbusb["firmware_version"] = mtbusbinfo.fw_version();
-		mtbusb["protocol_version"] = mtbusbinfo.proto_version();
+		QJsonObject mtbusb {
+			{"type", mtbusbinfo.type},
+			{"speed", Mtb::mtbBusSpeedToInt(mtbusbinfo.speed)},
+			{"firmware_version", mtbusbinfo.fw_version()},
+			{"protocol_version", mtbusbinfo.proto_version()},
+		};
 
 		QJsonArray jsonActiveModules;
 		for (size_t i = 0; i < Mtb::_MAX_MODULES; i++)

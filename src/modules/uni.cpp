@@ -9,25 +9,28 @@ bool MtbUni::isIrSupport() const {
 	return this->type == MtbModuleType::Univ2ir;
 }
 
-/* JSON request & responses --------------------------------------------------*/
+/* JSON Module Info --------------------------------------------------------- */
 
 QJsonObject MtbUni::moduleInfo(bool state) const {
 	QJsonObject response = MtbModule::moduleInfo(state);
-	QJsonObject uni;
 
-	uni["ir"] = this->isIrSupport();
-	uni["config"] = this->config.json(this->isIrSupport());
+	QJsonObject uni{
+		{"ir", this->isIrSupport()},
+		{"config", this->config.json(this->isIrSupport())},
+	};
 
 	if (state && this->active) {
-		QJsonObject state;
-		state["outputs"] = outputsToJson(this->outputsConfirmed);
-		state["inputs"] = inputsToJson(this->inputs);
-		uni["state"] = state;
+		uni["state"] = QJsonObject{
+			{"outputs", outputsToJson(this->outputsConfirmed)},
+			{"inputs", inputsToJson(this->inputs)},
+		};
 	}
 
 	response["MTB-UNI"] = uni;
 	return response;
 }
+
+/* Json Set Outputs --------------------------------------------------------- */
 
 void MtbUni::jsonSetOutput(QTcpSocket* socket, const QJsonObject& request) {
 	if (!this->active) {
@@ -90,13 +93,14 @@ void MtbUni::mtbBusOutputsSet(const std::vector<uint8_t>& data) {
 	// Report ok callback to clients
 	std::vector<QTcpSocket*> ignore;
 	for (const ServerRequest& sr : this->setOutputsSent) {
-		QJsonObject response;
-		response["command"] = "module_set_outputs";
-		response["type"] = "response";
+		QJsonObject response{
+			{"command", "module_set_outputs"},
+			{"type", "response"},
+			{"status", "ok"},
+			{"outputs", this->outputsToJson(this->outputsConfirmed)},
+		};
 		if (sr.id.has_value())
 			response["id"] = static_cast<int>(sr.id.value());
-		response["status"] = "ok";
-		response["outputs"] = this->outputsToJson(this->outputsConfirmed);
 		server.send(*sr.socket, response);
 		ignore.push_back(sr.socket);
 	}
@@ -143,15 +147,15 @@ QJsonArray MtbUni::inputsToJson(uint16_t inputs) {
 void MtbUni::mtbBusOutputsNotSet(Mtb::CmdError) {
 	// Report err callback to clients
 	for (const ServerRequest& sr : this->setOutputsSent) {
-		QJsonObject response;
-		QJsonObject error;
-		response["command"] = "module_set_outputs";
-		response["type"] = "response";
+		QJsonObject response{
+			{"command", "module_set_outputs"},
+			{"type", "response"},
+			{"status", "error"},
+			{"error", jsonError(MTB_MODULE_NOT_ANSWERED_CMD_GIVING_UP,
+		                              "No response to SetOutput command!")},
+		};
 		if (sr.id.has_value())
 			response["id"] = static_cast<int>(sr.id.value());
-		response["status"] = "error";
-		response["error"] = jsonError(MTB_MODULE_NOT_ANSWERED_CMD_GIVING_UP,
-		                              "No response to SetOutput command!");
 		server.send(*sr.socket, response);
 	}
 	this->setOutputsSent.clear();
@@ -160,8 +164,12 @@ void MtbUni::mtbBusOutputsNotSet(Mtb::CmdError) {
 	this->outputsConfirmed = this->outputsWant;
 }
 
+/* Json Set Config ---------------------------------------------------------- */
+
 void MtbUni::jsonSetConfig(QTcpSocket* socket, const QJsonObject& request) {
 }
+
+/* Json Upgrade Fw ---------------------------------------------------------- */
 
 void MtbUni::jsonUpgradeFw(QTcpSocket* socket, const QJsonObject& request) {
 	if (!this->active) {
@@ -169,6 +177,8 @@ void MtbUni::jsonUpgradeFw(QTcpSocket* socket, const QJsonObject& request) {
 		return;
 	}
 }
+
+/* -------------------------------------------------------------------------- */
 
 std::vector<uint8_t> MtbUni::mtbBusOutputsData() const {
 	// Set outputs data based on diff in this->outputsWant
@@ -282,11 +292,11 @@ void MtbUni::outputsReset() {
 	this->outputsWant = this->config.outputsSafe;
 	this->outputsConfirmed = this->outputsWant;
 
-	QJsonObject json;
-	QJsonArray array{this->address};
-	json["command"] = "module_activated";
-	json["type"] = "event";
-	json["modules"] = array;
+	QJsonObject json{
+		{"command", "module_activated"},
+		{"type", "event"},
+		{"modules", QJsonArray{this->address}}, // single module
+	};
 
 	for (auto pair : subscribes[this->address]) {
 		QTcpSocket* socket = pair.first;
