@@ -400,7 +400,7 @@ QJsonObject MtbUniConfig::json(bool withIrs) const {
 
 void MtbUniConfig::fromJson(const QJsonObject& json) {
 	const QJsonArray& jsonOutputsSafe = json["outputsSafe"].toArray();
-	const QJsonArray& jsonInputsDelay = json["outputsSafe"].toArray();
+	const QJsonArray& jsonInputsDelay = json["inputsDelay"].toArray();
 	for (size_t i = 0; i < UNI_IO_CNT; i++) {
 		if (i < static_cast<size_t>(jsonOutputsSafe.size()))
 			this->outputsSafe[i] = MtbUni::jsonOutputToByte(jsonOutputsSafe[i].toObject());
@@ -459,6 +459,7 @@ void MtbUni::loadConfig(const QJsonObject& json) {
 }
 
 void MtbUni::saveConfig(QJsonObject& json) const {
+	MtbModule::saveConfig(json);
 	if (this->configLoaded)
 		json["config"] = this->config.json(this->isIrSupport());
 }

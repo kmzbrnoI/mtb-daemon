@@ -28,6 +28,7 @@ public:
 
 private:
 	QJsonObject config;
+	QString configFileName;
 
 	void sendStatus(QTcpSocket&, std::optional<size_t> id);
 	void mtbUsbGotInfo();
@@ -40,7 +41,7 @@ private:
 	void moduleDidNotGetInfo();
 
 	bool loadConfig(const QString& filename);
-	void saveConfig(const QString& filename);
+	bool saveConfig(const QString& filename);
 
 	void mtbUsbConnect();
 

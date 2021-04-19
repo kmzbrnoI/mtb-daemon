@@ -37,10 +37,10 @@ DaemonCoreApplication::DaemonCoreApplication(int &argc, char **argv)
 	                 this, SLOT(mtbUsbOnInputsChange(uint8_t, const std::vector<uint8_t>&)));
 
 	{ // Load config file
-		const QString configFn = (argc > 1) ? argv[1] : DEFAULT_CONFIG_FILENAME;
-		bool configLoaded = this->loadConfig(configFn);
+		this->configFileName = (argc > 1) ? argv[1] : DEFAULT_CONFIG_FILENAME;
+		bool configLoaded = this->loadConfig(this->configFileName);
 		if (!configLoaded) {
-			log("Unable to load config file "+configFn+", resetting config, writing new config file...",
+			log("Unable to load config file "+configFileName+", resetting config, writing new config file...",
 				Mtb::LogLevel::Info);
 			this->config = QJsonObject{
 				{"loglevel", static_cast<int>(Mtb::LogLevel::Info)},
@@ -52,9 +52,9 @@ DaemonCoreApplication::DaemonCoreApplication(int &argc, char **argv)
 					{"port", "auto"},
 				}},
 			};
-			this->saveConfig(configFn);
+			this->saveConfig(configFileName);
 		} else {
-			log("Config file "+configFn+" successfully loaded.", Mtb::LogLevel::Info);
+			log("Config file "+configFileName+" successfully loaded.", Mtb::LogLevel::Info);
 		}
 	}
 
@@ -219,6 +219,23 @@ void DaemonCoreApplication::serverReceived(QTcpSocket* socket, const QJsonObject
 	if (command == "status") {
 		this->sendStatus(*socket, id);
 
+	} else if (command == "save_config") {
+		QString filename = this->configFileName;
+		if (request.contains("filename"))
+			filename = request["filename"].toString();
+		bool ok = this->saveConfig(filename);
+		QJsonObject response {
+			{"command", "save_config"},
+			{"type", "response"},
+			{"status", ok ? "ok" : "error"},
+		};
+		if (!ok)
+			response["error"] = jsonError(MTB_FILE_CANNOT_ACCESS, "Cannot access file "+filename);
+		if (id)
+			response["id"] = static_cast<int>(id.value());
+
+		server.send(*socket, response);
+
 	} else if (command == "module") {
 		QJsonObject response{
 			{"command", "module"},
@@ -226,7 +243,6 @@ void DaemonCoreApplication::serverReceived(QTcpSocket* socket, const QJsonObject
 		};
 		if (id)
 			response["id"] = static_cast<int>(id.value());
-
 
 		size_t addr = request["address"].toInt();
 		if ((Mtb::isValidModuleAddress(addr)) && (modules[addr] != nullptr)) {
@@ -382,18 +398,26 @@ bool DaemonCoreApplication::loadConfig(const QString& filename) {
 	return true;
 }
 
-void DaemonCoreApplication::saveConfig(const QString& filename) {
+bool DaemonCoreApplication::saveConfig(const QString& filename) {
+	log("Saving config to "+filename+"...", Mtb::LogLevel::Info);
+
 	QJsonObject root = this->config;
+	QJsonObject jsonModules;
 	for (size_t i = 0; i < Mtb::_MAX_MODULES; i++) {
-		QJsonObject module = root["modules"].toObject()[QString::number(i)].toObject();
-		if (modules[i] != nullptr)
+		if (modules[i] != nullptr) {
+			QJsonObject module;
 			modules[i]->saveConfig(module);
+			jsonModules[QString::number(i)] = module;
+		}
 	}
+	root["modules"] = jsonModules;
 
 	QJsonDocument doc(root);
 
 	QFile file(filename);
-	file.open(QIODevice::WriteOnly | QIODevice::Text);
+	if (!file.open(QIODevice::WriteOnly | QIODevice::Text))
+		return false;
 	file.write(doc.toJson(QJsonDocument::JsonFormat::Indented));
 	file.close();
+	return true;
 }
