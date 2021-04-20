@@ -73,6 +73,7 @@ QString mtbBusRecvErrorToStr(MtbBusRecvError);
 enum class CmdError {
 	UnknownCommand = 0x01,
 	UnsupportedCommand = 0x02,
+	BadAddress = 0x03,
 	SerialPortClosed = 0x10,
 	UsbNoResponse = 0x11,
 	BusNoResponse = 0x12,

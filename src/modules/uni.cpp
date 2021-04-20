@@ -302,12 +302,12 @@ void MtbUni::jsonUpgradeFw(QTcpSocket* socket, const QJsonObject& request) {
 
 	this->fwUpgrade.fwUpgrading = ServerRequest(socket, request);
 	this->fwUpgrade.data = parseFirmware(request["firmware"].toObject());
+
 	if (!this->configWriting.has_value() && this->setOutputsSent.empty())
 		this->fwUpgdInit();
 }
 
 std::map<size_t, std::vector<uint8_t>> MtbUni::parseFirmware(const QJsonObject& json) {
-	constexpr size_t BLOCK_SIZE = 64;
 	std::map<size_t, std::vector<uint8_t>> result;
 
 	for (const QString& key : json.keys()) {
@@ -315,12 +315,12 @@ std::map<size_t, std::vector<uint8_t>> MtbUni::parseFirmware(const QJsonObject& 
 		const QString& dataStr = json[key].toString();
 		std::vector<uint8_t> data;
 		for (int i = 0; i < dataStr.size(); i += 2)
-			data.push_back(dataStr.mid(i, 2).toInt(nullptr, 16));
+				data.push_back(dataStr.mid(i, 2).toInt(nullptr, 16));
 
-		size_t block = addr / BLOCK_SIZE;
-		size_t offset = addr % BLOCK_SIZE;
+		size_t block = addr / MtbModule::FwUpgrade::BLOCK_SIZE;
+		size_t offset = addr % MtbModule::FwUpgrade::BLOCK_SIZE;
 		if (result.find(block) == result.end())
-			result.emplace(block, std::vector<uint8_t>(BLOCK_SIZE));
+			result.emplace(block, std::vector<uint8_t>(MtbModule::FwUpgrade::BLOCK_SIZE));
 		for (size_t i = 0; i < data.size(); i++)
 			result[block][i+offset] = data[i];
 	}
@@ -416,6 +416,13 @@ std::array<uint8_t, UNI_IO_CNT> MtbUni::moduleOutputsData(const std::vector<uint
 void MtbUni::mtbBusActivate(Mtb::ModuleInfo info) {
 	// Mtb module activated, got info → set config, then get inputs
 	MtbModule::mtbBusActivate(info);
+
+	if (info.inBootloader()) {
+		// In bootloader → mark as active, don't do anything else
+		log("Module is in bootloader!", Mtb::LogLevel::Info);
+		this->outputsReset();
+		return;
+	}
 
 	if (this->configLoaded) {
 		log("Config previously loaded from file, setting to module...", Mtb::LogLevel::Info);

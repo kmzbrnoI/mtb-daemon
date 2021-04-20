@@ -20,6 +20,7 @@ QJsonObject MtbModule::moduleInfo(bool) const {
 	obj["name"] = this->name;
 	obj["type_code"] = static_cast<int>(this->type);
 	obj["type"] = moduleTypeToStr(this->type);
+	obj["fw_upgrading"] = this->isFirmwareUpgrading();
 
 	if (this->active) {
 		if (this->busModuleInfo.bootloader_unint)
@@ -46,6 +47,8 @@ void MtbModule::mtbBusActivate(Mtb::ModuleInfo moduleInfo) {
 
 void MtbModule::mtbBusLost() {
 	this->active = false;
+	this->fwUpgrade.fwUpgrading.reset();
+	this->configWriting.reset();
 
 	QJsonObject json{
 		{"command", "module_deactivated"},
@@ -146,6 +149,7 @@ void MtbModule::sendChanged(QTcpSocket* ignore) const {
 		{"type", "event"},
 		{"module_changed", QJsonObject{
 			{"address", this->address},
+			// TODO: send full module status?
 		}}
 	};
 
@@ -173,4 +177,105 @@ bool MtbModule::isFirmwareUpgrading() const {
 
 void MtbModule::fwUpgdInit() {
 	log("Initializing firmware upgrade of module "+QString::number(this->address), Mtb::LogLevel::Info);
+	this->sendChanged(this->fwUpgrade.fwUpgrading.value().socket);
+
+	if (this->busModuleInfo.inBootloader()) {
+		// Skip rebooting to bootloader
+		log("Module already in bootloader, skipping reboot", Mtb::LogLevel::Info);
+		this->fwUpgdGotInfo(this->busModuleInfo);
+		return;
+	}
+
+	// Reboot to bootloader
+	mtbusb.send(
+		Mtb::CmdMtbModuleFwUpgradeReq(
+			this->address,
+			{[this](uint8_t, void*) { this->fwUpgdReqAck(); }},
+			{[this](Mtb::CmdError, void*) { this->fwUpgdError("Unable to reboot module to bootloader!"); }}
+		)
+	);
+}
+
+void MtbModule::fwUpgdReqAck() {
+	// Wait for module to reboot & initialize communication
+	// Check if module is in bootloader
+	QTimer::singleShot(200, [this](){
+		mtbusb.send(
+			Mtb::CmdMtbModuleInfoRequest(
+				this->address,
+				{[this](uint8_t, Mtb::ModuleInfo info, void*) { this->fwUpgdGotInfo(info); }},
+				{[this](Mtb::CmdError, void*) { this->fwUpgdError("Unable to get rebooted module information"); }}
+			)
+		);
+	});
+}
+
+void MtbModule::fwUpgdGotInfo(Mtb::ModuleInfo info) {
+	this->busModuleInfo = info;
+	if (!this->busModuleInfo.inBootloader()) {
+		this->fwUpgdError("Module rebooted, but not in bootloader!");
+		return;
+	}
+
+	this->fwUpgrade.toWrite = this->fwUpgrade.data.begin();
+	this->fwUpgdGetStatus();
+}
+
+void MtbModule::fwUpgdGetStatus() {
+	mtbusb.send(
+		Mtb::CmdMtbModuleFwWriteFlashStatusRequest(
+			this->address,
+			{[this](uint8_t, Mtb::FwWriteFlashStatus status, void*) { this->fwUpgdGotStatus(status); }},
+			{[this](Mtb::CmdError, void*) { this->fwUpgdError("Unable to get write flash status"); }}
+		)
+	);
+}
+
+void MtbModule::fwUpgdGotStatus(Mtb::FwWriteFlashStatus status) {
+	if (status == Mtb::FwWriteFlashStatus::WritingFlash) {
+		this->fwUpgdGetStatus();
+		return;
+	}
+
+	if (this->fwUpgrade.toWrite == this->fwUpgrade.data.end()) {
+		log("Whole firmware sent", Mtb::LogLevel::Info);
+		return;
+	}
+
+	// TODO: page is counted in uint16_t for ATmega. Move the calculation to module types somehow
+	uint16_t fwAddr = (*this->fwUpgrade.toWrite).first * MtbModule::FwUpgrade::BLOCK_SIZE;
+	const std::vector<uint8_t>& fwBlob = (*this->fwUpgrade.toWrite).second;
+
+	log("Writing page from address 0x"+QString::number(fwAddr, 16)+"...", Mtb::LogLevel::Commands);
+
+	mtbusb.send(
+		Mtb::CmdMtbModuleFwWriteFlash(
+			this->address, fwAddr, fwBlob,
+			{[this](uint8_t, void*) { this->fwUpgdGetStatus(); }},
+			{[this](Mtb::CmdError error, void*) {
+				if (error == Mtb::CmdError::BadAddress)
+					this->fwUpgdError("Bad address!");
+				else
+					this->fwUpgdError("Unable to write flash!");
+			}}
+		)
+	);
+	++(this->fwUpgrade.toWrite);
+}
+
+void MtbModule::fwUpgdError(const QString& error, size_t code) {
+	QJsonObject json{
+		{"command", "module_upgrade_fw"},
+		{"type", "response"},
+		{"status", "error"},
+		{"error", jsonError(code, error)},
+	};
+	const ServerRequest request = this->fwUpgrade.fwUpgrading.value();
+	if (request.id.has_value())
+		json["id"] = static_cast<int>(request.id.value());
+	server.send(request.socket, json);
+
+	this->fwUpgrade.fwUpgrading.reset();
+	this->fwUpgrade.data.clear();
+	this->sendChanged(request.socket);
 }

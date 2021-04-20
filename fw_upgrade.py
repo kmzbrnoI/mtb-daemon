@@ -36,6 +36,7 @@ def main() -> None:
         'command':'module_upgrade_fw',
         'address': module_addr,
         'firmware': firmware,
+        'id': 12,
     }
     s.send((json.dumps(to_send)+'\n').encode('utf-8'))
 

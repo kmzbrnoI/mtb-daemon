@@ -5,6 +5,7 @@
 #include <QJsonObject>
 #include "../mtbusb/mtbusb-commands.h"
 #include "../server.h"
+#include "../errors.h"
 
 enum class MtbModuleType {
 	Uknown = 0x00,
@@ -26,9 +27,11 @@ protected:
 	std::optional<ServerRequest> configWriting;
 
 	struct FwUpgrade {
+		static constexpr size_t BLOCK_SIZE = 64;
+		using FirmwareStorage = std::map<size_t, std::vector<uint8_t>>;
 		std::optional<ServerRequest> fwUpgrading;
-		std::map<size_t, std::vector<uint8_t>> data; // address to data map
-		size_t writtenPage;
+		FirmwareStorage data; // address to data map
+		FirmwareStorage::iterator toWrite;
 	};
 	FwUpgrade fwUpgrade;
 
@@ -40,6 +43,11 @@ protected:
 	bool isConfigSetting() const;
 
 	void fwUpgdInit();
+	void fwUpgdError(const QString&, size_t code = MTB_MODULE_NOT_ANSWERED_CMD_GIVING_UP);
+	void fwUpgdReqAck();
+	void fwUpgdGotInfo(Mtb::ModuleInfo);
+	void fwUpgdGetStatus();
+	void fwUpgdGotStatus(Mtb::FwWriteFlashStatus);
 
 public:
 	MtbModule(uint8_t addr);
