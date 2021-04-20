@@ -324,6 +324,7 @@ void DaemonCoreApplication::serverReceived(QTcpSocket* socket, const QJsonObject
 		server.send(*socket, response);
 
 	} else if (command == "module_subscribe") {
+		QJsonArray addresses;
 		QJsonObject response {
 			{"command", "module_subscribe"},
 			{"type", "response"},
@@ -336,6 +337,7 @@ void DaemonCoreApplication::serverReceived(QTcpSocket* socket, const QJsonObject
 			size_t addr = value.toInt();
 			if (Mtb::isValidModuleAddress(addr)) {
 				subscribes[addr].insert_or_assign(socket, true);
+				addresses.push_back(static_cast<int>(addr));
 			} else {
 				response["status"] = "error";
 				response["error"] = DaemonServer::error(MTB_MODULE_INVALID_ADDR, "Invalid module address");
@@ -343,6 +345,7 @@ void DaemonCoreApplication::serverReceived(QTcpSocket* socket, const QJsonObject
 			}
 		}
 
+		response["addresses"] = addresses;
 		server.send(*socket, response);
 
 	} else if (command == "module_unsubscribe") {

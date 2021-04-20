@@ -54,7 +54,7 @@ void MtbModule::mtbBusLost() {
 	};
 
 	for (const auto& pair : subscribes[this->address])
-		server.send(*pair.first, json);
+		server.send(pair.first, json);
 }
 
 void MtbModule::mtbUsbDisconnected() {
@@ -108,7 +108,7 @@ void MtbModule::sendInputsChanged(QJsonArray inputs) const {
 
 	for (auto pair : subscribes[this->address]) {
 		QTcpSocket* socket = pair.first;
-		server.send(*socket, json);
+		server.send(socket, json);
 	}
 }
 
@@ -126,7 +126,7 @@ void MtbModule::sendOutputsChanged(QJsonObject outputs,
 	for (auto pair : subscribes[this->address]) {
 		QTcpSocket* socket = pair.first;
 		if (std::find(ignore.begin(), ignore.end(), socket) == ignore.end())
-			server.send(*socket, json);
+			server.send(socket, json);
 	}
 }
 
@@ -152,6 +152,11 @@ void MtbModule::sendChanged(QTcpSocket* ignore) const {
 	for (auto pair : subscribes[this->address]) {
 		QTcpSocket* socket = pair.first;
 		if (socket != ignore)
-			server.send(*socket, json);
+			server.send(socket, json);
 	}
+}
+
+void MtbModule::clientDisconnected(QTcpSocket* socket) {
+	if ((this->configWriting.has_value()) && (this->configWriting.value().socket == socket))
+		this->configWriting.reset();
 }

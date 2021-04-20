@@ -17,6 +17,7 @@ void DaemonServer::listen(const QHostAddress& addr, quint16 port) {
 
 void DaemonServer::serverNewConnection() {
 	QTcpSocket* client = m_server.nextPendingConnection();
+	log("New client: "+client->peerAddress().toString(), Mtb::LogLevel::Info);
 	QObject::connect(client, SIGNAL(disconnected()), this, SLOT(clientDisconnected()));
 	QObject::connect(client, SIGNAL(readyRead()), this, SLOT(clientReadyRead()));
 	this->clients.insert_or_assign(client, true);
@@ -24,14 +25,18 @@ void DaemonServer::serverNewConnection() {
 
 void DaemonServer::clientDisconnected() {
 	QTcpSocket* client = static_cast<QTcpSocket*>(QObject::sender());
+	log("Client disconnected: "+client->peerAddress().toString(), Mtb::LogLevel::Info);
 	client->deleteLater();
 
 	if (this->clients.find(client) != this->clients.end())
 		this->clients.erase(client);
 
-	for (size_t i = 0; i < Mtb::_MAX_MODULES; i++)
+	for (size_t i = 0; i < Mtb::_MAX_MODULES; i++) {
+		if (modules[i] != nullptr)
+			modules[i]->clientDisconnected(client);
 		if (subscribes[i].find(client) != subscribes[i].end())
 			subscribes[i].erase(client);
+	}
 }
 
 void DaemonServer::clientReadyRead() {
@@ -48,6 +53,11 @@ void DaemonServer::clientReadyRead() {
 void DaemonServer::send(QTcpSocket& socket, const QJsonObject& jsonObj) {
 	socket.write(QJsonDocument(jsonObj).toJson(QJsonDocument::Compact));
 	socket.write("\n");
+}
+
+void DaemonServer::send(QTcpSocket* socket, const QJsonObject& jsonObj) {
+	if (socket != nullptr)
+		this->send(*socket, jsonObj);
 }
 
 void DaemonServer::broadcast(const QJsonObject& json) {

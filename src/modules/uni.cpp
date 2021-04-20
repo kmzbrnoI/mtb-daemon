@@ -42,21 +42,41 @@ void MtbUni::jsonSetOutput(QTcpSocket* socket, const QJsonObject& request) {
 
 	QJsonObject outputs = request["outputs"].toObject();
 	bool send = (this->outputsWant == this->outputsConfirmed);
+	bool changed = false;
 
 	for (const auto& key : outputs.keys()) {
 		size_t port = key.toInt();
 		if (port > 15)
 			continue;
-		this->outputsWant[port] = jsonOutputToByte(outputs[key].toObject());
+		uint8_t code = jsonOutputToByte(outputs[key].toObject());
+		if (code != this->outputsWant[port]) {
+			changed = true;
+			if ((this->whoSetOutput[port] != nullptr) && (this->whoSetOutput[port] != socket))
+				log("Multiple clients set same output: "+QString::number(this->address)+":"+QString::number(port),
+				    Mtb::LogLevel::Warning);
+			this->whoSetOutput[port] = socket;
+		}
+		this->outputsWant[port] = code;
 	}
 
-	std::optional<size_t> id;
-	if (request.contains("id"))
-		id = request["id"].toInt();
-	this->setOutputsWaiting.push_back({socket, id});
-
-	if (send)
-		this->mtbBusSetOutputs();
+	if (changed) {
+		std::optional<size_t> id;
+		if (request.contains("id"))
+			id = request["id"].toInt();
+		this->setOutputsWaiting.push_back({socket, id});
+		if (send)
+			this->setOutputs();
+	} else {
+		QJsonObject response{
+			{"command", "module_set_outputs"},
+			{"type", "response"},
+			{"status", "ok"},
+			{"outputs", this->outputsToJson(this->outputsConfirmed)},
+		};
+		if (request.contains("id"))
+			response["id"] = request["id"];
+		server.send(socket, response);
+	}
 }
 
 uint8_t MtbUni::jsonOutputToByte(const QJsonObject& json) {
@@ -78,7 +98,7 @@ uint8_t MtbUni::jsonOutputToByte(const QJsonObject& json) {
 	return 0;
 }
 
-void MtbUni::mtbBusSetOutputs() {
+void MtbUni::setOutputs() {
 	this->setOutputsSent = this->setOutputsWaiting;
 	this->setOutputsWaiting.clear();
 
@@ -109,7 +129,7 @@ void MtbUni::mtbBusOutputsSet(const std::vector<uint8_t>& data) {
 		};
 		if (sr.id.has_value())
 			response["id"] = static_cast<int>(sr.id.value());
-		server.send(*sr.socket, response);
+		server.send(sr.socket, response);
 		ignore.push_back(sr.socket);
 	}
 	this->setOutputsSent.clear();
@@ -119,7 +139,7 @@ void MtbUni::mtbBusOutputsSet(const std::vector<uint8_t>& data) {
 
 	// Send next outputs
 	if (!this->setOutputsWaiting.empty())
-		this->mtbBusSetOutputs();
+		this->setOutputs();
 }
 
 QJsonObject MtbUni::outputsToJson(const std::array<uint8_t, UNI_IO_CNT>& outputs) {
@@ -164,7 +184,7 @@ void MtbUni::mtbBusOutputsNotSet(Mtb::CmdError) {
 		};
 		if (sr.id.has_value())
 			response["id"] = static_cast<int>(sr.id.value());
-		server.send(*sr.socket, response);
+		server.send(sr.socket, response);
 	}
 	this->setOutputsSent.clear();
 
@@ -211,7 +231,7 @@ void MtbUni::mtbBusConfigWritten() {
 	};
 	if (request.id.has_value())
 		response["id"] = static_cast<int>(request.id.value());
-	server.send(*request.socket, response);
+	server.send(request.socket, response);
 }
 
 void MtbUni::mtbBusConfigNotWritten(Mtb::CmdError) {
@@ -227,7 +247,7 @@ void MtbUni::mtbBusConfigNotWritten(Mtb::CmdError) {
 	};
 	if (request.id.has_value())
 		response["id"] = static_cast<int>(request.id.value());
-	server.send(*request.socket, response);
+	server.send(request.socket, response);
 }
 
 /* Json Upgrade Fw ---------------------------------------------------------- */
@@ -239,7 +259,27 @@ void MtbUni::jsonUpgradeFw(QTcpSocket* socket, const QJsonObject& request) {
 	}
 }
 
+
 /* -------------------------------------------------------------------------- */
+
+void MtbUni::clientDisconnected(QTcpSocket* socket) {
+	MtbModule::clientDisconnected(socket);
+
+	bool reset = false;
+	for (size_t i = 0; i < UNI_IO_CNT; i++) {
+		if (this->whoSetOutput[i] == socket) {
+			this->outputsWant[i] = this->config.outputsSafe[i];
+			this->whoSetOutput[i] = nullptr;
+			reset = true;
+		}
+	}
+
+	if (reset) {
+		this->setOutputsWaiting.push_back({nullptr});
+		if (this->setOutputsSent.empty())
+			this->setOutputs();
+	}
+}
 
 std::vector<uint8_t> MtbUni::mtbBusOutputsData() const {
 	// Set outputs data based on diff in this->outputsWant
@@ -384,7 +424,7 @@ void MtbUni::outputsReset() {
 	};
 
 	for (auto pair : subscribes[this->address])
-		server.send(*pair.first, json);
+		server.send(pair.first, json);
 }
 
 /* Inputs changed ----------------------------------------------------------- */

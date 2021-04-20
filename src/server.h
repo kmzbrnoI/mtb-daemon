@@ -11,7 +11,7 @@ struct ServerRequest {
 	QTcpSocket* socket;
 	std::optional<size_t> id;
 
-	ServerRequest(QTcpSocket* socket, std::optional<size_t> id) : socket(socket), id(id) {}
+	ServerRequest(QTcpSocket* socket, std::optional<size_t> id = std::nullopt) : socket(socket), id(id) {}
 	ServerRequest(QTcpSocket* socket, const QJsonObject& request) : socket(socket) {
 		if (request.contains("id"))
 			this->id = request["id"].toInt();
@@ -25,6 +25,7 @@ public:
 	DaemonServer(QObject *parent = nullptr);
 	void listen(const QHostAddress&, quint16 port);
 	void send(QTcpSocket&, const QJsonObject&);
+	void send(QTcpSocket*, const QJsonObject&);
 	void broadcast(const QJsonObject&);
 
 	static QJsonObject error(size_t code, const QString& message);

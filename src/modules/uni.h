@@ -26,6 +26,7 @@ protected:
 	MtbUniConfig config;
 	MtbUniConfig configToWrite;
 	bool configLoaded = false;
+	std::array<QTcpSocket*, UNI_IO_CNT> whoSetOutput;
 
 	std::vector<ServerRequest> setOutputsWaiting;
 	std::vector<ServerRequest> setOutputsSent;
@@ -40,7 +41,7 @@ protected:
 	static QJsonObject outputsToJson(const std::array<uint8_t, UNI_IO_CNT>&);
 	static QJsonArray inputsToJson(uint16_t inputs);
 
-	void mtbBusSetOutputs();
+	void setOutputs();
 	void mtbBusOutputsSet(const std::vector<uint8_t>& data);
 	void mtbBusOutputsNotSet(Mtb::CmdError);
 	void mtbBusConfigWritten();
@@ -63,6 +64,7 @@ public:
 	void jsonSetOutput(QTcpSocket*, const QJsonObject&) override;
 	void jsonSetConfig(QTcpSocket*, const QJsonObject&) override;
 	void jsonUpgradeFw(QTcpSocket*, const QJsonObject&) override;
+	void clientDisconnected(QTcpSocket*) override;
 
 	void loadConfig(const QJsonObject&) override;
 	void saveConfig(QJsonObject&) const override;
