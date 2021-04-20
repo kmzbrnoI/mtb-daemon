@@ -72,6 +72,8 @@ DaemonCoreApplication::DaemonCoreApplication(int &argc, char **argv)
 	}
 
 	this->mtbUsbConnect();
+	if (!mtbusb.connected())
+		this->t_reconnect.start(T_RECONNECT_PERIOD);
 }
 
 /* MTB-USB handling ----------------------------------------------------------*/
@@ -89,6 +91,7 @@ void DaemonCoreApplication::mtbUsbConnect() {
 		} else {
 			log("Found "+QString::number(mtbUsbPorts.size())+" MTB-USB modules. Not connecting to any.",
 			    Mtb::LogLevel::Warning);
+			return;
 		}
 	}
 
