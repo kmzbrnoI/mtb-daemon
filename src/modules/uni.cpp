@@ -21,7 +21,7 @@ QJsonObject MtbUni::moduleInfo(bool state) const {
 		{"config", this->config.json(this->isIrSupport())},
 	};
 
-	if (state && this->active) {
+	if (state && this->active && !this->busModuleInfo.inBootloader()) {
 		uni["state"] = QJsonObject{
 			{"outputs", outputsToJson(this->outputsConfirmed)},
 			{"inputs", inputsToJson(this->inputs)},
@@ -37,6 +37,18 @@ QJsonObject MtbUni::moduleInfo(bool state) const {
 void MtbUni::jsonSetOutput(QTcpSocket* socket, const QJsonObject& request) {
 	if (!this->active) {
 		sendError(socket, request, MTB_MODULE_FAILED, "Cannot set output of inactive module!");
+		return;
+	}
+	if (this->isFirmwareUpgrading()) {
+		sendError(socket, request, MTB_MODULE_UPGRADING_FW, "Firmware of module is being upgraded!");
+		return;
+	}
+	if (this->busModuleInfo.inBootloader()) {
+		sendError(socket, request, MTB_MODULE_IN_BOOTLOADER, "Module is in bootloader!");
+		return;
+	}
+	if (this->isConfigSetting()) {
+		sendError(socket, request, MTB_MODULE_CONFIG_SETTING, "Configuration of module is being changed!");
 		return;
 	}
 
@@ -138,8 +150,12 @@ void MtbUni::mtbBusOutputsSet(const std::vector<uint8_t>& data) {
 	this->sendOutputsChanged(outputsToJson(this->outputsConfirmed), ignore);
 
 	// Send next outputs
-	if (!this->setOutputsWaiting.empty())
+	if (this->setOutputsWaiting.empty()) {
+		if (this->isFirmwareUpgrading())
+			this->fwUpgdInit();
+	} else {
 		this->setOutputs();
+	}
 }
 
 QJsonObject MtbUni::outputsToJson(const std::array<uint8_t, UNI_IO_CNT>& outputs) {
@@ -190,6 +206,14 @@ void MtbUni::mtbBusOutputsNotSet(Mtb::CmdError) {
 
 	// TODO: mark module as failed? Do anything else?
 	this->outputsConfirmed = this->outputsWant;
+
+	// Send next outputs
+	if (this->setOutputsWaiting.empty()) {
+		if (this->isFirmwareUpgrading())
+			this->fwUpgdInit();
+	} else {
+		this->setOutputs();
+	}
 }
 
 /* Json Set Config ---------------------------------------------------------- */
@@ -197,6 +221,14 @@ void MtbUni::mtbBusOutputsNotSet(Mtb::CmdError) {
 void MtbUni::jsonSetConfig(QTcpSocket* socket, const QJsonObject& request) {
 	if (this->configWriting.has_value()) {
 		sendError(socket, request, MTB_MODULE_ALREADY_WRITING, "Another client is writing config now!");
+		return;
+	}
+	if (this->isFirmwareUpgrading()) {
+		sendError(socket, request, MTB_MODULE_UPGRADING_FW, "Firmware of module is being upgraded!");
+		return;
+	}
+	if (this->busModuleInfo.inBootloader()) {
+		sendError(socket, request, MTB_MODULE_IN_BOOTLOADER, "Module is in bootloader!");
 		return;
 	}
 
@@ -232,6 +264,9 @@ void MtbUni::mtbBusConfigWritten() {
 	if (request.id.has_value())
 		response["id"] = static_cast<int>(request.id.value());
 	server.send(request.socket, response);
+
+	if (this->isFirmwareUpgrading())
+		this->fwUpgdInit();
 }
 
 void MtbUni::mtbBusConfigNotWritten(Mtb::CmdError) {
@@ -248,15 +283,49 @@ void MtbUni::mtbBusConfigNotWritten(Mtb::CmdError) {
 	if (request.id.has_value())
 		response["id"] = static_cast<int>(request.id.value());
 	server.send(request.socket, response);
+
+	if (this->isFirmwareUpgrading())
+		this->fwUpgdInit();
 }
 
-/* Json Upgrade Fw ---------------------------------------------------------- */
+/* Json Upgrade Firmware ---------------------------------------------------- */
 
 void MtbUni::jsonUpgradeFw(QTcpSocket* socket, const QJsonObject& request) {
 	if (!this->active) {
 		sendError(socket, request, MTB_MODULE_FAILED, "Cannot upgrade FW of inactive module!");
 		return;
 	}
+	if (this->isFirmwareUpgrading()) {
+		sendError(socket, request, MTB_MODULE_UPGRADING_FW, "Firmware is already being upgraded!");
+		return;
+	}
+
+	this->fwUpgrade.fwUpgrading = ServerRequest(socket, request);
+	this->fwUpgrade.data = parseFirmware(request["firmware"].toObject());
+	if (!this->configWriting.has_value() && this->setOutputsSent.empty())
+		this->fwUpgdInit();
+}
+
+std::map<size_t, std::vector<uint8_t>> MtbUni::parseFirmware(const QJsonObject& json) {
+	constexpr size_t BLOCK_SIZE = 64;
+	std::map<size_t, std::vector<uint8_t>> result;
+
+	for (const QString& key : json.keys()) {
+		size_t addr = key.toInt();
+		const QString& dataStr = json[key].toString();
+		std::vector<uint8_t> data;
+		for (int i = 0; i < dataStr.size(); i += 2)
+			data.push_back(dataStr.mid(i, 2).toInt(nullptr, 16));
+
+		size_t block = addr / BLOCK_SIZE;
+		size_t offset = addr % BLOCK_SIZE;
+		if (result.find(block) == result.end())
+			result.emplace(block, std::vector<uint8_t>(BLOCK_SIZE));
+		for (size_t i = 0; i < data.size(); i++)
+			result[block][i+offset] = data[i];
+	}
+
+	return result;
 }
 
 

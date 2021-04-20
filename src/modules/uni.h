@@ -53,6 +53,8 @@ protected:
 	static uint8_t flickPerMinToMtbUniValue(size_t flickPerMin);
 	static size_t flickMtbUniToPerMin(uint8_t mtbUniFlick);
 
+	static std::map<size_t, std::vector<uint8_t>> parseFirmware(const QJsonObject&);
+
 public:
 	MtbUni(uint8_t addr);
 	virtual ~MtbUni() {}

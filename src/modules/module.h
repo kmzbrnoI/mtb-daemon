@@ -25,9 +25,21 @@ protected:
 	Mtb::ModuleInfo busModuleInfo;
 	std::optional<ServerRequest> configWriting;
 
+	struct FwUpgrade {
+		std::optional<ServerRequest> fwUpgrading;
+		std::map<size_t, std::vector<uint8_t>> data; // address to data map
+		size_t writtenPage;
+	};
+	FwUpgrade fwUpgrade;
+
 	void sendInputsChanged(QJsonArray inputs) const;
 	void sendOutputsChanged(QJsonObject outputs, const std::vector<QTcpSocket*> ignore) const;
 	void sendChanged(QTcpSocket* ignore = nullptr) const;
+
+	bool isFirmwareUpgrading() const;
+	bool isConfigSetting() const;
+
+	void fwUpgdInit();
 
 public:
 	MtbModule(uint8_t addr);

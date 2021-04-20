@@ -71,7 +71,7 @@ void MtbModule::jsonCommand(QTcpSocket* socket, const QJsonObject& request) {
 		this->jsonSetOutput(socket, request);
 	else if (command == "module_set_config")
 		this->jsonSetConfig(socket, request);
-	else if (command == "module_uprade_fw")
+	else if (command == "module_upgrade_fw")
 		this->jsonUpgradeFw(socket, request);
 }
 
@@ -159,4 +159,18 @@ void MtbModule::sendChanged(QTcpSocket* ignore) const {
 void MtbModule::clientDisconnected(QTcpSocket* socket) {
 	if ((this->configWriting.has_value()) && (this->configWriting.value().socket == socket))
 		this->configWriting.reset();
+}
+
+bool MtbModule::isConfigSetting() const {
+	return this->configWriting.has_value();
+}
+
+/* Firmware Upgrade ----------------------------------------------------------*/
+
+bool MtbModule::isFirmwareUpgrading() const {
+	return this->fwUpgrade.fwUpgrading.has_value();
+}
+
+void MtbModule::fwUpgdInit() {
+	log("Initializing firmware upgrade of module "+QString::number(this->address), Mtb::LogLevel::Info);
 }

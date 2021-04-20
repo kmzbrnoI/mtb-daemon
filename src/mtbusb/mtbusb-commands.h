@@ -149,6 +149,7 @@ struct ModuleInfo {
 
 	QString fw_version() const { return QString::number(fw_major)+"."+QString::number(fw_minor); }
 	QString proto_version() const { return QString::number(proto_major)+"."+QString::number(proto_minor); }
+	bool inBootloader() const { return this->bootloader_int || this->bootloader_unint; }
 };
 
 using ModuleInfoCallbackFunc = std::function<void(uint8_t module, ModuleInfo info, void *data)>;

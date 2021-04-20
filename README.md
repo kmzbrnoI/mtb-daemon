@@ -35,7 +35,7 @@ And then build:
 ```
 $ mkdir build
 $ cd build
-$ qmake -spec linux-clang ..
+$ qmake -spec linux-clang .. / qmake CONFIG+=debug -spec linux-clang ..
 $ bear make
 ```
 

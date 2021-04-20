@@ -9,9 +9,9 @@ def main() -> None:
     if len(sys.argv) < 5:
         sys.stderr.write('Usage: fw_upgrade.py server port module_addr hexfile\n')
         sys.exit(1)
-    server, port, addr, hexfilename = sys.argv[1:]
+    server, port, module_addr, hexfilename = sys.argv[1:]
     port = int(port)
-    addr = int(addr)
+    module_addr = int(module_addr)
 
     firmware = {}
     offset = 0
@@ -34,7 +34,7 @@ def main() -> None:
 
     to_send = {
         'command':'module_upgrade_fw',
-        'address': addr,
+        'address': module_addr,
         'firmware': firmware,
     }
     s.send((json.dumps(to_send)+'\n').encode('utf-8'))
