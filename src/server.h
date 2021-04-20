@@ -25,6 +25,7 @@ public:
 	DaemonServer(QObject *parent = nullptr);
 	void listen(const QHostAddress&, quint16 port);
 	void send(QTcpSocket&, const QJsonObject&);
+	void broadcast(const QJsonObject&);
 
 	static QJsonObject error(size_t code, const QString& message);
 
@@ -35,6 +36,7 @@ private slots:
 
 private:
 	QTcpServer m_server;
+	std::map<QTcpSocket*, bool> clients;
 
 signals:
 	void jsonReceived(QTcpSocket*, const QJsonObject&);

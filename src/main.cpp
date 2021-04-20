@@ -26,6 +26,7 @@ DaemonCoreApplication::DaemonCoreApplication(int &argc, char **argv)
 	QObject::connect(&server, SIGNAL(jsonReceived(QTcpSocket*, const QJsonObject&)),
 	                 this, SLOT(serverReceived(QTcpSocket*, const QJsonObject&)));
 
+	QObject::connect(&t_reconnect, SIGNAL(timeout()), this, SLOT(tReconnectTick()));
 
 	QObject::connect(&mtbusb, SIGNAL(onLog(QString, Mtb::LogLevel)),
 	                 this, SLOT(mtbUsbOnLog(QString, Mtb::LogLevel)));
@@ -86,7 +87,7 @@ void DaemonCoreApplication::mtbUsbConnect() {
 			log("Found single port "+mtbUsbPorts[0].portName(), Mtb::LogLevel::Info);
 			port = mtbUsbPorts[0].portName();
 		} else {
-			log("Found "+QString::number(mtbUsbPorts.size())+" MTB-USB modules. Not ocnnecting to any.",
+			log("Found "+QString::number(mtbUsbPorts.size())+" MTB-USB modules. Not connecting to any.",
 			    Mtb::LogLevel::Warning);
 		}
 	}
@@ -145,11 +146,27 @@ void DaemonCoreApplication::mtbUsbDidNotGetInfo(Mtb::CmdError) {
 }
 
 void DaemonCoreApplication::mtbUsbGotModules() {
+	server.broadcast({
+		{"command", "mtbusb_connect"},
+		{"type", "event"},
+	});
+
 	const auto activeModules = mtbusb.activeModules().value();
-	for (size_t i = 0; i < Mtb::_MAX_MODULES; i++) {
+
+	{ // Logging
+		size_t count = 0;
+		for (size_t i = 0; i < Mtb::_MAX_MODULES; i++)
+			if (activeModules[i])
+				count++;
+		QString message = "Got "+QString::number(count)+" active modules";
+		if (count > 0)
+			message += ", activating...";
+		log(message, Mtb::LogLevel::Info);
+	}
+
+	for (size_t i = 0; i < Mtb::_MAX_MODULES; i++)
 		if (activeModules[i])
 			this->activateModule(i);
-	}
 }
 
 void DaemonCoreApplication::activateModule(uint8_t addr) {
@@ -186,14 +203,22 @@ void DaemonCoreApplication::moduleGotInfo(uint8_t addr, Mtb::ModuleInfo info) {
 	modules[addr]->mtbBusActivate(info);
 }
 
-
 void DaemonCoreApplication::mtbUsbDidNotGetModules(Mtb::CmdError) {
 	log("Did not get active modules from MTB-USB, disconnecting...", Mtb::LogLevel::Info);
 	mtbusb.disconnect();
 }
 
 void DaemonCoreApplication::mtbUsbOnDisconnect() {
-	// TODO: add disconnect event
+	server.broadcast({
+		{"command", "mtbusb_disconnect"},
+		{"type", "event"},
+	});
+
+	for (size_t i = 0; i < Mtb::_MAX_MODULES; i++)
+		if (modules[i] != nullptr)
+			modules[i]->mtbUsbDisconnected();
+
+	this->t_reconnect.start(T_RECONNECT_PERIOD);
 }
 
 void DaemonCoreApplication::mtbUsbOnNewModule(uint8_t addr) {
@@ -208,6 +233,32 @@ void DaemonCoreApplication::mtbUsbOnModuleFail(uint8_t addr) {
 void DaemonCoreApplication::mtbUsbOnInputsChange(uint8_t addr, const std::vector<uint8_t>& data) {
 	if (modules[addr] != nullptr)
 		modules[addr]->mtbBusInputsChanged(data);
+}
+
+void DaemonCoreApplication::tReconnectTick() {
+	if (mtbusb.connected())
+		this->t_reconnect.stop();
+
+	const QJsonObject mtbUsbConfig = this->config["mtb-usb"].toObject();
+	QString port = mtbUsbConfig["port"].toString();
+	const std::vector<QSerialPortInfo>& mtbUsbPorts = Mtb::MtbUsb::ports();
+
+	if (port == "auto") {
+		if (mtbUsbPorts.size() != 1)
+			return;
+	} else {
+		bool found = false;
+		for (const QSerialPortInfo& portInfo :  mtbUsbPorts)
+			if (portInfo.portName() == port)
+				found = true;
+		if (!found)
+			return;
+	}
+
+	log("MTB-USB discovered, trying to reconnect...", Mtb::LogLevel::Info);
+	this->mtbUsbConnect();
+	if (mtbusb.connected())
+		this->t_reconnect.stop();
 }
 
 /* JSON server handling ------------------------------------------------------*/

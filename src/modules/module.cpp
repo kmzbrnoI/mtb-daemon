@@ -57,6 +57,10 @@ void MtbModule::mtbBusLost() {
 		server.send(*pair.first, json);
 }
 
+void MtbModule::mtbUsbDisconnected() {
+	this->active = false;
+}
+
 void MtbModule::mtbBusInputsChanged(const std::vector<uint8_t>) {
 }
 

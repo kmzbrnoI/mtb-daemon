@@ -41,6 +41,7 @@ public:
 	virtual void mtbBusActivate(Mtb::ModuleInfo);
 	virtual void mtbBusLost();
 	virtual void mtbBusInputsChanged(const std::vector<uint8_t>);
+	virtual void mtbUsbDisconnected();
 
 	virtual void jsonCommand(QTcpSocket*, const QJsonObject&);
 	virtual void jsonSetOutput(QTcpSocket*, const QJsonObject&);

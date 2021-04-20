@@ -10,6 +10,7 @@ DaemonServer::DaemonServer(QObject *parent) : QObject(parent) {
 }
 
 void DaemonServer::listen(const QHostAddress& addr, quint16 port) {
+	this->clients.clear();
 	if (!m_server.listen(addr, port))
 		throw std::logic_error(m_server.errorString().toStdString());
 }
@@ -18,11 +19,15 @@ void DaemonServer::serverNewConnection() {
 	QTcpSocket* client = m_server.nextPendingConnection();
 	QObject::connect(client, SIGNAL(disconnected()), this, SLOT(clientDisconnected()));
 	QObject::connect(client, SIGNAL(readyRead()), this, SLOT(clientReadyRead()));
+	this->clients.insert_or_assign(client, true);
 }
 
 void DaemonServer::clientDisconnected() {
 	QTcpSocket* client = static_cast<QTcpSocket*>(QObject::sender());
 	client->deleteLater();
+
+	if (this->clients.find(client) != this->clients.end())
+		this->clients.erase(client);
 
 	for (size_t i = 0; i < Mtb::_MAX_MODULES; i++)
 		if (subscribes[i].find(client) != subscribes[i].end())
@@ -43,6 +48,13 @@ void DaemonServer::clientReadyRead() {
 void DaemonServer::send(QTcpSocket& socket, const QJsonObject& jsonObj) {
 	socket.write(QJsonDocument(jsonObj).toJson(QJsonDocument::Compact));
 	socket.write("\n");
+}
+
+void DaemonServer::broadcast(const QJsonObject& json) {
+	for (const auto& pair : this->clients) {
+		QTcpSocket* const socket = pair.first;
+		this->send(*socket, json);
+	}
 }
 
 QJsonObject DaemonServer::error(size_t code, const QString& message) {

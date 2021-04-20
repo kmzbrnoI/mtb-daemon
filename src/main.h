@@ -12,6 +12,8 @@ extern DaemonServer server;
 extern std::array<std::unique_ptr<MtbModule>, Mtb::_MAX_MODULES> modules;
 extern std::array<std::map<QTcpSocket*, bool>, Mtb::_MAX_MODULES> subscribes;
 
+constexpr size_t T_RECONNECT_PERIOD = 1000; // 1 s
+
 const QString DEFAULT_CONFIG_FILENAME = "mtb-daemon.json";
 
 void log(const QString&, Mtb::LogLevel);
@@ -29,6 +31,7 @@ public:
 private:
 	QJsonObject config;
 	QString configFileName;
+	QTimer t_reconnect;
 
 	void sendStatus(QTcpSocket&, std::optional<size_t> id);
 	void mtbUsbGotInfo();
@@ -54,6 +57,8 @@ private slots:
 	void mtbUsbOnInputsChange(uint8_t addr, const std::vector<uint8_t>& data);
 
 	void serverReceived(QTcpSocket*, const QJsonObject&);
+
+	void tReconnectTick();
 };
 
 #endif
