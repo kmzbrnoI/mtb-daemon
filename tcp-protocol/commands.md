@@ -71,7 +71,7 @@ Command types:
     "command": "module",
     "type": "request",
     "id": 42,
-    "address: 1,
+    "address": 1,
     "state": false
 }
 ```
@@ -126,7 +126,7 @@ Command types:
     "command": "modules",
     "type": "request",
     "id": 10,
-    "state": bool
+    "state": false
 }
 ```
 
@@ -224,7 +224,7 @@ Command types:
 }
 ```
 
-* Request `firmware`: {`start_address`: `data`}
+* Request `firmware: {start_addres: data}`
   - Any `start_address` and any length of `data` could be sent
   - Server joins `data`.
   - Format is designed for hex files to be easily sendible.
