@@ -184,7 +184,7 @@ std::map<size_t, std::vector<uint8_t>> MtbModule::parseFirmware(const QJsonObjec
 		size_t block = addr / MtbModule::FwUpgrade::BLOCK_SIZE;
 		size_t offset = addr % MtbModule::FwUpgrade::BLOCK_SIZE;
 		if (result.find(block) == result.end())
-			result.emplace(block, std::vector<uint8_t>(MtbModule::FwUpgrade::BLOCK_SIZE));
+			result.emplace(block, std::vector<uint8_t>(MtbModule::FwUpgrade::BLOCK_SIZE, 0xFF));
 		for (size_t i = 0; i < data.size(); i++)
 			result[block][i+offset] = data[i];
 	}
