@@ -70,10 +70,9 @@ Command types:
 {
     "command": "module",
     "type": "request",
-    "id": int,
-    "address: int,
-    "data": bool,
-    "state": bool
+    "id": 42,
+    "address: 1,
+    "state": false
 }
 ```
 
@@ -81,26 +80,26 @@ Command types:
 {
     "command": "module",
     "type": "response",
-    "id": int,
+    "id": 42,
     "status": "ok",
     "module": {
-        "address": int,
-        "type": "MTB-UNI",
-        "type_code": int,
-        "bootloader_intentional": bool,
-        "bootloader_error": bool,
-        "firmware_version": string like "1.0",
-        "protocol_version": string like "1.0",
-        "MTB-UNI": {
-            "ir": bool,
+        "address": 1,
+        "type": "MTB-UNI v4",
+        "type_code": 21,
+        "bootloader_intentional": false,
+        "bootloader_error": false,
+        "firmware_version": "1.0",
+        "protocol_version": "4.0",
+        "MTB-UNI v4": {
+            "ir": false,
             "config": {
                 "outputsSafe": [
                     {"type": "plain", "value": 0},
                     {"type": "s-com", "value": 10},
                     {"type": "flicker", "value": 60},
-                    ...
+                    ... # 16 values
                 ],
-                "inputsDelay": [0, 0.5, 0.2, ..., 0.3]
+                "inputsDelay": [0, 0.5, 0.2, ..., 0.3] # 16 values
             },
             "state": {
                 "outputs": [
@@ -109,16 +108,16 @@ Command types:
                     {"type": "flicker", "value": 60},
                     ...
                 ],
-                "inputs": [bool, bool, bool, ..., bool]
+                "inputs": [false, false, true, true, ..., false] # 16 values
             }
         }
     }
 }
 ```
 
-* Flicker value: number of ticks in minute. Allowed values: 60, 120, 180, 240,
-  320, 600, 33, 66.
-* Inputs delay: 0–1.5 (including limits), step=0.1.
+* Flicker value: number of ticks in minute. Allowed values:
+  60, 120, 180, 240, 320, 600, 33, 66.
+* Inputs delay: 0–1.5 (including bounds), step=0.1.
 
 ### Modules
 
@@ -126,8 +125,7 @@ Command types:
 {
     "command": "modules",
     "type": "request",
-    "id": int,
-    "data": bool,
+    "id": 10,
     "state": bool
 }
 ```
@@ -136,11 +134,11 @@ Command types:
 {
     "command": "modules",
     "type": "response",
-    "id": int,
+    "id": 10,
     "status": "ok",
     "modules": {
-        "1": {},
-        "132": {}
+        "1": {...}, # See module definition above
+        "132": {...}
     }
 }
 ```
@@ -151,10 +149,10 @@ Command types:
 {
     "command": "module_set_outputs",
     "type": "request",
-    "id": int,
-    "address": int,
+    "id": 123,
+    "address": 1,
     "outputs": {
-        // Outputs specific for module, e.g.:
+        # Any number of outputs specific for module, e.g.:
         "1": {"type": "plain", "value": 0},
         "2": {"type": "s-com", "value": 10},
         "12": {"type": "flicker", "value": 60},
@@ -167,10 +165,10 @@ Command types:
 {
     "command": "module_set_outputs",
     "type": "response",
-    "id": int,
-    "status": ok,
+    "id": 123,
+    "status": "ok",
     "outputs": {
-        // Outputs specific for module, e.g.:
+        // Current state of (not neccessarry all) outputs
         "1": {"type": "plain", "value": 0},
         "2": {"type": "s-com", "value": 10},
         "12": {"type": "flicker", "value": 60},
@@ -185,10 +183,10 @@ Command types:
 {
     "command": "module_set_config",
     "type": "request",
-    "id": int,
-    "address": int,
+    "id": 10,
+    "address": 5,
     "config": {
-        // Config specific for module
+        # Config specific for module, see module definition above
     }
 }
 ```
@@ -197,7 +195,7 @@ Command types:
 {
     "command": "module_set_config",
     "type": "response",
-    "id": int,
+    "id": 10,
     "status": "ok",
 }
 ```
@@ -208,9 +206,12 @@ Command types:
 {
     "command": "module_upgrade_fw",
     "type": "request",
-    "id": int,
-    "address": int,
-    "firmware": str (large string of bytes TODO)
+    "id": 20,
+    "address": 32,
+    "firmware": {
+        "0": "0C9446010C9465010C9465010C946501",
+        "16": "0C9465010C9465010C9465010C946501",
+    }
 }
 ```
 
@@ -218,10 +219,15 @@ Command types:
 {
     "command": "module_upgrade_fw",
     "type": "response",
-    "id": int,
+    "id": 20,
     "status": "ok",
 }
 ```
+
+* Request `firmware`: {`start_address`: `data`}
+  - Any `start_address` and any length of `data` could be sent
+  - Server joins `data`.
+  - Format is designed for hex files to be easily sendible.
 
 ### Module subscribe/unsubscribe
 
@@ -229,8 +235,8 @@ Command types:
 {
     "command": "module_subscribe"/"module_unsubscribe",
     "type": "request",
-    "id": int,
-    "addresses": [int, int, ..., int]
+    "id": 12,
+    "addresses": [10, 11, 20]
 }
 ```
 
@@ -238,8 +244,9 @@ Command types:
 {
     "command": "module_subscribe"/"module_unsubscribe",
     "type": "response",
-    "id": int,
+    "id": 12,
     "status": "ok",
+    "addresses": [10, 11, 20]
 }
 ```
 
@@ -249,13 +256,13 @@ Command types:
 
 ```json
 {
-    "command": "module_input_changed",
+    "command": "module_inputs_changed",
     "type": "event",
-    "module_input_changed": {
-        "address": int,
-        "type": "MTB-UNI",
-        "type_code": int,
-        "inputs": [...]
+    "module_inputs_changed": {
+        "address": 10,
+        "type": "MTB-UNI v4",
+        "type_code": 21,
+        "inputs": {...} # Inputs definition specific for module
     }
 }
 ```
@@ -264,13 +271,13 @@ Command types:
 
 ```json
 {
-    "command": "module_output_changed",
+    "command": "module_outputs_changed",
     "type": "event",
     "module_output_changed": {
-        "address": int,
-        "type": "MTB-UNI",
-        "type_code": int,
-        "outputs": [...]
+        "address": 20,
+        "type": "MTB-UNI v4",
+        "type_code": 21,
+        "outputs": {...} # Outputs definition specific for modules
     }
 }
 ```
@@ -281,7 +288,7 @@ Command types:
 {
     "command": "module_activated",
     "type": "event",
-    "modules": [...]
+    "modules": [1, 5, 10]
 }
 ```
 
@@ -289,8 +296,8 @@ Command types:
 
 ```json
 {
-    "command": "module_lost",
+    "command": "module_deactivated",
     "type": "event",
-    "modules": [...]
+    "modules": [1, 5, 10]
 }
 ```

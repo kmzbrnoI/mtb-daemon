@@ -28,7 +28,7 @@ QJsonObject MtbUni::moduleInfo(bool state) const {
 		};
 	}
 
-	response["MTB-UNI"] = uni;
+	response[moduleTypeToStr(this->type)] = uni;
 	return response;
 }
 
