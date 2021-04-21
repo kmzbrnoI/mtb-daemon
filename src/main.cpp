@@ -227,7 +227,8 @@ void DaemonCoreApplication::mtbUsbOnDisconnect() {
 }
 
 void DaemonCoreApplication::mtbUsbOnNewModule(uint8_t addr) {
-	this->activateModule(addr);
+	if ((modules[addr] == nullptr) || ((!modules[addr]->isActive()) && (!modules[addr]->isRebooting())))
+		this->activateModule(addr);
 }
 
 void DaemonCoreApplication::mtbUsbOnModuleFail(uint8_t addr) {

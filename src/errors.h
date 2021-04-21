@@ -10,5 +10,6 @@ constexpr size_t MTB_ALREADY_STARTED = 2012;
 constexpr size_t MTB_MODULE_UPGRADING_FW = 3110;
 constexpr size_t MTB_MODULE_IN_BOOTLOADER = 3111;
 constexpr size_t MTB_MODULE_CONFIG_SETTING = 3112;
+constexpr size_t MTB_MODULE_REBOOTING = 3113;
 
 #endif

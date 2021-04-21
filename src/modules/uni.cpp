@@ -489,17 +489,7 @@ void MtbUni::storeInputsState(const std::vector<uint8_t>& data) {
 void MtbUni::outputsReset() {
 	this->outputsWant = this->config.outputsSafe;
 	this->outputsConfirmed = this->outputsWant;
-	this->active = true;
-	log("Module "+QString::number(this->address)+" activated", Mtb::LogLevel::Info);
-
-	QJsonObject json{
-		{"command", "module_activated"},
-		{"type", "event"},
-		{"modules", QJsonArray{this->address}}, // single module
-	};
-
-	for (auto pair : subscribes[this->address])
-		server.send(pair.first, json);
+	this->fullyActivated();
 }
 
 /* Inputs changed ----------------------------------------------------------- */

@@ -13,6 +13,10 @@ bool MtbModule::isActive() const {
 	return this->active;
 }
 
+bool MtbModule::isRebooting() const {
+	return this->rebooting.rebooting;
+}
+
 QJsonObject MtbModule::moduleInfo(bool) const {
 	QJsonObject obj;
 	obj["active"] = this->active;
@@ -33,7 +37,10 @@ QJsonObject MtbModule::moduleInfo(bool) const {
 		obj["firmware_version"] = this->busModuleInfo.fw_version();
 		obj["protocol_version"] = this->busModuleInfo.proto_version();
 	} else {
-		obj["state"] = "inactive";
+		if (this->isRebooting())
+			obj["state"] = "rebooting";
+		else
+			obj["state"] = "inactive";
 	}
 
 	return obj;
@@ -41,23 +48,26 @@ QJsonObject MtbModule::moduleInfo(bool) const {
 
 void MtbModule::mtbBusActivate(Mtb::ModuleInfo moduleInfo) {
 	this->busModuleInfo = moduleInfo;
+	this->rebooting.activatedByMtbUsb = true;
 	if (this->type == MtbModuleType::Uknown)
 		this->type = static_cast<MtbModuleType>(moduleInfo.type);
 }
 
 void MtbModule::mtbBusLost() {
 	this->active = false;
-	this->fwUpgrade.fwUpgrading.reset();
-	this->configWriting.reset();
 
-	QJsonObject json{
-		{"command", "module_deactivated"},
-		{"type", "event"},
-		{"modules", QJsonArray{this->address}},
-	};
+	if (!this->isRebooting()) {
+		this->fwUpgrade.fwUpgrading.reset();
+		this->configWriting.reset();
 
-	for (const auto& pair : subscribes[this->address])
-		server.send(pair.first, json);
+		QJsonObject json{
+			{"command", "module_deactivated"},
+			{"type", "event"},
+			{"modules", QJsonArray{this->address}},
+		};
+		for (const auto& pair : subscribes[this->address])
+			server.send(pair.first, json);
+	}
 }
 
 void MtbModule::mtbUsbDisconnected() {
@@ -92,24 +102,28 @@ void MtbModule::jsonSetConfig(QTcpSocket*, const QJsonObject& json) {
 void MtbModule::jsonUpgradeFw(QTcpSocket*, const QJsonObject&) {}
 
 void MtbModule::jsonReboot(QTcpSocket* socket, const QJsonObject& request) {
-	mtbusb.send(
-		Mtb::CmdMtbModuleReboot(
-			this->address,
-			{[socket, request](uint8_t, void*) {
-				QJsonObject response{
-					{"command", "module_reboot"},
-					{"type", "response"},
-					{"status", "ok"},
-				};
-				if (request.contains("id"))
-					response["id"] = request["id"];
-				server.send(socket, response);
-			}},
-			{[socket, request](Mtb::CmdError, void*) {
-				sendError(socket, request, MTB_MODULE_NOT_ANSWERED_CMD_GIVING_UP,
-				          "Module did not answer reboot command");
-			}}
-		)
+	if (this->isRebooting()) {
+		sendError(socket, request, MTB_MODULE_REBOOTING, "Already rebooting!");
+		return;
+	}
+
+	this->reboot(
+		{[socket, request]() {
+			log("Module successfully rebooted", Mtb::LogLevel::Info);
+			QJsonObject response{
+				{"command", "module_reboot"},
+				{"type", "response"},
+				{"status", "ok"},
+			};
+			if (request.contains("id"))
+				response["id"] = request["id"];
+			server.send(socket, response);
+		}},
+		{[this, socket, request]() {
+			sendError(socket, request, MTB_MODULE_NOT_ANSWERED_CMD_GIVING_UP,
+			          "Unable to reboot module");
+			this->mtbBusLost();
+		}}
 	);
 }
 
@@ -325,29 +339,13 @@ void MtbModule::fwUpgdError(const QString& error, size_t code) {
 void MtbModule::fwUpgdAllWritten() {
 	log("Firmware programming finished, rebooting module...", Mtb::LogLevel::Info);
 
-	mtbusb.send(
-		Mtb::CmdMtbModuleReboot(
-			this->address,
-			{[this](uint8_t, void*) { this->fwUpgdRebooted(); }},
-			{[this](Mtb::CmdError, void*) { this->fwUpgdError("Unable to reboot module back to operation!"); }}
-		)
+	this->reboot(
+		{[this]() { this->fwUpgdRebooted(); }},
+		{[this]() { this->fwUpgdError("Unable to reboot module back to operation!"); }}
 	);
 }
 
 void MtbModule::fwUpgdRebooted() {
-	QTimer::singleShot(200, [this](){
-		mtbusb.send(
-			Mtb::CmdMtbModuleInfoRequest(
-				this->address,
-				{[this](uint8_t, Mtb::ModuleInfo info, void*) { this->fwUpgdGotFinishedInfo(info); }},
-				{[this](Mtb::CmdError, void*) { this->fwUpgdError("Unable to get rebooted module information"); }}
-			)
-		);
-	});
-}
-
-void MtbModule::fwUpgdGotFinishedInfo(Mtb::ModuleInfo info) {
-	this->busModuleInfo = info;
 	if (this->busModuleInfo.inBootloader()) {
 		this->fwUpgdError("Module rebooted after upgrade, but it stayed in bootloader!");
 		return;
@@ -368,4 +366,60 @@ void MtbModule::fwUpgdGotFinishedInfo(Mtb::ModuleInfo info) {
 	this->fwUpgrade.fwUpgrading.reset();
 	this->fwUpgrade.data.clear();
 	this->sendChanged(request.socket);
+}
+
+void MtbModule::reboot(std::function<void()> onOk, std::function<void()> onError) {
+	if (this->isRebooting())
+		return;
+
+	this->rebooting.rebooting = true;
+	this->rebooting.onOk = onOk;
+	this->rebooting.onError = onError;
+	this->rebooting.activatedByMtbUsb = false;
+	this->mtbBusLost();
+
+	mtbusb.send(
+		Mtb::CmdMtbModuleReboot(
+			this->address,
+			{[this](uint8_t, void*) {
+				QTimer::singleShot(500, [this](){
+					if (this->rebooting.activatedByMtbUsb)
+						return;
+					mtbusb.send(
+						Mtb::CmdMtbModuleInfoRequest(
+							this->address,
+							{[this](uint8_t, Mtb::ModuleInfo info, void*) { this->mtbBusActivate(info); }},
+							{[this](Mtb::CmdError, void*) {
+								this->rebooting.rebooting = false;
+								this->rebooting.onError();
+							}}
+						)
+					);
+				});
+			}},
+			{[this](Mtb::CmdError, void*) {
+				this->rebooting.rebooting = false;
+				this->rebooting.onError();
+			}}
+		)
+	);
+}
+
+void MtbModule::fullyActivated() {
+	this->active = true;
+	log("Module "+QString::number(this->address)+" activated", Mtb::LogLevel::Info);
+
+	QJsonObject json{
+		{"command", "module_activated"},
+		{"type", "event"},
+		{"modules", QJsonArray{this->address}}, // single module
+	};
+
+	for (auto pair : subscribes[this->address])
+		server.send(pair.first, json);
+
+	if (this->isRebooting()) {
+		this->rebooting.rebooting = false;
+		this->rebooting.onOk();
+	}
 }

@@ -26,6 +26,14 @@ protected:
 	Mtb::ModuleInfo busModuleInfo;
 	std::optional<ServerRequest> configWriting;
 
+	struct Rebooting {
+		bool rebooting;
+		bool activatedByMtbUsb;
+		std::function<void()> onOk;
+		std::function<void()> onError;
+	};
+	Rebooting rebooting;
+
 	struct FwUpgrade {
 		static constexpr size_t BLOCK_SIZE = 64;
 		using FirmwareStorage = std::map<size_t, std::vector<uint8_t>>;
@@ -50,9 +58,11 @@ protected:
 	void fwUpgdGotStatus(Mtb::FwWriteFlashStatus);
 	void fwUpgdAllWritten();
 	void fwUpgdRebooted();
-	void fwUpgdGotFinishedInfo(Mtb::ModuleInfo);
 
 	static std::map<size_t, std::vector<uint8_t>> parseFirmware(const QJsonObject&);
+
+	void reboot(std::function<void()> onOk, std::function<void()> onError);
+	void fullyActivated();
 
 public:
 	MtbModule(uint8_t addr);
@@ -60,6 +70,7 @@ public:
 
 	MtbModuleType moduleType() const;
 	bool isActive() const;
+	bool isRebooting() const;
 
 	virtual QJsonObject moduleInfo(bool state) const;
 
