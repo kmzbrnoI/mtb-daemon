@@ -19,13 +19,15 @@ size_t MtbUni::pageSize() const {
 
 /* JSON Module Info --------------------------------------------------------- */
 
-QJsonObject MtbUni::moduleInfo(bool state) const {
-	QJsonObject response = MtbModule::moduleInfo(state);
+QJsonObject MtbUni::moduleInfo(bool state, bool config) const {
+	QJsonObject response = MtbModule::moduleInfo(state, config);
 
 	QJsonObject uni{
 		{"ir", this->isIrSupport()},
-		{"config", this->config.json(this->isIrSupport())},
 	};
+
+	if (config)
+		uni["config"] = this->config.json(this->isIrSupport());
 
 	if (state && this->active && !this->busModuleInfo.inBootloader()) {
 		uni["state"] = QJsonObject{

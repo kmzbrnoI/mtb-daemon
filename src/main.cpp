@@ -313,7 +313,7 @@ void DaemonCoreApplication::serverReceived(QTcpSocket* socket, const QJsonObject
 
 		size_t addr = request["address"].toInt();
 		if ((Mtb::isValidModuleAddress(addr)) && (modules[addr] != nullptr)) {
-			response["module"] = modules[addr]->moduleInfo(request["state"].toBool());
+			response["module"] = modules[addr]->moduleInfo(request["state"].toBool(), true);
 			response["status"] = "ok";
 		} else {
 			response["status"] = "error";
@@ -332,7 +332,7 @@ void DaemonCoreApplication::serverReceived(QTcpSocket* socket, const QJsonObject
 
 		for (size_t i = 0; i < Mtb::_MAX_MODULES; i++) {
 			if (modules[i] != nullptr)
-				response[QString::number(i)] = modules[i]->moduleInfo(request["state"].toBool());
+				response[QString::number(i)] = modules[i]->moduleInfo(request["state"].toBool(), true);
 		}
 
 		server.send(*socket, response);

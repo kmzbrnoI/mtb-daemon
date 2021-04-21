@@ -72,7 +72,7 @@ public:
 	bool isActive() const;
 	bool isRebooting() const;
 
-	virtual QJsonObject moduleInfo(bool state) const;
+	virtual QJsonObject moduleInfo(bool state, bool config) const;
 
 	virtual void mtbBusActivate(Mtb::ModuleInfo);
 	virtual void mtbBusLost();

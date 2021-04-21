@@ -59,7 +59,7 @@ protected:
 public:
 	MtbUni(uint8_t addr);
 	virtual ~MtbUni() {}
-	QJsonObject moduleInfo(bool state) const override;
+	QJsonObject moduleInfo(bool state, bool config) const override;
 
 	void mtbBusActivate(Mtb::ModuleInfo) override;
 	void mtbBusInputsChanged(const std::vector<uint8_t>) override;

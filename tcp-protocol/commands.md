@@ -281,23 +281,3 @@ Command types:
     }
 }
 ```
-
-### New module found / module restored
-
-```json
-{
-    "command": "module_activated",
-    "type": "event",
-    "modules": [1, 5, 10]
-}
-```
-
-### Module/s lost / module/s failed
-
-```json
-{
-    "command": "module_deactivated",
-    "type": "event",
-    "modules": [1, 5, 10]
-}
-```

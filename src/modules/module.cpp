@@ -17,7 +17,7 @@ bool MtbModule::isRebooting() const {
 	return this->rebooting.rebooting;
 }
 
-QJsonObject MtbModule::moduleInfo(bool) const {
+QJsonObject MtbModule::moduleInfo(bool, bool) const {
 	QJsonObject obj;
 	obj["address"] = this->address;
 	obj["name"] = this->name;
@@ -30,6 +30,8 @@ QJsonObject MtbModule::moduleInfo(bool) const {
 			obj["state"] = "bootloader_err";
 		else if (this->busModuleInfo.bootloader_int)
 			obj["state"] = "bootloader_int";
+		else if (this->isFirmwareUpgrading())
+			obj["state"] = "fw_upgrading";
 		else
 			obj["state"] = "active";
 
@@ -54,19 +56,7 @@ void MtbModule::mtbBusActivate(Mtb::ModuleInfo moduleInfo) {
 
 void MtbModule::mtbBusLost() {
 	this->active = false;
-
-	if (!this->isRebooting()) {
-		this->fwUpgrade.fwUpgrading.reset();
-		this->configWriting.reset();
-
-		QJsonObject json{
-			{"command", "module_deactivated"},
-			{"type", "event"},
-			{"modules", QJsonArray{this->address}},
-		};
-		for (const auto& pair : subscribes[this->address])
-			server.send(pair.first, json);
-	}
+	this->sendModuleInfo();
 }
 
 void MtbModule::mtbUsbDisconnected() {
@@ -184,7 +174,7 @@ void MtbModule::sendModuleInfo(QTcpSocket* ignore) const {
 	QJsonObject json{
 		{"command", "module"},
 		{"type", "event"},
-		{"module", this->moduleInfo(true)},
+		{"module", this->moduleInfo(true, false)},
 	};
 
 	for (auto pair : subscribes[this->address]) {
@@ -408,15 +398,7 @@ void MtbModule::reboot(std::function<void()> onOk, std::function<void()> onError
 void MtbModule::fullyActivated() {
 	this->active = true;
 	log("Module "+QString::number(this->address)+" activated", Mtb::LogLevel::Info);
-
-	QJsonObject json{
-		{"command", "module_activated"},
-		{"type", "event"},
-		{"modules", QJsonArray{this->address}}, // single module
-	};
-
-	for (auto pair : subscribes[this->address])
-		server.send(pair.first, json);
+	this->sendModuleInfo();
 
 	if (this->isRebooting()) {
 		this->rebooting.rebooting = false;
