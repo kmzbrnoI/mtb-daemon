@@ -76,6 +76,8 @@ void MtbModule::jsonCommand(QTcpSocket* socket, const QJsonObject& request) {
 		this->jsonSetConfig(socket, request);
 	else if (command == "module_upgrade_fw")
 		this->jsonUpgradeFw(socket, request);
+	else if (command == "module_reboot")
+		this->jsonReboot(socket, request);
 }
 
 void MtbModule::jsonSetOutput(QTcpSocket*, const QJsonObject&) {}
@@ -88,6 +90,28 @@ void MtbModule::jsonSetConfig(QTcpSocket*, const QJsonObject& json) {
 }
 
 void MtbModule::jsonUpgradeFw(QTcpSocket*, const QJsonObject&) {}
+
+void MtbModule::jsonReboot(QTcpSocket* socket, const QJsonObject& request) {
+	mtbusb.send(
+		Mtb::CmdMtbModuleReboot(
+			this->address,
+			{[socket, request](uint8_t, void*) {
+				QJsonObject response{
+					{"command", "module_reboot"},
+					{"type", "response"},
+					{"status", "ok"},
+				};
+				if (request.contains("id"))
+					response["id"] = request["id"];
+				server.send(socket, response);
+			}},
+			{[socket, request](Mtb::CmdError, void*) {
+				sendError(socket, request, MTB_MODULE_NOT_ANSWERED_CMD_GIVING_UP,
+				          "Module did not answer reboot command");
+			}}
+		)
+	);
+}
 
 QString moduleTypeToStr(MtbModuleType type) {
 	switch (type) {

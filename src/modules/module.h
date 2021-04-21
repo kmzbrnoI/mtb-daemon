@@ -69,6 +69,7 @@ public:
 	virtual void jsonSetOutput(QTcpSocket*, const QJsonObject&);
 	virtual void jsonSetConfig(QTcpSocket*, const QJsonObject&);
 	virtual void jsonUpgradeFw(QTcpSocket*, const QJsonObject&);
+	virtual void jsonReboot(QTcpSocket*, const QJsonObject&);
 	virtual void clientDisconnected(QTcpSocket*);
 
 	virtual void loadConfig(const QJsonObject&);
