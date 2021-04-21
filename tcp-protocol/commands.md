@@ -34,33 +34,35 @@ Command types:
 
 ```json
 {
-    "command": "status",
+    "command": "mtbusb",
     "type": "request",
-    "id": int
+    "id": 42
 }
 ```
 
 ```json
 {
-    "command": "status",
+    "command": "mtbusb",
     "type": "response",
-    "id": int,
+    "id": 42,
     "status": "ok",
-    "status": {
-        "connected": true/false,
-        "mtb-usb": {
-            "type": int,
-            "speed": int,
-            "firmware_version": string like "1.0",
-            "protocol_version": string like "1.0",
-            "active_modules": [1, 5, 2, 121]
-        }
+    "mtbusb": {
+        "connected": true,
+        "type": 1,
+        "speed": 115200,
+        "firmware_version": "1.0",
+        "protocol_version": "1.0",
+        "active_modules": [1, 5, 2, 121]
     }
 }
 ```
 
-* When daemon connects to MTB-USB, this message is sent as event.
-* "mtb-usb" section is present if and only if daemon is connected to MTB-USB.
+* When daemon connects to / disconnects from MTB-USB, this message is sent as
+  event.
+  - When connect event occurs, modules are not scanned.
+    Client is informed about scanned modules via `module_activated` command.
+  - When disconnect event occurs, error responses to pending commands are sent.
+* Fields after `connected` are sent if and only if `connected=True`.
 
 ### Module
 
@@ -292,27 +294,3 @@ Command types:
     "modules": [...]
 }
 ```
-
-### Disconnected from MTB-USB
-
-```json
-{
-    "command": "mtbusb_disconnect",
-    "type": "event",
-}
-```
-
-When this event occurs, client can ask for MTB-USB info. Modules are not scanned
-yet when this event occurs. Client is informed about scanned modules via
-`module_activated` command.
-
-### Connected to MTB-USB
-
-```json
-{
-    "command": "mtbusb_disconnect",
-    "type": "event",
-}
-```
-
-Error responses to pending commands are sent.

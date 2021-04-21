@@ -150,8 +150,9 @@ void DaemonCoreApplication::mtbUsbDidNotGetInfo(Mtb::CmdError) {
 
 void DaemonCoreApplication::mtbUsbGotModules() {
 	server.broadcast({
-		{"command", "mtbusb_connect"},
+		{"command", "mtbusb"},
 		{"type", "event"},
+		{"mtbusb", this->mtbUsbJson()},
 	});
 
 	const auto activeModules = mtbusb.activeModules().value();
@@ -213,8 +214,9 @@ void DaemonCoreApplication::mtbUsbDidNotGetModules(Mtb::CmdError) {
 
 void DaemonCoreApplication::mtbUsbOnDisconnect() {
 	server.broadcast({
-		{"command", "mtbusb_disconnect"},
+		{"command", "mtbusb"},
 		{"type", "event"},
+		{"mtbusb", this->mtbUsbJson()},
 	});
 
 	for (size_t i = 0; i < Mtb::_MAX_MODULES; i++)
@@ -272,8 +274,16 @@ void DaemonCoreApplication::serverReceived(QTcpSocket* socket, const QJsonObject
 	if (request.contains("id"))
 		id = request["id"].toInt();
 
-	if (command == "status") {
-		this->sendStatus(*socket, id);
+	if (command == "mtbusb") {
+		QJsonObject response{
+			{"command", "mtbusb"},
+			{"type", "response"},
+			{"status", "ok"},
+			{"mtbusb", this->mtbUsbJson()},
+		};
+		if (id)
+			response["id"] = static_cast<int>(id.value());
+		server.send(socket, response);
 
 	} else if (command == "save_config") {
 		QString filename = this->configFileName;
@@ -418,15 +428,7 @@ void DaemonCoreApplication::serverReceived(QTcpSocket* socket, const QJsonObject
 	}
 }
 
-void DaemonCoreApplication::sendStatus(QTcpSocket& socket, std::optional<size_t> id) {
-	QJsonObject response {
-		{"command", "status"},
-		{"type", "response"},
-		{"status", "ok"},
-	};
-	if (id)
-		response["id"] = static_cast<int>(id.value());
-
+QJsonObject DaemonCoreApplication::mtbUsbJson() const {
 	QJsonObject status;
 	bool connected = (mtbusb.connected() && mtbusb.mtbUsbInfo().has_value() &&
 	                  mtbusb.activeModules().has_value());
@@ -434,24 +436,19 @@ void DaemonCoreApplication::sendStatus(QTcpSocket& socket, std::optional<size_t>
 	if (connected) {
 		const Mtb::MtbUsbInfo& mtbusbinfo = mtbusb.mtbUsbInfo().value();
 		const std::array<bool, Mtb::_MAX_MODULES>& activeModules = mtbusb.activeModules().value();
-		QJsonObject mtbusb {
-			{"type", mtbusbinfo.type},
-			{"speed", Mtb::mtbBusSpeedToInt(mtbusbinfo.speed)},
-			{"firmware_version", mtbusbinfo.fw_version()},
-			{"protocol_version", mtbusbinfo.proto_version()},
-		};
+		status["type"] = mtbusbinfo.type;
+		status["speed"] = Mtb::mtbBusSpeedToInt(mtbusbinfo.speed);
+		status["firmware_version"] = mtbusbinfo.fw_version();
+		status["protocol_version"] = mtbusbinfo.proto_version();
 
 		QJsonArray jsonActiveModules;
 		for (size_t i = 0; i < Mtb::_MAX_MODULES; i++)
 			if (activeModules[i])
 				jsonActiveModules.push_back(static_cast<int>(i));
 
-		mtbusb["active_modules"] = jsonActiveModules;
-		status["mtb-usb"] = mtbusb;
+		status["active_modules"] = jsonActiveModules;
 	}
-	response["status"] = status;
-
-	server.send(socket, response);
+	return status;
 }
 
 /* Configuration ------------------------------------------------------------ */

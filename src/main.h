@@ -33,7 +33,7 @@ private:
 	QString configFileName;
 	QTimer t_reconnect;
 
-	void sendStatus(QTcpSocket&, std::optional<size_t> id);
+	QJsonObject mtbUsbJson() const;
 	void mtbUsbGotInfo();
 	void mtbUsbDidNotGetInfo(Mtb::CmdError);
 	void mtbUsbGotModules();
