@@ -260,7 +260,7 @@ void MtbUni::mtbBusConfigWritten() {
 	this->config = this->configToWrite;
 	const ServerRequest request = this->configWriting.value();
 	this->configWriting.reset();
-	this->sendChanged(request.socket);
+	this->sendModuleInfo(request.socket);
 
 	QJsonObject response{
 		{"command", "module_set_config"},

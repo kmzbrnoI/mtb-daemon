@@ -19,7 +19,6 @@ bool MtbModule::isRebooting() const {
 
 QJsonObject MtbModule::moduleInfo(bool) const {
 	QJsonObject obj;
-	obj["active"] = this->active;
 	obj["address"] = this->address;
 	obj["name"] = this->name;
 	obj["type_code"] = static_cast<int>(this->type);
@@ -181,14 +180,11 @@ void MtbModule::saveConfig(QJsonObject& json) const {
 	json["type"] = static_cast<int>(this->type);
 }
 
-void MtbModule::sendChanged(QTcpSocket* ignore) const {
+void MtbModule::sendModuleInfo(QTcpSocket* ignore) const {
 	QJsonObject json{
-		{"command", "module_changed"},
+		{"command", "module"},
 		{"type", "event"},
-		{"module_changed", QJsonObject{
-			{"address", this->address},
-			// TODO: send full module status?
-		}}
+		{"module", this->moduleInfo(true)},
 	};
 
 	for (auto pair : subscribes[this->address]) {
@@ -236,7 +232,7 @@ bool MtbModule::isFirmwareUpgrading() const {
 
 void MtbModule::fwUpgdInit() {
 	log("Initializing firmware upgrade of module "+QString::number(this->address), Mtb::LogLevel::Info);
-	this->sendChanged(this->fwUpgrade.fwUpgrading.value().socket);
+	this->sendModuleInfo(this->fwUpgrade.fwUpgrading.value().socket);
 
 	if (this->busModuleInfo.inBootloader()) {
 		// Skip rebooting to bootloader
@@ -333,7 +329,7 @@ void MtbModule::fwUpgdError(const QString& error, size_t code) {
 
 	this->fwUpgrade.fwUpgrading.reset();
 	this->fwUpgrade.data.clear();
-	this->sendChanged(request.socket);
+	this->sendModuleInfo(request.socket);
 }
 
 void MtbModule::fwUpgdAllWritten() {
@@ -365,7 +361,7 @@ void MtbModule::fwUpgdRebooted() {
 
 	this->fwUpgrade.fwUpgrading.reset();
 	this->fwUpgrade.data.clear();
-	this->sendChanged(request.socket);
+	this->sendModuleInfo(request.socket);
 }
 
 void MtbModule::reboot(std::function<void()> onOk, std::function<void()> onError) {
@@ -377,6 +373,8 @@ void MtbModule::reboot(std::function<void()> onOk, std::function<void()> onError
 	this->rebooting.onError = onError;
 	this->rebooting.activatedByMtbUsb = false;
 	this->mtbBusLost();
+
+	this->sendModuleInfo();
 
 	mtbusb.send(
 		Mtb::CmdMtbModuleReboot(
@@ -391,6 +389,7 @@ void MtbModule::reboot(std::function<void()> onOk, std::function<void()> onError
 							{[this](uint8_t, Mtb::ModuleInfo info, void*) { this->mtbBusActivate(info); }},
 							{[this](Mtb::CmdError, void*) {
 								this->rebooting.rebooting = false;
+								this->sendModuleInfo();
 								this->rebooting.onError();
 							}}
 						)
@@ -399,6 +398,7 @@ void MtbModule::reboot(std::function<void()> onOk, std::function<void()> onError
 			}},
 			{[this](Mtb::CmdError, void*) {
 				this->rebooting.rebooting = false;
+				this->sendModuleInfo();
 				this->rebooting.onError();
 			}}
 		)
