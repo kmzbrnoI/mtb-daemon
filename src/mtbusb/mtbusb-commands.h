@@ -418,6 +418,7 @@ struct CmdMtbModuleFwWriteFlash : public CmdMtbUsbForward {
 	static constexpr uint8_t _busCommandCode = 0xF1;
 	std::vector<uint8_t> data;
 	const CommandCallback<StdModuleCallbackFunc> onOk;
+	const uint16_t flashAddr;
 
 	CmdMtbModuleFwWriteFlash(
 		uint8_t module,
@@ -425,14 +426,15 @@ struct CmdMtbModuleFwWriteFlash : public CmdMtbUsbForward {
 		const std::vector<uint8_t>& data,
 		const CommandCallback<StdModuleCallbackFunc> onOk = {[](uint8_t, void*) {}},
 		const CommandCallback<ErrCallbackFunc> onError = {[](CmdError, void*) {}}
-	) : CmdMtbUsbForward(module, _busCommandCode, onError), onOk(onOk) {
+	) : CmdMtbUsbForward(module, _busCommandCode, onError), onOk(onOk), flashAddr(flashAddr) {
 		this->data = {usbCommandCode, module, _busCommandCode, static_cast<uint8_t>(flashAddr>>8),
 		              static_cast<uint8_t>(flashAddr&0xFF)};
 		std::copy(data.begin(), data.end(), std::back_inserter(this->data));
 	}
 	std::vector<uint8_t> getBytes() const override { return this->data; }
 	QString msg() const override {
-		return "Module "+QString::number(module)+" firmware write flash";
+		return "Module "+QString::number(module)+" firmware write flash 0x"+
+		       QString::number(this->flashAddr, 16).rightJustified(4, '0');;
 	}
 
 	bool processBusResponse(MtbBusRecvCommand busCommand, const std::vector<uint8_t>&) const override {

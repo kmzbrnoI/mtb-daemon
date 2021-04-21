@@ -290,8 +290,6 @@ void MtbModule::fwUpgdGotStatus(Mtb::FwWriteFlashStatus status) {
 	uint16_t fwAddr = (*this->fwUpgrade.toWrite).first * MtbModule::FwUpgrade::BLOCK_SIZE;
 	const std::vector<uint8_t>& fwBlob = (*this->fwUpgrade.toWrite).second;
 
-	log("Writing page from address 0x"+QString::number(fwAddr, 16)+"...", Mtb::LogLevel::Commands);
-
 	mtbusb.send(
 		Mtb::CmdMtbModuleFwWriteFlash(
 			this->address, fwAddr, fwBlob,
@@ -354,6 +352,8 @@ void MtbModule::fwUpgdGotFinishedInfo(Mtb::ModuleInfo info) {
 		this->fwUpgdError("Module rebooted after upgrade, but it stayed in bootloader!");
 		return;
 	}
+
+	log("Firmware successfully upgraded", Mtb::LogLevel::Info);
 
 	QJsonObject json{
 		{"command", "module_upgrade_fw"},

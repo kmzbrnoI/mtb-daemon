@@ -321,12 +321,9 @@ void MtbUni::alignFirmware(std::map<size_t, std::vector<uint8_t>>& fw, size_t pa
 		blocks.push_back(imap.first);
 	for (size_t block : blocks) {
 		size_t page = block / blocksPerPage;
-		log("Page 0x"+QString::number(page, 16), Mtb::LogLevel::Info);
 		for (size_t i = 0; i < blocksPerPage; i++) {
-			if (fw.find((page*blocksPerPage)+i) == fw.end()) {
+			if (fw.find((page*blocksPerPage)+i) == fw.end())
 				fw.emplace((page*blocksPerPage) + i, std::vector<uint8_t>(MtbModule::FwUpgrade::BLOCK_SIZE, 0xFF));
-				log("Adding address 0x"+QString::number((page*blocksPerPage)+i, 16), Mtb::LogLevel::Info);
-			}
 		}
 	}
 }
