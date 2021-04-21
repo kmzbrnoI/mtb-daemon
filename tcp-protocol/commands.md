@@ -292,3 +292,27 @@ Command types:
     "modules": [...]
 }
 ```
+
+### Disconnected from MTB-USB
+
+```json
+{
+    "command": "mtbusb_disconnect",
+    "type": "event",
+}
+```
+
+When this event occurs, client can ask for MTB-USB info. Modules are not scanned
+yet when this event occurs. Client is informed about scanned modules via
+`module_activated` command.
+
+### Connected to MTB-USB
+
+```json
+{
+    "command": "mtbusb_disconnect",
+    "type": "event",
+}
+```
+
+Error responses to pending commands are sent.
