@@ -48,6 +48,9 @@ protected:
 	void fwUpgdGotInfo(Mtb::ModuleInfo);
 	void fwUpgdGetStatus();
 	void fwUpgdGotStatus(Mtb::FwWriteFlashStatus);
+	void fwUpgdAllWritten();
+	void fwUpgdRebooted();
+	void fwUpgdGotFinishedInfo(Mtb::ModuleInfo);
 
 	static std::map<size_t, std::vector<uint8_t>> parseFirmware(const QJsonObject&);
 

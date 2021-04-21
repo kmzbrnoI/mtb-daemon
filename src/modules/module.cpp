@@ -283,11 +283,10 @@ void MtbModule::fwUpgdGotStatus(Mtb::FwWriteFlashStatus status) {
 	}
 
 	if (this->fwUpgrade.toWrite == this->fwUpgrade.data.end()) {
-		log("Whole firmware sent", Mtb::LogLevel::Info);
+		fwUpgdAllWritten();
 		return;
 	}
 
-	// TODO: page is counted in uint16_t for ATmega. Move the calculation to module types somehow
 	uint16_t fwAddr = (*this->fwUpgrade.toWrite).first * MtbModule::FwUpgrade::BLOCK_SIZE;
 	const std::vector<uint8_t>& fwBlob = (*this->fwUpgrade.toWrite).second;
 
@@ -314,6 +313,52 @@ void MtbModule::fwUpgdError(const QString& error, size_t code) {
 		{"type", "response"},
 		{"status", "error"},
 		{"error", jsonError(code, error)},
+	};
+	const ServerRequest request = this->fwUpgrade.fwUpgrading.value();
+	if (request.id.has_value())
+		json["id"] = static_cast<int>(request.id.value());
+	server.send(request.socket, json);
+
+	this->fwUpgrade.fwUpgrading.reset();
+	this->fwUpgrade.data.clear();
+	this->sendChanged(request.socket);
+}
+
+void MtbModule::fwUpgdAllWritten() {
+	log("Firmware programming finished, rebooting module...", Mtb::LogLevel::Info);
+
+	mtbusb.send(
+		Mtb::CmdMtbModuleReboot(
+			this->address,
+			{[this](uint8_t, void*) { this->fwUpgdRebooted(); }},
+			{[this](Mtb::CmdError, void*) { this->fwUpgdError("Unable to reboot module back to operation!"); }}
+		)
+	);
+}
+
+void MtbModule::fwUpgdRebooted() {
+	QTimer::singleShot(200, [this](){
+		mtbusb.send(
+			Mtb::CmdMtbModuleInfoRequest(
+				this->address,
+				{[this](uint8_t, Mtb::ModuleInfo info, void*) { this->fwUpgdGotFinishedInfo(info); }},
+				{[this](Mtb::CmdError, void*) { this->fwUpgdError("Unable to get rebooted module information"); }}
+			)
+		);
+	});
+}
+
+void MtbModule::fwUpgdGotFinishedInfo(Mtb::ModuleInfo info) {
+	this->busModuleInfo = info;
+	if (this->busModuleInfo.inBootloader()) {
+		this->fwUpgdError("Module rebooted after upgrade, but it stayed in bootloader!");
+		return;
+	}
+
+	QJsonObject json{
+		{"command", "module_upgrade_fw"},
+		{"type", "response"},
+		{"status", "ok"},
 	};
 	const ServerRequest request = this->fwUpgrade.fwUpgrading.value();
 	if (request.id.has_value())
