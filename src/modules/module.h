@@ -49,6 +49,8 @@ protected:
 	void fwUpgdGetStatus();
 	void fwUpgdGotStatus(Mtb::FwWriteFlashStatus);
 
+	static std::map<size_t, std::vector<uint8_t>> parseFirmware(const QJsonObject&);
+
 public:
 	MtbModule(uint8_t addr);
 	virtual ~MtbModule() {}

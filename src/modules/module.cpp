@@ -171,6 +171,27 @@ bool MtbModule::isConfigSetting() const {
 
 /* Firmware Upgrade ----------------------------------------------------------*/
 
+std::map<size_t, std::vector<uint8_t>> MtbModule::parseFirmware(const QJsonObject& json) {
+	std::map<size_t, std::vector<uint8_t>> result;
+
+	for (const QString& key : json.keys()) {
+		size_t addr = key.toInt();
+		const QString& dataStr = json[key].toString();
+		std::vector<uint8_t> data;
+		for (int i = 0; i < dataStr.size(); i += 2)
+				data.push_back(dataStr.mid(i, 2).toInt(nullptr, 16));
+
+		size_t block = addr / MtbModule::FwUpgrade::BLOCK_SIZE;
+		size_t offset = addr % MtbModule::FwUpgrade::BLOCK_SIZE;
+		if (result.find(block) == result.end())
+			result.emplace(block, std::vector<uint8_t>(MtbModule::FwUpgrade::BLOCK_SIZE));
+		for (size_t i = 0; i < data.size(); i++)
+			result[block][i+offset] = data[i];
+	}
+
+	return result;
+}
+
 bool MtbModule::isFirmwareUpgrading() const {
 	return this->fwUpgrade.fwUpgrading.has_value();
 }
