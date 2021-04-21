@@ -53,6 +53,8 @@ protected:
 	static uint8_t flickPerMinToMtbUniValue(size_t flickPerMin);
 	static size_t flickMtbUniToPerMin(uint8_t mtbUniFlick);
 
+	static void alignFirmware(std::map<size_t, std::vector<uint8_t>>&, size_t pageSize);
+
 public:
 	MtbUni(uint8_t addr);
 	virtual ~MtbUni() {}

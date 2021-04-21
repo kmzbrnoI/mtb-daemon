@@ -302,9 +302,27 @@ void MtbUni::jsonUpgradeFw(QTcpSocket* socket, const QJsonObject& request) {
 
 	this->fwUpgrade.fwUpgrading = ServerRequest(socket, request);
 	this->fwUpgrade.data = parseFirmware(request["firmware"].toObject());
+	this->alignFirmware(this->fwUpgrade.data, 256);
 
 	if (!this->configWriting.has_value() && this->setOutputsSent.empty())
 		this->fwUpgdInit();
+}
+
+void MtbUni::alignFirmware(std::map<size_t, std::vector<uint8_t>>& fw, size_t pageSize) {
+	const size_t blocksPerPage = pageSize / MtbModule::FwUpgrade::BLOCK_SIZE;
+	std::vector<size_t> blocks;
+	for (auto const& imap : fw)
+		blocks.push_back(imap.first);
+	for (size_t block : blocks) {
+		size_t page = block / blocksPerPage;
+		log("Page 0x"+QString::number(page, 16), Mtb::LogLevel::Info);
+		for (size_t i = 0; i < blocksPerPage; i++) {
+			if (fw.find((page*blocksPerPage)+i) == fw.end()) {
+				fw.emplace((page*blocksPerPage) + i, std::vector<uint8_t>(MtbModule::FwUpgrade::BLOCK_SIZE));
+				log("Adding address 0x"+QString::number((page*blocksPerPage)+i, 16), Mtb::LogLevel::Info);
+			}
+		}
+	}
 }
 
 /* -------------------------------------------------------------------------- */

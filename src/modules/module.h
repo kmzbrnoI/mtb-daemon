@@ -30,7 +30,7 @@ protected:
 		static constexpr size_t BLOCK_SIZE = 64;
 		using FirmwareStorage = std::map<size_t, std::vector<uint8_t>>;
 		std::optional<ServerRequest> fwUpgrading;
-		FirmwareStorage data; // address to data map
+		FirmwareStorage data; // block to data map
 		FirmwareStorage::iterator toWrite;
 	};
 	FwUpgrade fwUpgrade;
