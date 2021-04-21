@@ -33,6 +33,7 @@ protected:
 
 	void configSet();
 	bool isIrSupport() const;
+	size_t pageSize() const;
 
 	void storeInputsState(const std::vector<uint8_t>&);
 	void inputsRead(const std::vector<uint8_t>&);

@@ -11,6 +11,12 @@ bool MtbUni::isIrSupport() const {
 	return this->type == MtbModuleType::Univ2ir;
 }
 
+size_t MtbUni::pageSize() const {
+	if ((this->type == MtbModuleType::Univ2ir) || (this->type == MtbModuleType::Univ2noIr))
+		return 128;
+	return 256;
+}
+
 /* JSON Module Info --------------------------------------------------------- */
 
 QJsonObject MtbUni::moduleInfo(bool state) const {
@@ -302,7 +308,7 @@ void MtbUni::jsonUpgradeFw(QTcpSocket* socket, const QJsonObject& request) {
 
 	this->fwUpgrade.fwUpgrading = ServerRequest(socket, request);
 	this->fwUpgrade.data = parseFirmware(request["firmware"].toObject());
-	this->alignFirmware(this->fwUpgrade.data, 256);
+	this->alignFirmware(this->fwUpgrade.data, this->pageSize());
 
 	if (!this->configWriting.has_value() && this->setOutputsSent.empty())
 		this->fwUpgdInit();
