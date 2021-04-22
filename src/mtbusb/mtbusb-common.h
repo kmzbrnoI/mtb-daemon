@@ -23,6 +23,9 @@ enum class MtbBusSpeed {
 };
 
 int mtbBusSpeedToInt(MtbBusSpeed speed);
+MtbBusSpeed intToMtbBusSpeed(int speed);
+bool mtbBusSpeedValid(int speed);
+
 
 struct EInvalidAddress : public MtbUsbError {
 	EInvalidAddress() : MtbUsbError(std::string("Invalid MTBbus module address!")) {}

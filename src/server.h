@@ -53,5 +53,6 @@ QJsonObject jsonError(size_t code, const QString& msg);
 QJsonObject jsonError(Mtb::CmdError);
 QJsonObject jsonOkResponse(const QJsonObject& request);
 void sendError(QTcpSocket*, const QJsonObject&, size_t code, const QString&);
+void sendError(QTcpSocket*, const QJsonObject&, Mtb::CmdError);
 
 #endif

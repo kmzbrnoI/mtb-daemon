@@ -12,6 +12,18 @@ int mtbBusSpeedToInt(MtbBusSpeed speed) {
 	throw EInvalidSpeed();
 }
 
+MtbBusSpeed intToMtbBusSpeed(int speed) {
+	if (speed == 57600)
+		return MtbBusSpeed::br57600;
+	if (speed == 115200)
+		return MtbBusSpeed::br115200;
+	return MtbBusSpeed::br38400;
+}
+
+bool mtbBusSpeedValid(int speed) {
+	return (speed == 38400) || (speed == 57600) || (speed == 115200);
+}
+
 bool isValidModuleAddress(size_t addr) {
 	return (addr > 0) && (addr < 256);
 }

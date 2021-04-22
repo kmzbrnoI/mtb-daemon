@@ -64,6 +64,21 @@ Command types:
   - When disconnect event occurs, error responses to pending commands are sent.
 * Fields after `connected` are sent if and only if `connected=True`.
 
+### MTB-USB Change Speed
+
+```json
+{
+    "command": "mtbusb",
+    "type": "request",
+    "id": 42,
+    "mtbusb": {
+        "speed": 115200
+    }
+}
+```
+
+Response in same as *Daemon Status* response.
+
 ### Module
 
 ```json

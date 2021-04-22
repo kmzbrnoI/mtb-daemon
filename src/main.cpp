@@ -278,6 +278,35 @@ void DaemonCoreApplication::serverReceived(QTcpSocket* socket, const QJsonObject
 		id = request["id"].toInt();
 
 	if (command == "mtbusb") {
+		if (request.contains("mtbusb")) { // Changing MTB-USB
+			QJsonObject jsonMtbUsb = request["mtbusb"].toObject();
+			if (jsonMtbUsb.contains("speed")) { // Change MTBbus speed
+				if (!mtbusb.connected() || !mtbusb.mtbUsbInfo().has_value()) {
+					sendError(socket, request, MTB_DEVICE_DISCONNECTED, "Disconnected from MTB-USB!");
+					return;
+				}
+				size_t speed = jsonMtbUsb["speed"].toInt();
+				if (!Mtb::mtbBusSpeedValid(speed)) {
+					sendError(socket, request, MTB_INVALID_SPEED, "Invalid MTBbus speed!");
+					return;
+				}
+				Mtb::MtbBusSpeed mtbUsbSpeed = mtbusb.mtbUsbInfo().value().speed;
+				Mtb::MtbBusSpeed newSpeed = Mtb::intToMtbBusSpeed(speed);
+				if (mtbUsbSpeed != newSpeed) {
+					mtbusb.changeSpeed(
+						newSpeed,
+						{[this, socket, request]() {
+							QJsonObject response = jsonOkResponse(request);
+							response["mtbusb"] = this->mtbUsbJson();
+							server.send(socket, response);
+						}},
+						{[socket, request](Mtb::CmdError error) { sendError(socket, request, error); }}
+					);
+					return;
+				}
+			}
+		}
+
 		QJsonObject response = jsonOkResponse(request);
 		response["mtbusb"] = this->mtbUsbJson();
 		server.send(socket, response);

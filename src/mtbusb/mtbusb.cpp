@@ -92,4 +92,32 @@ std::vector<QSerialPortInfo> MtbUsb::ports() {
 	return result;
 }
 
+void MtbUsb::changeSpeed(MtbBusSpeed newSpeed, std::function<void()> onOk, std::function<void(Mtb::CmdError)> onError) {
+	if ((!this->connected()) || (!this->m_mtbUsbInfo.has_value()))
+		return;
+
+	// Send 3× broadcast to change module speed
+	this->send(Mtb::CmdMtbModuleChangeSpeed(newSpeed));
+	this->send(Mtb::CmdMtbModuleChangeSpeed(newSpeed));
+	this->send(
+		Mtb::CmdMtbModuleChangeSpeed(
+			newSpeed,
+			{[this, onOk, onError, newSpeed](void*) {
+				// Send MTB-USB speed change request
+				this->send(
+					Mtb::CmdMtbUsbChangeSpeed(
+						newSpeed,
+						{[this, newSpeed, onOk](void*) {
+							this->m_mtbUsbInfo.value().speed = newSpeed;
+							onOk();
+						}},
+						{[onError](Mtb::CmdError cmdError, void*) { onError(cmdError); }}
+					)
+				);
+			}},
+			{[onError](Mtb::CmdError cmdError, void*) { onError(cmdError); }}
+		)
+	);
+}
+
 }; // namespace Mtb

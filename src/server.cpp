@@ -100,6 +100,18 @@ void sendError(QTcpSocket* socket, const QJsonObject& request, size_t code,
 	server.send(*socket, response);
 }
 
+void sendError(QTcpSocket* socket, const QJsonObject& request, Mtb::CmdError cmdError) {
+	QJsonObject response {
+		{"command", request["command"]},
+		{"type", "response"},
+		{"status", "error"},
+		{"error", jsonError(cmdError)},
+	};
+	if (request.contains("id"))
+		response["id"] = request["id"];
+	server.send(*socket, response);
+}
+
 QJsonObject jsonOkResponse(const QJsonObject& request) {
 	QJsonObject response{
 		{"command", request["command"]},

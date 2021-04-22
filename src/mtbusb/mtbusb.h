@@ -104,6 +104,8 @@ public:
 	std::optional<MtbUsbInfo> mtbUsbInfo() const { return m_mtbUsbInfo; }
 	std::optional<std::array<bool, _MAX_MODULES>> activeModules() const { return m_activeModules; }
 
+	void changeSpeed(MtbBusSpeed, std::function<void()> onOk, std::function<void(Mtb::CmdError)> onError);
+
 	static std::vector<QSerialPortInfo> ports();
 
 private slots:
