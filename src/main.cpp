@@ -278,14 +278,8 @@ void DaemonCoreApplication::serverReceived(QTcpSocket* socket, const QJsonObject
 		id = request["id"].toInt();
 
 	if (command == "mtbusb") {
-		QJsonObject response{
-			{"command", "mtbusb"},
-			{"type", "response"},
-			{"status", "ok"},
-			{"mtbusb", this->mtbUsbJson()},
-		};
-		if (id)
-			response["id"] = static_cast<int>(id.value());
+		QJsonObject response = jsonOkResponse(request);
+		response["mtbusb"] = this->mtbUsbJson();
 		server.send(socket, response);
 
 	} else if (command == "save_config") {
@@ -303,15 +297,10 @@ void DaemonCoreApplication::serverReceived(QTcpSocket* socket, const QJsonObject
 		if (id)
 			response["id"] = static_cast<int>(id.value());
 
-		server.send(*socket, response);
+		server.send(socket, response);
 
 	} else if (command == "module") {
-		QJsonObject response{
-			{"command", "module"},
-			{"type", "response"},
-		};
-		if (id)
-			response["id"] = static_cast<int>(id.value());
+		QJsonObject response = jsonOkResponse(request);
 
 		size_t addr = request["address"].toInt();
 		if ((Mtb::isValidModuleAddress(addr)) && (modules[addr] != nullptr)) {
@@ -322,33 +311,22 @@ void DaemonCoreApplication::serverReceived(QTcpSocket* socket, const QJsonObject
 			response["error"] = DaemonServer::error(MTB_MODULE_INVALID_ADDR, "Invalid module address");
 		}
 
-		server.send(*socket, response);
+		server.send(socket, response);
 
 	} else if (command == "modules") {
-		QJsonObject response {
-			{"command", "module"},
-			{"type", "response"},
-		};
-		if (id)
-			response["id"] = static_cast<int>(id.value());
+		QJsonObject response = jsonOkResponse(request);
 
 		for (size_t i = 0; i < Mtb::_MAX_MODULES; i++) {
 			if (modules[i] != nullptr)
 				response[QString::number(i)] = modules[i]->moduleInfo(request["state"].toBool(), true);
 		}
 
-		server.send(*socket, response);
+		server.send(socket, response);
 
 	} else if (command == "module_subscribe") {
-		QJsonArray addresses;
-		QJsonObject response {
-			{"command", "module_subscribe"},
-			{"type", "response"},
-			{"status", "ok"},
-		};
-		if (id)
-			response["id"] = static_cast<int>(id.value());
+		QJsonObject response = jsonOkResponse(request);
 
+		QJsonArray addresses;
 		for (const auto& value : request["addresses"].toArray()) {
 			size_t addr = value.toInt();
 			if (Mtb::isValidModuleAddress(addr)) {
@@ -362,16 +340,10 @@ void DaemonCoreApplication::serverReceived(QTcpSocket* socket, const QJsonObject
 		}
 
 		response["addresses"] = addresses;
-		server.send(*socket, response);
+		server.send(socket, response);
 
 	} else if (command == "module_unsubscribe") {
-		QJsonObject response {
-			{"command", "module_unsubscribe"},
-			{"type", "response"},
-			{"status", "ok"},
-		};
-		if (id)
-			response["id"] = static_cast<int>(id.value());
+		QJsonObject response = jsonOkResponse(request);
 
 		for (const auto& value : response["addresses"].toArray()) {
 			size_t addr = value.toInt();
@@ -385,7 +357,7 @@ void DaemonCoreApplication::serverReceived(QTcpSocket* socket, const QJsonObject
 			}
 		}
 
-		server.send(*socket, response);
+		server.send(socket, response);
 
 	} else if (command == "module_set_config") {
 		// Set config can change module type
@@ -420,13 +392,7 @@ void DaemonCoreApplication::serverReceived(QTcpSocket* socket, const QJsonObject
 		if ((Mtb::isValidModuleAddress(addr)) && (modules[addr] != nullptr)) {
 			modules[addr]->jsonCommand(socket, request);
 		} else {
-			QJsonObject response{
-				{"command", command},
-				{"type", "response"},
-				{"status", "error"},
-				{"error", DaemonServer::error(MTB_MODULE_INVALID_ADDR, "Invalid module address")},
-			};
-			server.send(*socket, response);
+			sendError(socket, request, MTB_MODULE_INVALID_ADDR, "Invalid module address");
 		}
 	}
 }

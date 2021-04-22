@@ -87,14 +87,8 @@ void MtbUni::jsonSetOutput(QTcpSocket* socket, const QJsonObject& request) {
 		if (send)
 			this->setOutputs();
 	} else {
-		QJsonObject response{
-			{"command", "module_set_outputs"},
-			{"type", "response"},
-			{"status", "ok"},
-			{"outputs", this->outputsToJson(this->outputsConfirmed)},
-		};
-		if (request.contains("id"))
-			response["id"] = request["id"];
+		QJsonObject response = jsonOkResponse(request);
+		response["outputs"] = this->outputsToJson(this->outputsConfirmed);
 		server.send(socket, response);
 	}
 }
