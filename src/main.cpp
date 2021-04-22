@@ -48,6 +48,7 @@ DaemonCoreApplication::DaemonCoreApplication(int &argc, char **argv)
 				{"server", QJsonObject{
 					{"host", "127.0.0.1"},
 					{"port", static_cast<int>(SERVER_DEFAULT_PORT)},
+					{"keepAlive", true},
 				}},
 				{"mtb-usb", QJsonObject{
 					{"port", "auto"},
@@ -66,9 +67,10 @@ DaemonCoreApplication::DaemonCoreApplication(int &argc, char **argv)
 	{ // Start server
 		const QJsonObject serverConfig = this->config["server"].toObject();
 		size_t port = serverConfig["port"].toInt();
+		bool keepAlive = serverConfig["keepAlive"].toBool(true);
 		QHostAddress host(serverConfig["host"].toString());
 		log("Starting server: "+host.toString()+":"+QString::number(port)+"...", Mtb::LogLevel::Info);
-		server.listen(host, port);
+		server.listen(host, port, keepAlive);
 	}
 
 	this->mtbUsbConnect();

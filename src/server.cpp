@@ -7,12 +7,16 @@
 
 DaemonServer::DaemonServer(QObject *parent) : QObject(parent) {
 	QObject::connect(&m_server, SIGNAL(newConnection()), this, SLOT(serverNewConnection()));
+	QObject::connect(&this->m_tKeepAlive, SIGNAL(timeout()), this, SLOT(tKeepAliveTick()));
 }
 
-void DaemonServer::listen(const QHostAddress& addr, quint16 port) {
+void DaemonServer::listen(const QHostAddress& addr, quint16 port, bool keepAlive) {
 	this->clients.clear();
 	if (!m_server.listen(addr, port))
 		throw std::logic_error(m_server.errorString().toStdString());
+
+	if (keepAlive)
+		this->m_tKeepAlive.start(SERVER_KEEP_ALIVE_SEND_PERIOD_MS);
 }
 
 void DaemonServer::serverNewConnection() {
@@ -69,6 +73,11 @@ void DaemonServer::broadcast(const QJsonObject& json) {
 
 QJsonObject DaemonServer::error(size_t code, const QString& message) {
 	return {{"code", static_cast<int>(code)}, {"message", message}};
+}
+
+void DaemonServer::tKeepAliveTick() {
+	for (const auto& pair : this->clients)
+		this->send(pair.first, {});
 }
 
 QJsonObject jsonError(size_t code, const QString& msg) {

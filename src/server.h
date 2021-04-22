@@ -4,9 +4,11 @@
 #include <QObject>
 #include <QTcpServer>
 #include <QJsonObject>
+#include <QTimer>
 #include "mtbusb/mtbusb-common.h"
 
 constexpr size_t SERVER_DEFAULT_PORT = 3841;
+constexpr size_t SERVER_KEEP_ALIVE_SEND_PERIOD_MS = 5000;
 
 struct ServerRequest {
 	QTcpSocket* socket;
@@ -24,7 +26,7 @@ class DaemonServer : public QObject {
 
 public:
 	DaemonServer(QObject *parent = nullptr);
-	void listen(const QHostAddress&, quint16 port);
+	void listen(const QHostAddress&, quint16 port, bool keepAlive=true);
 	void send(QTcpSocket&, const QJsonObject&);
 	void send(QTcpSocket*, const QJsonObject&);
 	void broadcast(const QJsonObject&);
@@ -35,9 +37,11 @@ private slots:
 	void serverNewConnection();
 	void clientDisconnected();
 	void clientReadyRead();
+	void tKeepAliveTick();
 
 private:
 	QTcpServer m_server;
+	QTimer m_tKeepAlive;
 	std::map<QTcpSocket*, bool> clients;
 
 signals:
