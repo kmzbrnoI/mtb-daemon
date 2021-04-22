@@ -51,7 +51,7 @@ protected:
 	bool isConfigSetting() const;
 
 	void fwUpgdInit();
-	void fwUpgdError(const QString&, size_t code = MTB_MODULE_NOT_ANSWERED_CMD_GIVING_UP);
+	void fwUpgdError(const QString&, size_t code = MTB_MODULE_FWUPGD_ERROR);
 	void fwUpgdReqAck();
 	void fwUpgdGotInfo(Mtb::ModuleInfo);
 	void fwUpgdGetStatus();
@@ -84,6 +84,7 @@ public:
 	virtual void jsonSetConfig(QTcpSocket*, const QJsonObject&);
 	virtual void jsonUpgradeFw(QTcpSocket*, const QJsonObject&);
 	virtual void jsonReboot(QTcpSocket*, const QJsonObject&);
+	virtual void jsonSpecificCommand(QTcpSocket*, const QJsonObject&);
 	virtual void clientDisconnected(QTcpSocket*);
 
 	virtual void loadConfig(const QJsonObject&);

@@ -229,6 +229,32 @@ Command types:
   - Server joins `data`.
   - Format is designed for hex files to be easily sendible.
 
+### Module-specific command
+
+```json
+{
+    "command": "module_specific_command",
+    "type": "request",
+    "id": 20,
+    "address": 32,
+    "data": [10, 15, 10, 0, 5]
+}
+```
+
+```json
+{
+    "command": "module_specific_command",
+    "type": "response",
+    "id": 20,
+    "status": "ok",
+    "response": {
+        "command_code": 10,
+        "data": [5, 10, 0, 5]
+    }
+}
+```
+
+
 ### Module subscribe/unsubscribe
 
 ```json

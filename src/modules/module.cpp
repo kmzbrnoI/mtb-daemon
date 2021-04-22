@@ -77,6 +77,8 @@ void MtbModule::jsonCommand(QTcpSocket* socket, const QJsonObject& request) {
 		this->jsonUpgradeFw(socket, request);
 	else if (command == "module_reboot")
 		this->jsonReboot(socket, request);
+	else if (command == "module_specific_command")
+		this->jsonSpecificCommand(socket, request);
 }
 
 void MtbModule::jsonSetOutput(QTcpSocket*, const QJsonObject&) {}
@@ -109,7 +111,7 @@ void MtbModule::jsonReboot(QTcpSocket* socket, const QJsonObject& request) {
 			server.send(socket, response);
 		}},
 		{[this, socket, request]() {
-			sendError(socket, request, MTB_MODULE_NOT_ANSWERED_CMD_GIVING_UP,
+			sendError(socket, request, MTB_BUS_NO_RESPONSE,
 			          "Unable to reboot module");
 			this->mtbBusLost();
 		}}
@@ -404,4 +406,31 @@ void MtbModule::fullyActivated() {
 		this->rebooting.rebooting = false;
 		this->rebooting.onOk();
 	}
+}
+
+void MtbModule::jsonSpecificCommand(QTcpSocket* socket, const QJsonObject& request) {
+	const QJsonArray& dataAr = request["data"].toArray();
+	std::vector<uint8_t> data;
+	for (const auto var : dataAr)
+		data.push_back(var.toInt());
+
+	mtbusb.send(
+		Mtb::CmdMtbModuleSpecific(
+			this->address, data,
+			{[request, socket](uint8_t, Mtb::MtbBusRecvCommand command, const std::vector<uint8_t>& data, void*) -> bool {
+				QJsonObject json = jsonOkResponse(request);
+				QJsonObject response = json["response"].toObject();
+				response["command_code"] = static_cast<int>(command);
+				QJsonArray dataAr;
+				for (const uint8_t byte : data)
+					dataAr.push_back(byte);
+				response["data"] = dataAr;
+				server.send(socket, json);
+				return true;
+			}},
+			{[socket, request](Mtb::CmdError error, void*) {
+				sendError(socket, request, static_cast<int>(error)+0x1000, Mtb::cmdErrorToStr(error));
+			}}
+		)
+	);
 }

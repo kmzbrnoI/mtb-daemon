@@ -4,6 +4,7 @@
 #include <QObject>
 #include <QTcpServer>
 #include <QJsonObject>
+#include "mtbusb/mtbusb-common.h"
 
 constexpr size_t SERVER_DEFAULT_PORT = 3841;
 
@@ -45,6 +46,8 @@ signals:
 };
 
 QJsonObject jsonError(size_t code, const QString& msg);
+QJsonObject jsonError(Mtb::CmdError);
+QJsonObject jsonOkResponse(const QJsonObject& request);
 void sendError(QTcpSocket*, const QJsonObject&, size_t code, const QString&);
 
 #endif

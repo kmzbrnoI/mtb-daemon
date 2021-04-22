@@ -196,15 +196,14 @@ QJsonArray MtbUni::inputsToJson(uint16_t inputs) {
 	return json;
 }
 
-void MtbUni::mtbBusOutputsNotSet(Mtb::CmdError) {
+void MtbUni::mtbBusOutputsNotSet(Mtb::CmdError error) {
 	// Report err callback to clients
 	for (const ServerRequest& sr : this->setOutputsSent) {
 		QJsonObject response{
 			{"command", "module_set_outputs"},
 			{"type", "response"},
 			{"status", "error"},
-			{"error", jsonError(MTB_MODULE_NOT_ANSWERED_CMD_GIVING_UP,
-		                              "No response to SetOutput command!")},
+			{"error", jsonError(error)},
 		};
 		if (sr.id.has_value())
 			response["id"] = static_cast<int>(sr.id.value());
@@ -277,7 +276,7 @@ void MtbUni::mtbBusConfigWritten() {
 		this->fwUpgdInit();
 }
 
-void MtbUni::mtbBusConfigNotWritten(Mtb::CmdError) {
+void MtbUni::mtbBusConfigNotWritten(Mtb::CmdError error) {
 	const ServerRequest request = this->configWriting.value();
 	this->configWriting.reset();
 
@@ -285,8 +284,7 @@ void MtbUni::mtbBusConfigNotWritten(Mtb::CmdError) {
 		{"command", "module_set_config"},
 		{"type", "response"},
 		{"status", "error"},
-		{"error", jsonError(MTB_MODULE_NOT_ANSWERED_CMD_GIVING_UP,
-		                    "No response to SetConfig command!")},
+		{"error", jsonError(error)},
 	};
 	if (request.id.has_value())
 		response["id"] = static_cast<int>(request.id.value());
