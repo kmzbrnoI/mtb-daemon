@@ -1,34 +1,7 @@
-Commands of MTB daemon TCP protocol
-==================================
+MTB daemon's TCP sever messages specification
+=============================================
 
-Command types:
-* `request`
-* `response`
-* `event`
-
-## Common *request* attributes
-
- * `command`: string identifier of command
- * `type`: `request`
- * `id`: any number, will be sent in response
-   - `id` could be omitted
-
-## Common *response* attributes
-
- * `command`: identifier of response
- * `type`: `response`
- * `id`: request id for which response is generated
- * `status`: `ok` / `error`
-   - In case of error, `error` dict is provided:
-     `error: {"code": int, "message": str}`
-
-## Common *event* attributes
-
- * `command`: string identifier of command
- * `type`: `event`
-
-
-## Commands
+## Request & responses
 
 ### Daemon status
 
@@ -106,6 +79,7 @@ Response in same as *Daemon Status* response.
         "firmware_version": "1.0",
         "protocol_version": "4.0",
         "MTB-UNI v4": {
+            # data specific for module type, e.g.:
             "ir": false,
             "config": {
                 "outputsSafe": [
@@ -123,7 +97,7 @@ Response in same as *Daemon Status* response.
                     {"type": "flicker", "value": 60},
                     ...
                 ],
-                "inputs": [false, false, true, true, ..., false] # 16 values
+                "inputs": {"uniinputs": [false, false, true, true, ..., false]} # 16 values
             }
         }
     }
@@ -167,6 +141,7 @@ Response in same as *Daemon Status* response.
     "id": 123,
     "address": 1,
     "outputs": {
+        # Data format specific for module type, e.g. for MTB-UNI:
         # Any number of outputs specific for module, e.g.:
         "1": {"type": "plain", "value": 0},
         "2": {"type": "s-com", "value": 10},
@@ -183,7 +158,8 @@ Response in same as *Daemon Status* response.
     "id": 123,
     "status": "ok",
     "outputs": {
-        // Current state of (not neccessarry all) outputs
+        # Data format specific for module type, e.g. for MTB-UNI:
+        # Current state of (not neccessarry all) outputs
         "1": {"type": "plain", "value": 0},
         "2": {"type": "s-com", "value": 10},
         "12": {"type": "flicker", "value": 60},
@@ -215,7 +191,7 @@ Response in same as *Daemon Status* response.
 }
 ```
 
-### Firmware upgrade request
+### Module firmware upgrade request
 
 ```json
 {
@@ -269,7 +245,6 @@ Response in same as *Daemon Status* response.
 }
 ```
 
-
 ### Module subscribe/unsubscribe
 
 ```json
@@ -293,7 +268,7 @@ Response in same as *Daemon Status* response.
 
 ## Events
 
-### Module input changed
+### Module input/s changed
 
 ```json
 {
@@ -308,7 +283,7 @@ Response in same as *Daemon Status* response.
 }
 ```
 
-### Module output changed
+### Module output/s changed
 
 ```json
 {

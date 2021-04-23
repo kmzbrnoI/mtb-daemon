@@ -17,6 +17,18 @@ state as well as configuring modules, changing MTBbus speed etc.
 
 [TCP protocol description](tcp-protocol/README.md)
 
+## Program workflow
+
+When program starts, configuration file `mtb-daemon.json` is read. If the file
+does not exists, it is created. JSON server is started. WHen server cannot be
+started, program dies. Main application loop is started.
+
+Daemon searches for available MTB-USB modules. If it finds module specified
+in configuration, it connects. If reports changes to clients and allows clients
+to control MTBbus and MTBbus modules. When connection with MTB-USB fails,
+daemon reports this event to clients and keeps running. When MTB-USB is
+available again, connection is established again.
+
 ## Building & toolkit
 
 This library was developed in `vim` using `qmake` & `make`. It is suggested
