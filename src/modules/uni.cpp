@@ -181,13 +181,13 @@ QJsonObject MtbUni::outputsToJson(const std::array<uint8_t, UNI_IO_CNT>& outputs
 	return result;
 }
 
-QJsonArray MtbUni::inputsToJson(uint16_t inputs) {
+QJsonObject MtbUni::inputsToJson(uint16_t inputs) {
 	QJsonArray json;
 	for (size_t i = 0; i < UNI_IO_CNT; i++) {
 		json.push_back(static_cast<bool>(inputs&1));
 		inputs >>= 1;
 	}
-	return json;
+	return {{"uniinputs", json}};
 }
 
 void MtbUni::mtbBusOutputsNotSet(Mtb::CmdError error) {

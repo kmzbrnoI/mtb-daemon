@@ -128,7 +128,7 @@ QString moduleTypeToStr(MtbModuleType type) {
 	}
 }
 
-void MtbModule::sendInputsChanged(QJsonArray inputs) const {
+void MtbModule::sendInputsChanged(QJsonObject inputs) const {
 	QJsonObject json{
 		{"command", "module_inputs_changed"},
 		{"type", "event"},

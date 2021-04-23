@@ -40,7 +40,7 @@ protected:
 	void outputsReset();
 	void outputsSet(uint8_t, const std::vector<uint8_t>&);
 	static QJsonObject outputsToJson(const std::array<uint8_t, UNI_IO_CNT>&);
-	static QJsonArray inputsToJson(uint16_t inputs);
+	static QJsonObject inputsToJson(uint16_t inputs);
 
 	void setOutputs();
 	void mtbBusOutputsSet(const std::vector<uint8_t>& data);

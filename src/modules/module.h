@@ -43,7 +43,7 @@ protected:
 	};
 	FwUpgrade fwUpgrade;
 
-	void sendInputsChanged(QJsonArray inputs) const;
+	void sendInputsChanged(QJsonObject inputs) const;
 	void sendOutputsChanged(QJsonObject outputs, const std::vector<QTcpSocket*> ignore) const;
 	void sendModuleInfo(QTcpSocket* ignore = nullptr) const;
 
