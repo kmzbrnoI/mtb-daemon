@@ -468,7 +468,7 @@ struct CmdMtbModuleFwWriteFlashStatusRequest : public CmdMtbUsbForward {
 	}
 
 	bool processBusResponse(MtbBusRecvCommand busCommand, const std::vector<uint8_t>& data) const override {
-		if ((busCommand == MtbBusRecvCommand::FWWriteFlashStatus) && (data.size() >= 1)) {
+		if ((busCommand == MtbBusRecvCommand::FWWriteFlashStatus) && (!data.empty())) {
 			onResponse.func(module, static_cast<FwWriteFlashStatus>(data[0]), onResponse.data);
 			return true;
 		}
@@ -517,9 +517,8 @@ struct CmdMtbModuleSpecific : public CmdMtbUsbForward {
 				return true;
 			}
 			return false;
-		} else {
-			return onResponse.func(module, busCommand, data, onResponse.data);
 		}
+		return onResponse.func(module, busCommand, data, onResponse.data);
 	}
 };
 

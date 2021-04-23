@@ -63,7 +63,7 @@ void MtbModule::mtbUsbDisconnected() {
 	this->active = false;
 }
 
-void MtbModule::mtbBusInputsChanged(const std::vector<uint8_t>) {
+void MtbModule::mtbBusInputsChanged(const std::vector<uint8_t>&) {
 }
 
 void MtbModule::jsonCommand(QTcpSocket* socket, const QJsonObject& request) {
@@ -145,7 +145,7 @@ void MtbModule::sendInputsChanged(QJsonObject inputs) const {
 }
 
 void MtbModule::sendOutputsChanged(QJsonObject outputs,
-                                   const std::vector<QTcpSocket*> ignore) const {
+                                   const std::vector<QTcpSocket*>& ignore) const {
 	QJsonObject json{
 		{"command", "module_outputs_changed"},
 		{"type", "event"},

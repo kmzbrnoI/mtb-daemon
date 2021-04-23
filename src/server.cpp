@@ -28,7 +28,7 @@ void DaemonServer::serverNewConnection() {
 }
 
 void DaemonServer::clientDisconnected() {
-	QTcpSocket* client = static_cast<QTcpSocket*>(QObject::sender());
+	auto client = dynamic_cast<QTcpSocket*>(QObject::sender());
 	log("Client disconnected: "+client->peerAddress().toString(), Mtb::LogLevel::Info);
 	client->deleteLater();
 
@@ -44,7 +44,7 @@ void DaemonServer::clientDisconnected() {
 }
 
 void DaemonServer::clientReadyRead() {
-	QTcpSocket* client = static_cast<QTcpSocket*>(QObject::sender());
+	auto client = dynamic_cast<QTcpSocket*>(QObject::sender());
 	if (client->canReadLine()) {
 		QByteArray data = client->readLine();
 		if (data.size() > 0) {

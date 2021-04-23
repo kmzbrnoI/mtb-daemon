@@ -370,7 +370,7 @@ std::vector<uint8_t> MtbUni::mtbBusOutputsData() const {
 	return data;
 }
 
-std::array<uint8_t, UNI_IO_CNT> MtbUni::moduleOutputsData(const std::vector<uint8_t> mtbBusData) {
+std::array<uint8_t, UNI_IO_CNT> MtbUni::moduleOutputsData(const std::vector<uint8_t>& mtbBusData) {
 	std::array<uint8_t, UNI_IO_CNT> result;
 	if (mtbBusData.size() < 4)
 		return result; // TODO: report error?
@@ -488,7 +488,7 @@ void MtbUni::outputsReset() {
 
 /* Inputs changed ----------------------------------------------------------- */
 
-void MtbUni::mtbBusInputsChanged(const std::vector<uint8_t> data) {
+void MtbUni::mtbBusInputsChanged(const std::vector<uint8_t>& data) {
 	this->storeInputsState(data);
 	this->sendInputsChanged(inputsToJson(this->inputs));
 }

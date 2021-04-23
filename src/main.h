@@ -24,7 +24,7 @@ public:
 	static Mtb::LogLevel loglevel;
 
 	DaemonCoreApplication(int &argc, char **argv);
-	virtual ~DaemonCoreApplication() {};
+	~DaemonCoreApplication() override = default;
 
 	static void log(const QString&, Mtb::LogLevel);
 

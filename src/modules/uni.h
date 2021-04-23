@@ -49,7 +49,7 @@ protected:
 	void mtbBusConfigNotWritten(Mtb::CmdError);
 
 	std::vector<uint8_t> mtbBusOutputsData() const;
-	static std::array<uint8_t, UNI_IO_CNT> moduleOutputsData(const std::vector<uint8_t> mtbBusData);
+	static std::array<uint8_t, UNI_IO_CNT> moduleOutputsData(const std::vector<uint8_t>& mtbBusData);
 
 	static uint8_t flickPerMinToMtbUniValue(size_t flickPerMin);
 	static size_t flickMtbUniToPerMin(uint8_t mtbUniFlick);
@@ -58,11 +58,11 @@ protected:
 
 public:
 	MtbUni(uint8_t addr);
-	virtual ~MtbUni() {}
+	~MtbUni() override = default;
 	QJsonObject moduleInfo(bool state, bool config) const override;
 
 	void mtbBusActivate(Mtb::ModuleInfo) override;
-	void mtbBusInputsChanged(const std::vector<uint8_t>) override;
+	void mtbBusInputsChanged(const std::vector<uint8_t>&) override;
 
 	void jsonSetOutput(QTcpSocket*, const QJsonObject&) override;
 	void jsonSetConfig(QTcpSocket*, const QJsonObject&) override;

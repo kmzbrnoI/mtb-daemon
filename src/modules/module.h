@@ -44,7 +44,7 @@ protected:
 	FwUpgrade fwUpgrade;
 
 	void sendInputsChanged(QJsonObject inputs) const;
-	void sendOutputsChanged(QJsonObject outputs, const std::vector<QTcpSocket*> ignore) const;
+	void sendOutputsChanged(QJsonObject outputs, const std::vector<QTcpSocket*>& ignore) const;
 	void sendModuleInfo(QTcpSocket* ignore = nullptr) const;
 
 	bool isFirmwareUpgrading() const;
@@ -66,7 +66,7 @@ protected:
 
 public:
 	MtbModule(uint8_t addr);
-	virtual ~MtbModule() {}
+	virtual ~MtbModule() = default;
 
 	MtbModuleType moduleType() const;
 	bool isActive() const;
@@ -76,7 +76,7 @@ public:
 
 	virtual void mtbBusActivate(Mtb::ModuleInfo);
 	virtual void mtbBusLost();
-	virtual void mtbBusInputsChanged(const std::vector<uint8_t>);
+	virtual void mtbBusInputsChanged(const std::vector<uint8_t>&);
 	virtual void mtbUsbDisconnected();
 
 	virtual void jsonCommand(QTcpSocket*, const QJsonObject&);
