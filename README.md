@@ -1,7 +1,21 @@
 MTB daemon
 ==========
 
-**TODO TODO text taken from RCS XN library, rewrite**
+MTB daemon is a simple console computer application intended to be run as
+a service. It features 2 interfaces:
+
+ * MTB-USB v4 connection via USB CDC
+ * json tcp server
+
+Aim of this daemon is
+
+ 1. to allow multiple applications to control single MTBbus
+ 2. to provide nice communication API with MTBbus.
+
+JSON server features API for setting MTBbus modules state, getting MTBbus modules
+state as well as configuring modules, changing MTBbus speed etc.
+
+[TCP protocol description](tcp-protocol/README.md)
 
 ## Building & toolkit
 
@@ -27,7 +41,7 @@ $ apt install clang-7 clang-tools-7 clang-tidy-7 clang-format-7
 Clone this repository:
 
 ```
-$ git clone TODO
+$ git clone https://github.com/kmzbrnoI/mtb-daemon
 ```
 
 And then build:
@@ -35,7 +49,8 @@ And then build:
 ```
 $ mkdir build
 $ cd build
-$ qmake -spec linux-clang .. / qmake CONFIG+=debug -spec linux-clang ..
+$ qmake -spec linux-clang ..
+$ # qmake CONFIG+=debug -spec linux-clang ..
 $ bear make
 ```
 
@@ -62,7 +77,7 @@ $ make qtbase qtserialport
 
 ```bash
 $ cd src
-$ clang-tidy-7 -p ../build -extra-arg-before=-x -extra-arg-before=c++ -extra-arg=-std=c++14 -header-filter=src/ *.cpp
+$ clang-tidy-7 -p ../build -extra-arg-before=-x -extra-arg-before=c++ -extra-arg=-std=c++17 -header-filter=src/ *.cpp
 $ clang-format-7 *.cpp *.h
 $ clang-include-fixer-7 -p ../build *.cpp
 ```
