@@ -4,7 +4,7 @@ namespace Mtb {
 
 void MtbUsb::histTimerTick() {
 	if (!m_serialPort.isOpen()) {
-		for (const auto& hist : m_hist)
+		for (const auto &hist : m_hist)
 			hist.cmd->callError(CmdError::SerialPortClosed);
 		m_hist.clear();
 	}

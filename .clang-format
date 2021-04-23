@@ -13,7 +13,7 @@ UseTab: ForIndentation
 Cpp11BracedListStyle: true
 ConstructorInitializerAllOnOneLineOrOnePerLine: true
 AlignAfterOpenBracket: true
-ColumnLimit: 100
+ColumnLimit: 120
 BreakBeforeBinaryOperators: None
 AlignOperands: true
 AlwaysBreakTemplateDeclarations: true

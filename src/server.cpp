@@ -10,7 +10,7 @@ DaemonServer::DaemonServer(QObject *parent) : QObject(parent) {
 	QObject::connect(&this->m_tKeepAlive, SIGNAL(timeout()), this, SLOT(tKeepAliveTick()));
 }
 
-void DaemonServer::listen(const QHostAddress& addr, quint16 port, bool keepAlive) {
+void DaemonServer::listen(const QHostAddress &addr, quint16 port, bool keepAlive) {
 	this->clients.clear();
 	if (!m_server.listen(addr, port))
 		throw std::logic_error(m_server.errorString().toStdString());
@@ -20,7 +20,7 @@ void DaemonServer::listen(const QHostAddress& addr, quint16 port, bool keepAlive
 }
 
 void DaemonServer::serverNewConnection() {
-	QTcpSocket* client = m_server.nextPendingConnection();
+	QTcpSocket *client = m_server.nextPendingConnection();
 	log("New client: "+client->peerAddress().toString(), Mtb::LogLevel::Info);
 	QObject::connect(client, SIGNAL(disconnected()), this, SLOT(clientDisconnected()));
 	QObject::connect(client, SIGNAL(readyRead()), this, SLOT(clientReadyRead()));
@@ -54,24 +54,24 @@ void DaemonServer::clientReadyRead() {
 	}
 }
 
-void DaemonServer::send(QTcpSocket& socket, const QJsonObject& jsonObj) {
+void DaemonServer::send(QTcpSocket &socket, const QJsonObject &jsonObj) {
 	socket.write(QJsonDocument(jsonObj).toJson(QJsonDocument::Compact));
 	socket.write("\n");
 }
 
-void DaemonServer::send(QTcpSocket* socket, const QJsonObject& jsonObj) {
+void DaemonServer::send(QTcpSocket *socket, const QJsonObject &jsonObj) {
 	if (socket != nullptr)
 		this->send(*socket, jsonObj);
 }
 
-void DaemonServer::broadcast(const QJsonObject& json) {
-	for (const auto& pair : this->clients) {
-		QTcpSocket* const socket = pair.first;
+void DaemonServer::broadcast(const QJsonObject &json) {
+	for (const auto &pair : this->clients) {
+		QTcpSocket *const socket = pair.first;
 		this->send(*socket, json);
 	}
 }
 
-QJsonObject DaemonServer::error(size_t code, const QString& message) {
+QJsonObject DaemonServer::error(size_t code, const QString &message) {
 	return {{"code", static_cast<int>(code)}, {"message", message}};
 }
 
@@ -80,14 +80,14 @@ void DaemonServer::tKeepAliveTick() {
 		this->send(pair.first, {});
 }
 
-QJsonObject jsonError(size_t code, const QString& msg) {
+QJsonObject jsonError(size_t code, const QString &msg) {
 	return QJsonObject{
 		{"code", static_cast<int>(code)},
 		{"message", msg},
 	};
 }
 
-void sendError(QTcpSocket* socket, const QJsonObject& request, size_t code,
+void sendError(QTcpSocket *socket, const QJsonObject &request, size_t code,
                       const QString& message) {
 	QJsonObject response {
 		{"command", request["command"]},
@@ -100,7 +100,7 @@ void sendError(QTcpSocket* socket, const QJsonObject& request, size_t code,
 	server.send(*socket, response);
 }
 
-void sendError(QTcpSocket* socket, const QJsonObject& request, Mtb::CmdError cmdError) {
+void sendError(QTcpSocket *socket, const QJsonObject &request, Mtb::CmdError cmdError) {
 	QJsonObject response {
 		{"command", request["command"]},
 		{"type", "response"},
@@ -112,7 +112,7 @@ void sendError(QTcpSocket* socket, const QJsonObject& request, Mtb::CmdError cmd
 	server.send(*socket, response);
 }
 
-QJsonObject jsonOkResponse(const QJsonObject& request) {
+QJsonObject jsonOkResponse(const QJsonObject &request) {
 	QJsonObject response{
 		{"command", request["command"]},
 		{"type", "response"},

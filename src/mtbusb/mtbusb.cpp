@@ -43,7 +43,7 @@ void MtbUsb::spHandleError(QSerialPort::SerialPortError serialPortError) {
 		// Serial port error is considered as fatal → close device immediately
 		if (this->connected())
 			this->disconnect();
-		log("Serial port error: "+m_serialPort.errorString(), LogLevel::Error);
+		log("Serial port error: " + m_serialPort.errorString(), LogLevel::Error);
 	}
 }
 
@@ -86,7 +86,7 @@ bool MtbUsb::connected() const { return m_serialPort.isOpen(); }
 std::vector<QSerialPortInfo> MtbUsb::ports() {
 	std::vector<QSerialPortInfo> result;
 	QList<QSerialPortInfo> ports(QSerialPortInfo::availablePorts());
-	for (const QSerialPortInfo& info : ports)
+	for (const QSerialPortInfo &info : ports)
 		if (info.description() == "MTB-USB v4")
 			result.push_back(info);
 	return result;

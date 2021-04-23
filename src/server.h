@@ -11,11 +11,11 @@ constexpr size_t SERVER_DEFAULT_PORT = 3841;
 constexpr size_t SERVER_KEEP_ALIVE_SEND_PERIOD_MS = 5000;
 
 struct ServerRequest {
-	QTcpSocket* socket;
+	QTcpSocket *socket;
 	std::optional<size_t> id;
 
-	ServerRequest(QTcpSocket* socket, std::optional<size_t> id = std::nullopt) : socket(socket), id(id) {}
-	ServerRequest(QTcpSocket* socket, const QJsonObject& request) : socket(socket) {
+	ServerRequest(QTcpSocket *socket, std::optional<size_t> id = std::nullopt) : socket(socket), id(id) {}
+	ServerRequest(QTcpSocket *socket, const QJsonObject& request) : socket(socket) {
 		if (request.contains("id"))
 			this->id = request["id"].toInt();
 	}
@@ -49,9 +49,9 @@ signals:
 
 };
 
-QJsonObject jsonError(size_t code, const QString& msg);
+QJsonObject jsonError(size_t code, const QString &msg);
 QJsonObject jsonError(Mtb::CmdError);
-QJsonObject jsonOkResponse(const QJsonObject& request);
+QJsonObject jsonOkResponse(const QJsonObject &request);
 void sendError(QTcpSocket*, const QJsonObject&, size_t code, const QString&);
 void sendError(QTcpSocket*, const QJsonObject&, Mtb::CmdError);
 

@@ -5,11 +5,9 @@
 #include "../main.h"
 #include "../errors.h"
 
-MtbUni::MtbUni(uint8_t addr) : MtbModule(addr) { }
+MtbUni::MtbUni(uint8_t addr) : MtbModule(addr) {}
 
-bool MtbUni::isIrSupport() const {
-	return this->type == MtbModuleType::Univ2ir;
-}
+bool MtbUni::isIrSupport() const { return this->type == MtbModuleType::Univ2ir; }
 
 size_t MtbUni::pageSize() const {
 	if ((this->type == MtbModuleType::Univ2ir) || (this->type == MtbModuleType::Univ2noIr))
@@ -42,7 +40,7 @@ QJsonObject MtbUni::moduleInfo(bool state, bool config) const {
 
 /* Json Set Outputs --------------------------------------------------------- */
 
-void MtbUni::jsonSetOutput(QTcpSocket* socket, const QJsonObject& request) {
+void MtbUni::jsonSetOutput(QTcpSocket *socket, const QJsonObject &request) {
 	if (!this->active) {
 		sendError(socket, request, MTB_MODULE_FAILED, "Cannot set output of inactive module!");
 		return;
@@ -64,7 +62,7 @@ void MtbUni::jsonSetOutput(QTcpSocket* socket, const QJsonObject& request) {
 	bool send = (this->outputsWant == this->outputsConfirmed);
 	bool changed = false;
 
-	for (const auto& key : outputs.keys()) {
+	for (const auto &key : outputs.keys()) {
 		size_t port = key.toInt();
 		if (port > 15)
 			continue;
@@ -93,7 +91,7 @@ void MtbUni::jsonSetOutput(QTcpSocket* socket, const QJsonObject& request) {
 	}
 }
 
-uint8_t MtbUni::jsonOutputToByte(const QJsonObject& json) {
+uint8_t MtbUni::jsonOutputToByte(const QJsonObject &json) {
 	if (json["type"] == "plain") {
 		return (json["value"].toInt() > 0) ? 1 : 0;
 	}
@@ -134,7 +132,7 @@ void MtbUni::mtbBusOutputsSet(const std::vector<uint8_t>& data) {
 
 	// Report ok callback to clients
 	std::vector<QTcpSocket*> ignore;
-	for (const ServerRequest& sr : this->setOutputsSent) {
+	for (const ServerRequest &sr : this->setOutputsSent) {
 		QJsonObject response{
 			{"command", "module_set_outputs"},
 			{"type", "response"},
@@ -160,7 +158,7 @@ void MtbUni::mtbBusOutputsSet(const std::vector<uint8_t>& data) {
 	}
 }
 
-QJsonObject MtbUni::outputsToJson(const std::array<uint8_t, UNI_IO_CNT>& outputs) {
+QJsonObject MtbUni::outputsToJson(const std::array<uint8_t, UNI_IO_CNT> &outputs) {
 	QJsonObject result;
 	for (size_t i = 0; i < UNI_IO_CNT; i++) {
 		QJsonObject output;
@@ -192,7 +190,7 @@ QJsonObject MtbUni::inputsToJson(uint16_t inputs) {
 
 void MtbUni::mtbBusOutputsNotSet(Mtb::CmdError error) {
 	// Report err callback to clients
-	for (const ServerRequest& sr : this->setOutputsSent) {
+	for (const ServerRequest &sr : this->setOutputsSent) {
 		QJsonObject response{
 			{"command", "module_set_outputs"},
 			{"type", "response"},
@@ -219,7 +217,7 @@ void MtbUni::mtbBusOutputsNotSet(Mtb::CmdError error) {
 
 /* Json Set Config ---------------------------------------------------------- */
 
-void MtbUni::jsonSetConfig(QTcpSocket* socket, const QJsonObject& request) {
+void MtbUni::jsonSetConfig(QTcpSocket *socket, const QJsonObject &request) {
 	if (this->configWriting.has_value()) {
 		sendError(socket, request, MTB_MODULE_ALREADY_WRITING, "Another client is writing config now!");
 		return;
@@ -290,7 +288,7 @@ void MtbUni::mtbBusConfigNotWritten(Mtb::CmdError error) {
 
 /* Json Upgrade Firmware ---------------------------------------------------- */
 
-void MtbUni::jsonUpgradeFw(QTcpSocket* socket, const QJsonObject& request) {
+void MtbUni::jsonUpgradeFw(QTcpSocket *socket, const QJsonObject &request) {
 	if (!this->active) {
 		sendError(socket, request, MTB_MODULE_FAILED, "Cannot upgrade FW of inactive module!");
 		return;
@@ -308,10 +306,10 @@ void MtbUni::jsonUpgradeFw(QTcpSocket* socket, const QJsonObject& request) {
 		this->fwUpgdInit();
 }
 
-void MtbUni::alignFirmware(std::map<size_t, std::vector<uint8_t>>& fw, size_t pageSize) {
+void MtbUni::alignFirmware(std::map<size_t, std::vector<uint8_t>> &fw, size_t pageSize) {
 	const size_t blocksPerPage = pageSize / MtbModule::FwUpgrade::BLOCK_SIZE;
 	std::vector<size_t> blocks;
-	for (auto const& imap : fw)
+	for (auto const &imap : fw)
 		blocks.push_back(imap.first);
 	for (size_t block : blocks) {
 		size_t page = block / blocksPerPage;
@@ -324,7 +322,7 @@ void MtbUni::alignFirmware(std::map<size_t, std::vector<uint8_t>>& fw, size_t pa
 
 /* -------------------------------------------------------------------------- */
 
-void MtbUni::clientDisconnected(QTcpSocket* socket) {
+void MtbUni::clientDisconnected(QTcpSocket *socket) {
 	MtbModule::clientDisconnected(socket);
 
 	bool reset = false;
@@ -345,8 +343,8 @@ void MtbUni::clientDisconnected(QTcpSocket* socket) {
 
 std::vector<uint8_t> MtbUni::mtbBusOutputsData() const {
 	// Set outputs data based on diff in this->outputsWant
-	const std::array<uint8_t, UNI_IO_CNT>& outputs = this->outputsWant;
-	std::vector<uint8_t> data{0, 0, 0, 0};
+	const std::array<uint8_t, UNI_IO_CNT> &outputs = this->outputsWant;
+	std::vector<uint8_t> data {0, 0, 0, 0};
 
 	for (size_t i = 0; i < UNI_IO_CNT; i++) {
 		if ((outputs[i] & 0xC0) > 0) {
@@ -370,7 +368,7 @@ std::vector<uint8_t> MtbUni::mtbBusOutputsData() const {
 	return data;
 }
 
-std::array<uint8_t, UNI_IO_CNT> MtbUni::moduleOutputsData(const std::vector<uint8_t>& mtbBusData) {
+std::array<uint8_t, UNI_IO_CNT> MtbUni::moduleOutputsData(const std::vector<uint8_t> &mtbBusData) {
 	std::array<uint8_t, UNI_IO_CNT> result;
 	if (mtbBusData.size() < 4)
 		return result; // TODO: report error?
@@ -459,7 +457,7 @@ void MtbUni::configSet() {
 	);
 }
 
-void MtbUni::inputsRead(const std::vector<uint8_t>& data) {
+void MtbUni::inputsRead(const std::vector<uint8_t> &data) {
 	// Mtb module activation: got info & config set & inputs read → mark module as active
 	this->storeInputsState(data);
 
@@ -475,7 +473,7 @@ void MtbUni::inputsRead(const std::vector<uint8_t>& data) {
 	);
 }
 
-void MtbUni::storeInputsState(const std::vector<uint8_t>& data) {
+void MtbUni::storeInputsState(const std::vector<uint8_t> &data) {
 	if (data.size() >= 2)
 		this->inputs = (data[0] << 8) | data[1];
 }
@@ -488,7 +486,7 @@ void MtbUni::outputsReset() {
 
 /* Inputs changed ----------------------------------------------------------- */
 
-void MtbUni::mtbBusInputsChanged(const std::vector<uint8_t>& data) {
+void MtbUni::mtbBusInputsChanged(const std::vector<uint8_t> &data) {
 	this->storeInputsState(data);
 	this->sendInputsChanged(inputsToJson(this->inputs));
 }
@@ -550,9 +548,9 @@ QJsonObject MtbUniConfig::json(bool withIrs) const {
 	return result;
 }
 
-void MtbUniConfig::fromJson(const QJsonObject& json) {
-	const QJsonArray& jsonOutputsSafe = json["outputsSafe"].toArray();
-	const QJsonArray& jsonInputsDelay = json["inputsDelay"].toArray();
+void MtbUniConfig::fromJson(const QJsonObject &json) {
+	const QJsonArray &jsonOutputsSafe = json["outputsSafe"].toArray();
+	const QJsonArray &jsonInputsDelay = json["inputsDelay"].toArray();
 	for (size_t i = 0; i < UNI_IO_CNT; i++) {
 		if (i < static_cast<size_t>(jsonOutputsSafe.size()))
 			this->outputsSafe[i] = MtbUni::jsonOutputToByte(jsonOutputsSafe[i].toObject());
@@ -561,7 +559,7 @@ void MtbUniConfig::fromJson(const QJsonObject& json) {
 	}
 }
 
-void MtbUniConfig::fromMtbUsb(const std::vector<uint8_t>& data) {
+void MtbUniConfig::fromMtbUsb(const std::vector<uint8_t> &data) {
 	if (data.size() < 24)
 		return;
 	for (size_t i = 0; i < UNI_IO_CNT; i++)
@@ -605,13 +603,13 @@ size_t MtbUni::flickMtbUniToPerMin(uint8_t mtbUniFlick) {
 
 /* Configuration ------------------------------------------------------------ */
 
-void MtbUni::loadConfig(const QJsonObject& json) {
+void MtbUni::loadConfig(const QJsonObject &json) {
 	MtbModule::loadConfig(json);
 	this->config.fromJson(json["config"].toObject());
 	this->configLoaded = true;
 }
 
-void MtbUni::saveConfig(QJsonObject& json) const {
+void MtbUni::saveConfig(QJsonObject &json) const {
 	MtbModule::saveConfig(json);
 	if (this->configLoaded)
 		json["config"] = this->config.json(this->isIrSupport());

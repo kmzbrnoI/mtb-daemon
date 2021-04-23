@@ -85,7 +85,7 @@ void DaemonCoreApplication::mtbUsbConnect() {
 	QString port = mtbUsbConfig["port"].toString();
 
 	if (port == "auto") {
-		const std::vector<QSerialPortInfo>& mtbUsbPorts = Mtb::MtbUsb::ports();
+		const std::vector<QSerialPortInfo> &mtbUsbPorts = Mtb::MtbUsb::ports();
 		log("Automatic MTB-USB port detected", Mtb::LogLevel::Info);
 		if (mtbUsbPorts.size() == 1) {
 			log("Found single port "+mtbUsbPorts[0].portName(), Mtb::LogLevel::Info);
@@ -102,11 +102,11 @@ void DaemonCoreApplication::mtbUsbConnect() {
 	} catch (const Mtb::EOpenError&) {}
 }
 
-void log(const QString& message, Mtb::LogLevel loglevel) {
+void log(const QString &message, Mtb::LogLevel loglevel) {
 	DaemonCoreApplication::log(message, loglevel);
 }
 
-void DaemonCoreApplication::log(const QString& message, Mtb::LogLevel loglevel) {
+void DaemonCoreApplication::log(const QString &message, Mtb::LogLevel loglevel) {
 	if (loglevel > DaemonCoreApplication::loglevel)
 		return;
 
@@ -238,7 +238,7 @@ void DaemonCoreApplication::mtbUsbOnModuleFail(uint8_t addr) {
 		modules[addr]->mtbBusLost();
 }
 
-void DaemonCoreApplication::mtbUsbOnInputsChange(uint8_t addr, const std::vector<uint8_t>& data) {
+void DaemonCoreApplication::mtbUsbOnInputsChange(uint8_t addr, const std::vector<uint8_t> &data) {
 	if (modules[addr] != nullptr)
 		modules[addr]->mtbBusInputsChanged(data);
 }
@@ -249,14 +249,14 @@ void DaemonCoreApplication::tReconnectTick() {
 
 	const QJsonObject mtbUsbConfig = this->config["mtb-usb"].toObject();
 	QString port = mtbUsbConfig["port"].toString();
-	const std::vector<QSerialPortInfo>& mtbUsbPorts = Mtb::MtbUsb::ports();
+	const std::vector<QSerialPortInfo> &mtbUsbPorts = Mtb::MtbUsb::ports();
 
 	if (port == "auto") {
 		if (mtbUsbPorts.size() != 1)
 			return;
 	} else {
 		bool found = false;
-		for (const QSerialPortInfo& portInfo :  mtbUsbPorts)
+		for (const QSerialPortInfo &portInfo :  mtbUsbPorts)
 			if (portInfo.portName() == port)
 				found = true;
 		if (!found)
@@ -271,7 +271,7 @@ void DaemonCoreApplication::tReconnectTick() {
 
 /* JSON server handling ------------------------------------------------------*/
 
-void DaemonCoreApplication::serverReceived(QTcpSocket* socket, const QJsonObject& request) {
+void DaemonCoreApplication::serverReceived(QTcpSocket *socket, const QJsonObject &request) {
 	QString command = request["command"].toString();
 	std::optional<size_t> id;
 	if (request.contains("id"))
@@ -356,7 +356,7 @@ void DaemonCoreApplication::serverReceived(QTcpSocket* socket, const QJsonObject
 		QJsonObject response = jsonOkResponse(request);
 
 		QJsonArray addresses;
-		for (const auto& value : request["addresses"].toArray()) {
+		for (const auto &value : request["addresses"].toArray()) {
 			size_t addr = value.toInt();
 			if (Mtb::isValidModuleAddress(addr)) {
 				subscribes[addr].insert_or_assign(socket, true);
@@ -374,7 +374,7 @@ void DaemonCoreApplication::serverReceived(QTcpSocket* socket, const QJsonObject
 	} else if (command == "module_unsubscribe") {
 		QJsonObject response = jsonOkResponse(request);
 
-		for (const auto& value : response["addresses"].toArray()) {
+		for (const auto &value : response["addresses"].toArray()) {
 			size_t addr = value.toInt();
 			if (Mtb::isValidModuleAddress(addr)) {
 				if (subscribes[addr].find(socket) != subscribes[addr].end())
@@ -428,12 +428,11 @@ void DaemonCoreApplication::serverReceived(QTcpSocket* socket, const QJsonObject
 
 QJsonObject DaemonCoreApplication::mtbUsbJson() const {
 	QJsonObject status;
-	bool connected = (mtbusb.connected() && mtbusb.mtbUsbInfo().has_value() &&
-	                  mtbusb.activeModules().has_value());
+	bool connected = (mtbusb.connected() && mtbusb.mtbUsbInfo().has_value() && mtbusb.activeModules().has_value());
 	status["connected"] = connected;
 	if (connected) {
-		const Mtb::MtbUsbInfo& mtbusbinfo = mtbusb.mtbUsbInfo().value();
-		const std::array<bool, Mtb::_MAX_MODULES>& activeModules = mtbusb.activeModules().value();
+		const Mtb::MtbUsbInfo &mtbusbinfo = mtbusb.mtbUsbInfo().value();
+		const std::array<bool, Mtb::_MAX_MODULES> &activeModules = mtbusb.activeModules().value();
 		status["type"] = mtbusbinfo.type;
 		status["speed"] = Mtb::mtbBusSpeedToInt(mtbusbinfo.speed);
 		status["firmware_version"] = mtbusbinfo.fw_version();
@@ -462,7 +461,7 @@ bool DaemonCoreApplication::loadConfig(const QString& filename) {
 	{
 		// Load modules
 		QJsonObject _modules = this->config["modules"].toObject();
-		for (const QString& _addr : _modules.keys()) {
+		for (const QString &_addr : _modules.keys()) {
 			size_t addr = _addr.toInt();
 			QJsonObject module = _modules[_addr].toObject();
 			size_t type = module["type"].toInt();
@@ -480,7 +479,7 @@ bool DaemonCoreApplication::loadConfig(const QString& filename) {
 	return true;
 }
 
-bool DaemonCoreApplication::saveConfig(const QString& filename) {
+bool DaemonCoreApplication::saveConfig(const QString &filename) {
 	log("Saving config to "+filename+"...", Mtb::LogLevel::Info);
 
 	QJsonObject root = this->config;

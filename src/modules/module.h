@@ -44,8 +44,8 @@ protected:
 	FwUpgrade fwUpgrade;
 
 	void sendInputsChanged(QJsonObject inputs) const;
-	void sendOutputsChanged(QJsonObject outputs, const std::vector<QTcpSocket*>& ignore) const;
-	void sendModuleInfo(QTcpSocket* ignore = nullptr) const;
+	void sendOutputsChanged(QJsonObject outputs, const std::vector<QTcpSocket*> &ignore) const;
+	void sendModuleInfo(QTcpSocket *ignore = nullptr) const;
 
 	bool isFirmwareUpgrading() const;
 	bool isConfigSetting() const;

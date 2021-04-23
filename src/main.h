@@ -43,8 +43,8 @@ private:
 	void moduleGotInfo(uint8_t addr, Mtb::ModuleInfo);
 	void moduleDidNotGetInfo();
 
-	bool loadConfig(const QString& filename);
-	bool saveConfig(const QString& filename);
+	bool loadConfig(const QString &filename);
+	bool saveConfig(const QString &filename);
 
 	void mtbUsbConnect();
 
@@ -54,7 +54,7 @@ private slots:
 	void mtbUsbOnDisconnect();
 	void mtbUsbOnNewModule(uint8_t addr);
 	void mtbUsbOnModuleFail(uint8_t addr);
-	void mtbUsbOnInputsChange(uint8_t addr, const std::vector<uint8_t>& data);
+	void mtbUsbOnInputsChange(uint8_t addr, const std::vector<uint8_t> &data);
 
 	void serverReceived(QTcpSocket*, const QJsonObject&);
 

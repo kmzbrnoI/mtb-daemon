@@ -19,8 +19,7 @@ void MtbUsb::spHandleReadyRead() {
 		pos = m_readData.size();
 	m_readData.remove(0, pos);
 
-	while (m_readData.size() > 2 &&
-	       m_readData.size() >= (m_readData[2])+3) {
+	while (m_readData.size() > 2 && m_readData.size() >= (m_readData[2]) + 3) {
 		unsigned int length = m_readData[2];
 
 		log("GET: " + dataToStr<QByteArray, uint8_t>(m_readData, length+3), LogLevel::RawData);
@@ -31,9 +30,9 @@ void MtbUsb::spHandleReadyRead() {
 		++begin;
 		++begin;
 
-		std::vector<uint8_t> data(begin, begin+length-1);
+		std::vector<uint8_t> data(begin, begin + length - 1);
 		parseMtbUsbMessage(m_readData[3], data); // without 0x2A 0x42 length; just command code & data
-		m_readData.remove(0, static_cast<int>(length+3));
+		m_readData.remove(0, static_cast<int>(length + 3));
 	}
 }
 
@@ -121,7 +120,8 @@ void MtbUsb::parseMtbUsbMessage(uint8_t command_code, const std::vector<uint8_t>
 	log("GET: unknown MTB-USB command "+QString::number(command_code), LogLevel::Warning);
 }
 
-void MtbUsb::parseMtbBusMessage(uint8_t module, uint8_t attempts, uint8_t command_code, const std::vector<uint8_t> &data) {
+void MtbUsb::parseMtbBusMessage(uint8_t module, uint8_t attempts, uint8_t command_code,
+                                const std::vector<uint8_t> &data) {
 	if (isBusEvent(static_cast<MtbBusRecvCommand>(command_code))) {
 		if (attempts != 0)
 			log("Got attempts="+QString::number(attempts)+" for event!", LogLevel::Warning);
@@ -173,7 +173,7 @@ void MtbUsb::parseMtbBusMessage(uint8_t module, uint8_t attempts, uint8_t comman
 	auto it = m_hist.begin();
 	for (size_t i = 0; i < m_hist.size(); i++, ++it) {
 		if (is<CmdMtbUsbForward>(*m_hist[i].cmd)) {
-			const CmdMtbUsbForward& forward = dynamic_cast<const CmdMtbUsbForward&>(*m_hist[i].cmd);
+			const CmdMtbUsbForward &forward = dynamic_cast<const CmdMtbUsbForward&>(*m_hist[i].cmd);
 			if ((forward.module == module) &&
 			    (forward.processBusResponse(static_cast<MtbBusRecvCommand>(command_code), data))) {
 				m_hist.erase(it);
@@ -190,7 +190,7 @@ void MtbUsb::handleMtbUsbError(uint8_t code, uint8_t out_command_code, uint8_t a
 	if (error == MtbUsbRecvError::NoResponse) {
 		for (size_t i = 0; i < m_hist.size(); i++) {
 			if (is<CmdMtbUsbForward>(*m_hist[i].cmd)) {
-				const CmdMtbUsbForward& forward = dynamic_cast<const CmdMtbUsbForward&>(*m_hist[i].cmd);
+				const CmdMtbUsbForward &forward = dynamic_cast<const CmdMtbUsbForward&>(*m_hist[i].cmd);
 				if ((out_command_code == forward.busCommandCode) && (addr == forward.module)) {
 					log("GET: error: no response from module "+QString::number(addr)+" to command "+forward.msg(),
 					    LogLevel::Error);
@@ -220,7 +220,7 @@ void MtbUsb::handleMtbBusError(uint8_t errorCode, uint8_t addr) {
 
 	for (size_t i = 0; i < m_hist.size(); i++) {
 		if (is<CmdMtbUsbForward>(*m_hist[i].cmd)) {
-			const CmdMtbUsbForward& forward = dynamic_cast<const CmdMtbUsbForward&>(*m_hist[i].cmd);
+			const CmdMtbUsbForward &forward = dynamic_cast<const CmdMtbUsbForward&>(*m_hist[i].cmd);
 			if (addr == forward.module) {
 				log("GET: error: "+mtbBusRecvErrorToStr(error)+", module: "+QString::number(addr)+
 				    ", command: "+forward.msg(), LogLevel::Error);

@@ -43,7 +43,7 @@ protected:
 	static QJsonObject inputsToJson(uint16_t inputs);
 
 	void setOutputs();
-	void mtbBusOutputsSet(const std::vector<uint8_t>& data);
+	void mtbBusOutputsSet(const std::vector<uint8_t> &data);
 	void mtbBusOutputsNotSet(Mtb::CmdError);
 	void mtbBusConfigWritten();
 	void mtbBusConfigNotWritten(Mtb::CmdError);

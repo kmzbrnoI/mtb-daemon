@@ -54,8 +54,8 @@ bool is(const Cmd &x) {
 struct CmdMtbUsbInfoRequest : public Cmd {
 	const CommandCallback<StdCallbackFunc> onOk; // no special callback here, data could be read from MtbUsb class directly
 
-	CmdMtbUsbInfoRequest(const CommandCallback<StdCallbackFunc>& onOk = {[](void*){}},
-	                     const CommandCallback<ErrCallbackFunc>& onError = {[](CmdError, void*){}})
+	CmdMtbUsbInfoRequest(const CommandCallback<StdCallbackFunc> &onOk = {[](void*){}},
+	                     const CommandCallback<ErrCallbackFunc> &onError = {[](CmdError, void*){}})
 	 : Cmd(onError), onOk(onOk) {}
 
 	std::vector<uint8_t> getBytes() const override { return {0x20}; }
@@ -74,8 +74,8 @@ struct CmdMtbUsbChangeSpeed : public Cmd {
 	const MtbBusSpeed speed;
 	const CommandCallback<StdCallbackFunc> onOk;
 
-	CmdMtbUsbChangeSpeed(const MtbBusSpeed speed, const CommandCallback<StdCallbackFunc>& onOk = {[](void*){}},
-	                     const CommandCallback<ErrCallbackFunc>& onError = {[](CmdError, void*){}})
+	CmdMtbUsbChangeSpeed(const MtbBusSpeed speed, const CommandCallback<StdCallbackFunc> &onOk = {[](void*){}},
+	                     const CommandCallback<ErrCallbackFunc> &onError = {[](CmdError, void*){}})
 	  : Cmd(onError), speed(speed), onOk(onOk) {}
 
 	std::vector<uint8_t> getBytes() const override {
@@ -98,8 +98,8 @@ struct CmdMtbUsbChangeSpeed : public Cmd {
 struct CmdMtbUsbActiveModulesRequest : public Cmd {
 	const CommandCallback<StdCallbackFunc> onOk;
 
-	CmdMtbUsbActiveModulesRequest(const CommandCallback<StdCallbackFunc>& onOk = {[](void*){}},
-	                              const CommandCallback<ErrCallbackFunc>& onError = {[](CmdError, void*){}})
+	CmdMtbUsbActiveModulesRequest(const CommandCallback<StdCallbackFunc> &onOk = {[](void*){}},
+	                              const CommandCallback<ErrCallbackFunc> &onError = {[](CmdError, void*){}})
 	  : Cmd(onError), onOk(onOk) {}
 
 	std::vector<uint8_t> getBytes() const override { return {0x22}; }
@@ -120,13 +120,13 @@ struct CmdMtbUsbForward : public Cmd {
 	const uint8_t busCommandCode;
 
 	CmdMtbUsbForward(uint8_t module, uint8_t busCommandCode,
-	                 const CommandCallback<ErrCallbackFunc>& onError = {[](CmdError, void*){}})
+	                 const CommandCallback<ErrCallbackFunc> &onError = {[](CmdError, void*){}})
 	 : Cmd(onError), module(module), busCommandCode(busCommandCode) {
 		if (module == 0)
 			throw EInvalidAddress(module);
 	}
 	CmdMtbUsbForward(uint8_t busCommandCode,
-	                 const CommandCallback<ErrCallbackFunc>& onError = {[](CmdError, void*){}})
+	                 const CommandCallback<ErrCallbackFunc> &onError = {[](CmdError, void*){}})
 	 : Cmd(onError), module(0), busCommandCode(busCommandCode) {} // broadcat
 
 	virtual bool processBusResponse(MtbBusRecvCommand, const std::vector<uint8_t>&) const {
@@ -187,7 +187,7 @@ struct CmdMtbModuleSetConfig : public CmdMtbUsbForward {
 	std::vector<uint8_t> data;
 	const CommandCallback<StdModuleCallbackFunc> onOk;
 
-	CmdMtbModuleSetConfig(uint8_t module, const std::vector<uint8_t>& data,
+	CmdMtbModuleSetConfig(uint8_t module, const std::vector<uint8_t> &data,
 	                      const CommandCallback<StdModuleCallbackFunc> onOk = {[](uint8_t, void*) {}},
 	                      const CommandCallback<ErrCallbackFunc> onError = {[](CmdError, void*) {}})
 	 : CmdMtbUsbForward(module, _busCommandCode, onError), onOk(onOk) {
@@ -276,7 +276,7 @@ struct CmdMtbModuleSetOutput : public CmdMtbUsbForward {
 	std::vector<uint8_t> data;
 	const CommandCallback<DataCallbackFunc> onSet;
 
-	CmdMtbModuleSetOutput(uint8_t module, const std::vector<uint8_t>& data,
+	CmdMtbModuleSetOutput(uint8_t module, const std::vector<uint8_t> &data,
 	                      const CommandCallback<DataCallbackFunc> onSet = {[](uint8_t, const std::vector<uint8_t>&, void*) {}},
 	                      const CommandCallback<ErrCallbackFunc> onError = {[](CmdError, void*) {}})
 	 : CmdMtbUsbForward(module, _busCommandCode, onError), onSet(onSet) {
@@ -286,7 +286,7 @@ struct CmdMtbModuleSetOutput : public CmdMtbUsbForward {
 	std::vector<uint8_t> getBytes() const override { return data; }
 	QString msg() const override { return "Module "+QString::number(module)+" set output"; }
 
-	bool processBusResponse(MtbBusRecvCommand busCommand, const std::vector<uint8_t>& data) const override {
+	bool processBusResponse(MtbBusRecvCommand busCommand, const std::vector<uint8_t> &data) const override {
 		if (busCommand == MtbBusRecvCommand::OutputSet) {
 			onSet.func(module, data, onSet.data);
 			return true;
@@ -423,7 +423,7 @@ struct CmdMtbModuleFwWriteFlash : public CmdMtbUsbForward {
 	CmdMtbModuleFwWriteFlash(
 		uint8_t module,
 		uint16_t flashAddr,
-		const std::vector<uint8_t>& data,
+		const std::vector<uint8_t> &data,
 		const CommandCallback<StdModuleCallbackFunc> onOk = {[](uint8_t, void*) {}},
 		const CommandCallback<ErrCallbackFunc> onError = {[](CmdError, void*) {}}
 	) : CmdMtbUsbForward(module, _busCommandCode, onError), onOk(onOk), flashAddr(flashAddr) {
@@ -477,7 +477,8 @@ struct CmdMtbModuleFwWriteFlashStatusRequest : public CmdMtbUsbForward {
 };
 
 // Should return true iff response if valid.
-using SpecificCallbackFunc = std::function<bool(uint8_t addr, MtbBusRecvCommand busCommand, const std::vector<uint8_t>& outputs, void *data)>;
+using SpecificCallbackFunc =
+    std::function<bool(uint8_t addr, MtbBusRecvCommand busCommand, const std::vector<uint8_t> &outputs, void *data)>;
 
 struct CmdMtbModuleSpecific : public CmdMtbUsbForward {
 	static constexpr uint8_t _busCommandCode = 0xFE;
@@ -487,7 +488,7 @@ struct CmdMtbModuleSpecific : public CmdMtbUsbForward {
 
 	CmdMtbModuleSpecific(
 		uint8_t module,
-		const std::vector<uint8_t>& data,
+		const std::vector<uint8_t> &data,
 		const CommandCallback<SpecificCallbackFunc> onResponse = {[](uint8_t, MtbBusRecvCommand, const std::vector<uint8_t>&, void*) { return true; }},
 		const CommandCallback<ErrCallbackFunc> onError = {[](CmdError, void*) {}}
 	) : CmdMtbUsbForward(module, _busCommandCode, onError), onResponse(onResponse) {
@@ -496,7 +497,7 @@ struct CmdMtbModuleSpecific : public CmdMtbUsbForward {
 	}
 
 	CmdMtbModuleSpecific(
-		const std::vector<uint8_t>& data,
+		const std::vector<uint8_t> &data,
 		const CommandCallback<StdCallbackFunc> onOk = {[](void*) {}},
 		const CommandCallback<ErrCallbackFunc> onError = {[](CmdError, void*) {}}
 	) : CmdMtbUsbForward(_busCommandCode, onError), onOkBroadcast(onOk) {

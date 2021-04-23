@@ -3,14 +3,14 @@
 
 /* Low-level access to MTB-USB module via CDC serial port. */
 
+#include <QDateTime>
 #include <QObject>
 #include <QSerialPort>
 #include <QTimer>
-#include <QDateTime>
-#include <queue>
 #include <functional>
 #include <memory>
 #include <optional>
+#include <queue>
 
 #include "mtbusb-commands.h"
 
@@ -26,12 +26,12 @@ constexpr size_t _MAX_HIST_BUF_COUNT = 3;
 constexpr size_t _OUT_TIMER_INTERVAL = 20; // 20 ms
 
 struct EOpenError : public MtbUsbError {
-	EOpenError(const std::string& str) : MtbUsbError(str) {}
-	EOpenError(const QString& str) : MtbUsbError(str) {}
+	EOpenError(const std::string &str) : MtbUsbError(str) {}
+	EOpenError(const QString &str) : MtbUsbError(str) {}
 };
 
 struct EWriteError : public MtbUsbError {
-	EWriteError(const std::string& str) : MtbUsbError(str) {}
+	EWriteError(const std::string &str) : MtbUsbError(str) {}
 };
 
 enum class LogLevel {
@@ -81,8 +81,8 @@ struct MtbUsbInfo {
 	uint8_t proto_major;
 	uint8_t proto_minor;
 
-	QString fw_version() const { return QString::number(fw_major)+"."+QString::number(fw_minor); }
-	QString proto_version() const { return QString::number(proto_major)+"."+QString::number(proto_minor); }
+	QString fw_version() const { return QString::number(fw_major) + "." + QString::number(fw_minor); }
+	QString proto_version() const { return QString::number(proto_major) + "." + QString::number(proto_minor); }
 };
 
 
@@ -122,7 +122,7 @@ signals:
 
 	void onNewModule(uint8_t addr);
 	void onModuleFail(uint8_t addr);
-	void onModuleInputsChange(uint8_t addr, const std::vector<uint8_t>& data);
+	void onModuleInputsChange(uint8_t addr, const std::vector<uint8_t> &data);
 
 private:
 	QSerialPort m_serialPort;
