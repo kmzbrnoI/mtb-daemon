@@ -27,7 +27,7 @@ protected:
 	std::optional<ServerRequest> configWriting;
 
 	struct Rebooting {
-		bool rebooting;
+		bool rebooting = false;
 		bool activatedByMtbUsb;
 		std::function<void()> onOk;
 		std::function<void()> onError;
