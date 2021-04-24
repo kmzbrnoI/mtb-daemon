@@ -45,7 +45,7 @@ void DaemonServer::clientDisconnected() {
 
 void DaemonServer::clientReadyRead() {
 	auto client = dynamic_cast<QTcpSocket*>(QObject::sender());
-	if (client->canReadLine()) {
+	while (client->canReadLine()) {
 		QByteArray data = client->readLine();
 		if (data.size() > 0) {
 			QJsonObject json = QJsonDocument::fromJson(data).object();
