@@ -162,6 +162,6 @@ void MtbUsb::send(const T &&cmd) {
 	send(cmd2);
 }
 
-}; // namespace Mtb
+} // namespace Mtb
 
 #endif

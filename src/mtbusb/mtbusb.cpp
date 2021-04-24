@@ -120,4 +120,4 @@ void MtbUsb::changeSpeed(MtbBusSpeed newSpeed, std::function<void()> onOk, std::
 	);
 }
 
-}; // namespace Mtb
+} // namespace Mtb

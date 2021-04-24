@@ -559,6 +559,6 @@ struct CmdMtbModuleReboot : public CmdMtbUsbForward {
 	}
 };
 
-}; // namespace Mtb
+} // namespace Mtb
 
 #endif

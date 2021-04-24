@@ -74,4 +74,4 @@ void MtbUsb::sendNextOut() {
 	send(out, true);
 }
 
-}; // namespace Mtb
+} // namespace Mtb

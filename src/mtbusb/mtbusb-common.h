@@ -83,6 +83,6 @@ enum class CmdError {
 
 QString cmdErrorToStr(CmdError);
 
-}; // namespace Mtb
+} // namespace Mtb
 
 #endif

@@ -30,4 +30,4 @@ bool MtbUsb::conflictWithOut(const Cmd &cmd) const {
 	return false;
 }
 
-}; // namespace Mtb
+} // namespace Mtb

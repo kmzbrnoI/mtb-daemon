@@ -251,4 +251,4 @@ void MtbUsb::histTimeoutError(CmdError cmdError, size_t i) {
 		this->sendNextOut();
 }
 
-}; // namespace Mtb
+} // namespace Mtb

@@ -67,4 +67,4 @@ QString cmdErrorToStr(CmdError cmdError) {
 	}
 }
 
-}; // namespace Mtb
+} // namespace Mtb
