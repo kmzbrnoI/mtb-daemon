@@ -157,6 +157,7 @@ Response in same as *Daemon Status* response.
     "type": "response",
     "id": 123,
     "status": "ok",
+    "address": 1,
     "outputs": {
         # Data format specific for module type, e.g. for MTB-UNI:
         # Current state of (not neccessarry all) outputs
@@ -188,6 +189,7 @@ Response in same as *Daemon Status* response.
     "type": "response",
     "id": 10,
     "status": "ok",
+    "address": 1
 }
 ```
 
@@ -212,6 +214,7 @@ Response in same as *Daemon Status* response.
     "type": "response",
     "id": 20,
     "status": "ok",
+    "address": 1,
 }
 ```
 
@@ -238,10 +241,32 @@ Response in same as *Daemon Status* response.
     "type": "response",
     "id": 20,
     "status": "ok",
+    "address": 1,
     "response": {
         "command_code": 10,
         "data": [5, 10, 0, 5]
     }
+}
+```
+
+### Module reboot
+
+```json
+{
+    "command": "module_reboot",
+    "type": "request",
+    "id": 22,
+    "address": 32
+}
+```
+
+```json
+{
+    "command": "module_reboot",
+    "type": "response",
+    "id": 22,
+    "status": "ok",
+    "address": 32,
 }
 ```
 
