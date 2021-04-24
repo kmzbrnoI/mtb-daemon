@@ -363,9 +363,9 @@ std::vector<uint8_t> MtbUni::mtbBusOutputsData() const {
 			// Plain outputs
 			if (outputs[i] > 0) {
 				if (i < 8)
-					data[3] = (1 << i);
+					data[3] |= (1 << i);
 				else
-					data[2] = (1 << (i-8));
+					data[2] |= (1 << (i-8));
 			}
 		}
 	}
