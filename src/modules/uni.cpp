@@ -547,6 +547,7 @@ QJsonObject MtbUniConfig::json(bool withIrs) const {
 			irs >>= 1;
 		}
 		result["irs"] = array;
+		result["irsPacked"] = this->irs;
 	}
 
 	return result;

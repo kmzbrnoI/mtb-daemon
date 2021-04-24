@@ -23,7 +23,9 @@ Definition of messages for MTB-UNI
             ...
         ],
         "inputs": [false, false, true, true, ..., false], # 16 values
-        "inputsPacked": 1234 # Int representing bit state of inputs
+        "inputsPacked": 1234, # Int representing bit state of inputs
+        "irs": [false, false, true, ..., true], # 15 values, just for IR modules
+        "irsPacked": 6541, # int representing ir inputs in bits, just for IR modules
     }
 }
 ```
