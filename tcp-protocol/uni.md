@@ -22,7 +22,8 @@ Definition of messages for MTB-UNI
             {"type": "flicker", "value": 60},
             ...
         ],
-        "inputs": [false, false, true, true, ..., false] # 16 values
+        "inputs": [false, false, true, true, ..., false], # 16 values
+        "inputsPacked": 1234 # Int representing bit state of inputs
     }
 }
 ```
@@ -32,7 +33,7 @@ Definition of messages for MTB-UNI
 16 values representing inputs 0–15.
 
 ```json
-"inputs": {"uniinputs": [false, false, true, true, ..., false]}
+"inputs": {"full": [false, false, true, true, ..., false], "packed": 5421}
 ```
 
 ## Outputs

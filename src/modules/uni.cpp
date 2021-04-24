@@ -31,6 +31,7 @@ QJsonObject MtbUni::moduleInfo(bool state, bool config) const {
 		uni["state"] = QJsonObject{
 			{"outputs", outputsToJson(this->outputsConfirmed)},
 			{"inputs", inputsToJson(this->inputs)},
+			{"inputsPacked", this->inputs},
 		};
 	}
 
@@ -185,7 +186,7 @@ QJsonObject MtbUni::inputsToJson(uint16_t inputs) {
 		json.push_back(static_cast<bool>(inputs&1));
 		inputs >>= 1;
 	}
-	return {{"uniinputs", json}};
+	return {{"full", json}, {"packed", inputs}};
 }
 
 void MtbUni::mtbBusOutputsNotSet(Mtb::CmdError error) {
