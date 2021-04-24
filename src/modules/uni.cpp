@@ -486,6 +486,10 @@ void MtbUni::storeInputsState(const std::vector<uint8_t> &data) {
 void MtbUni::outputsReset() {
 	this->outputsWant = this->config.outputsSafe;
 	this->outputsConfirmed = this->outputsWant;
+
+	for (size_t i = 0; i < UNI_IO_CNT; i++)
+		this->whoSetOutput[i] = nullptr;
+
 	this->fullyActivated();
 }
 
