@@ -92,12 +92,13 @@ void MtbModule::jsonReboot(QTcpSocket *socket, const QJsonObject &request) {
 	}
 
 	this->reboot(
-		{[socket, request]() {
+		{[this, socket, request]() {
 			log("Module successfully rebooted", Mtb::LogLevel::Info);
 			QJsonObject response{
 				{"command", "module_reboot"},
 				{"type", "response"},
 				{"status", "ok"},
+				{"address", this->address},
 			};
 			if (request.contains("id"))
 				response["id"] = request["id"];
@@ -334,6 +335,7 @@ void MtbModule::fwUpgdRebooted() {
 		{"command", "module_upgrade_fw"},
 		{"type", "response"},
 		{"status", "ok"},
+		{"address", this->address},
 	};
 	const ServerRequest request = this->fwUpgrade.fwUpgrading.value();
 	if (request.id.has_value())

@@ -97,6 +97,8 @@ void sendError(QTcpSocket *socket, const QJsonObject &request, size_t code,
 	};
 	if (request.contains("id"))
 		response["id"] = request["id"];
+	if (request.contains("address"))
+		response["address"] = request["address"];
 	server.send(*socket, response);
 }
 
@@ -109,6 +111,8 @@ void sendError(QTcpSocket *socket, const QJsonObject &request, Mtb::CmdError cmd
 	};
 	if (request.contains("id"))
 		response["id"] = request["id"];
+	if (request.contains("address"))
+		response["address"] = request["address"];
 	server.send(*socket, response);
 }
 
@@ -120,6 +124,8 @@ QJsonObject jsonOkResponse(const QJsonObject &request) {
 	};
 	if (request.contains("id"))
 		response["id"] = request["id"];
+	if (request.contains("address"))
+		response["address"] = request["address"];
 	return response;
 }
 

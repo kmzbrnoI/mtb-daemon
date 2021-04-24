@@ -138,6 +138,7 @@ void MtbUni::mtbBusOutputsSet(const std::vector<uint8_t>& data) {
 			{"command", "module_set_outputs"},
 			{"type", "response"},
 			{"status", "ok"},
+			{"address", this->address},
 			{"outputs", this->outputsToJson(this->outputsConfirmed)},
 		};
 		if (sr.id.has_value())
@@ -260,6 +261,7 @@ void MtbUni::mtbBusConfigWritten() {
 		{"command", "module_set_config"},
 		{"type", "response"},
 		{"status", "ok"},
+		{"address", this->address},
 	};
 	if (request.id.has_value())
 		response["id"] = static_cast<int>(request.id.value());
@@ -277,6 +279,7 @@ void MtbUni::mtbBusConfigNotWritten(Mtb::CmdError error) {
 		{"command", "module_set_config"},
 		{"type", "response"},
 		{"status", "error"},
+		{"address", this->address},
 		{"error", jsonError(error)},
 	};
 	if (request.id.has_value())
