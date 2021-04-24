@@ -55,8 +55,9 @@ void DaemonServer::clientReadyRead() {
 }
 
 void DaemonServer::send(QTcpSocket &socket, const QJsonObject &jsonObj) {
-	socket.write(QJsonDocument(jsonObj).toJson(QJsonDocument::Compact));
-	socket.write("\n");
+	QByteArray data = QJsonDocument(jsonObj).toJson(QJsonDocument::Compact);
+	data.push_back('\n');
+	socket.write(data);
 }
 
 void DaemonServer::send(QTcpSocket *socket, const QJsonObject &jsonObj) {

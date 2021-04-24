@@ -344,11 +344,13 @@ void DaemonCoreApplication::serverReceived(QTcpSocket *socket, const QJsonObject
 
 	} else if (command == "modules") {
 		QJsonObject response = jsonOkResponse(request);
+		QJsonObject jsonModules;
 
 		for (size_t i = 0; i < Mtb::_MAX_MODULES; i++) {
 			if (modules[i] != nullptr)
-				response[QString::number(i)] = modules[i]->moduleInfo(request["state"].toBool(), true);
+				jsonModules[QString::number(i)] = modules[i]->moduleInfo(request["state"].toBool(), true);
 		}
+		response["modules"] = jsonModules;
 
 		server.send(socket, response);
 
