@@ -70,6 +70,8 @@ void MtbUsb::connect(const QString &portname, int32_t br, QSerialPort::FlowContr
 	if (!m_serialPort.open(QIODevice::ReadWrite))
 		throw EOpenError(m_serialPort.errorString());
 
+	m_serialPort.setDataTerminalReady(true);
+
 	m_histTimer.start(_HIST_CHECK_INTERVAL);
 	log("Connected", LogLevel::Info);
 	onConnect();
