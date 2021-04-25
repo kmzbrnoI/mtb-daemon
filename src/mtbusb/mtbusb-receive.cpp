@@ -108,11 +108,17 @@ void MtbUsb::parseMtbUsbMessage(uint8_t command_code, const std::vector<uint8_t>
 		break;
 	}
 
-	// Find appropriate history item & call it's ok callback
-	auto it = m_hist.begin();
-	for (size_t i = 0; i < m_hist.size(); i++, ++it) {
-		if (m_hist[i].cmd->processUsbResponse(static_cast<MtbUsbRecvCommand>(command_code), data)) {
-			m_hist.erase(it);
+	// Find appropriate history item & call its ok callback
+	for (size_t i = 0; i < m_hist.size(); i++) {
+		const Cmd* cmd = m_hist[i].cmd.get();
+		if (cmd->processUsbResponse(static_cast<MtbUsbRecvCommand>(command_code), data)) {
+			// Find this item in history again, because error callback may sent new command and thus invalidated m_hist iterators
+			for (auto it = m_hist.begin(); it != m_hist.end(); ++it) {
+				if (it->cmd.get() == cmd) {
+					m_hist.erase(it);
+					return;
+				}
+			}
 			return;
 		}
 	}
