@@ -433,8 +433,8 @@ QJsonObject DaemonCoreApplication::mtbUsbJson() const {
 	bool connected = (mtbusb.connected() && mtbusb.mtbUsbInfo().has_value() && mtbusb.activeModules().has_value());
 	status["connected"] = connected;
 	if (connected) {
-		const Mtb::MtbUsbInfo &mtbusbinfo = mtbusb.mtbUsbInfo().value();
-		const std::array<bool, Mtb::_MAX_MODULES> &activeModules = mtbusb.activeModules().value();
+		const Mtb::MtbUsbInfo mtbusbinfo = mtbusb.mtbUsbInfo().value();
+		const std::array<bool, Mtb::_MAX_MODULES> activeModules = mtbusb.activeModules().value();
 		status["type"] = mtbusbinfo.type;
 		status["speed"] = Mtb::mtbBusSpeedToInt(mtbusbinfo.speed);
 		status["firmware_version"] = mtbusbinfo.fw_version();
