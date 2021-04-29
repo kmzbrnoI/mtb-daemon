@@ -72,10 +72,10 @@ Response in same as *Daemon Status* response.
     "status": "ok",
     "module": {
         "address": 1,
-        "type": "MTB-UNI v4",
+        "name": "Testing module 1",
         "type_code": 21,
-        "bootloader_intentional": false,
-        "bootloader_error": false,
+        "type": "MTB-UNI v4",
+        "state": "active",
         "firmware_version": "1.0",
         "protocol_version": "4.0",
         "MTB-UNI v4": {
@@ -104,6 +104,8 @@ Response in same as *Daemon Status* response.
 }
 ```
 
+* `state`: `inactive`, `active`, `rebooting`, `fw_upgrading`, `bootloader_err`,
+  `bootloader_int`.
 * Flicker value: number of ticks in minute. Allowed values:
   60, 120, 180, 240, 320, 600, 33, 66.
 * Inputs delay: 0–1.5 (including bounds), step=0.1.
