@@ -25,6 +25,7 @@ protected:
 	MtbModuleType type = MtbModuleType::Uknown;
 	Mtb::ModuleInfo busModuleInfo;
 	std::optional<ServerRequest> configWriting;
+	bool beacon = false;
 
 	struct Rebooting {
 		bool rebooting = false;
@@ -50,6 +51,12 @@ protected:
 	bool isFirmwareUpgrading() const;
 	bool isConfigSetting() const;
 
+	virtual void jsonSetOutput(QTcpSocket*, const QJsonObject&);
+	virtual void jsonUpgradeFw(QTcpSocket*, const QJsonObject&);
+	virtual void jsonReboot(QTcpSocket*, const QJsonObject&);
+	virtual void jsonSpecificCommand(QTcpSocket*, const QJsonObject&);
+	virtual void jsonBeacon(QTcpSocket*, const QJsonObject&);
+
 	void fwUpgdInit();
 	void fwUpgdError(const QString&, size_t code = MTB_MODULE_FWUPGD_ERROR);
 	void fwUpgdReqAck();
@@ -71,6 +78,7 @@ public:
 	MtbModuleType moduleType() const;
 	bool isActive() const;
 	bool isRebooting() const;
+	bool isBeacon() const;
 
 	virtual QJsonObject moduleInfo(bool state, bool config) const;
 
@@ -80,11 +88,7 @@ public:
 	virtual void mtbUsbDisconnected();
 
 	virtual void jsonCommand(QTcpSocket*, const QJsonObject&);
-	virtual void jsonSetOutput(QTcpSocket*, const QJsonObject&);
 	virtual void jsonSetConfig(QTcpSocket*, const QJsonObject&);
-	virtual void jsonUpgradeFw(QTcpSocket*, const QJsonObject&);
-	virtual void jsonReboot(QTcpSocket*, const QJsonObject&);
-	virtual void jsonSpecificCommand(QTcpSocket*, const QJsonObject&);
 	virtual void clientDisconnected(QTcpSocket*);
 
 	virtual void loadConfig(const QJsonObject&);

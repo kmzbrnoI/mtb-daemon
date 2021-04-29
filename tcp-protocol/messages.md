@@ -78,6 +78,7 @@ Response in same as *Daemon Status* response.
         "state": "active",
         "firmware_version": "1.0",
         "protocol_version": "4.0",
+        "beacon": false,
         "MTB-UNI v4": {
             # data specific for module type, e.g.:
             "ir": false,
@@ -269,6 +270,29 @@ Response in same as *Daemon Status* response.
     "id": 22,
     "status": "ok",
     "address": 32,
+}
+```
+
+### Module beacon
+
+```json
+{
+    "command": "module_beacon",
+    "type": "request",
+    "id": 22,
+    "address": 32,
+    "beacon": true
+}
+```
+
+```json
+{
+    "command": "module_beacon",
+    "type": "response",
+    "id": 22,
+    "status": "ok",
+    "address": 32,
+    "beacon": true
 }
 ```
 

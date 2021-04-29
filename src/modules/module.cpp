@@ -10,6 +10,8 @@ bool MtbModule::isActive() const { return this->active; }
 
 bool MtbModule::isRebooting() const { return this->rebooting.rebooting; }
 
+bool MtbModule::isBeacon() const { return this->beacon; }
+
 QJsonObject MtbModule::moduleInfo(bool, bool) const {
 	QJsonObject obj;
 	obj["address"] = this->address;
@@ -17,6 +19,7 @@ QJsonObject MtbModule::moduleInfo(bool, bool) const {
 	obj["type_code"] = static_cast<int>(this->type);
 	obj["type"] = moduleTypeToStr(this->type);
 	obj["fw_upgrading"] = this->isFirmwareUpgrading();
+	obj["beacon"] = this->beacon;
 
 	if (this->active) {
 		if (this->busModuleInfo.bootloader_unint)
@@ -72,6 +75,8 @@ void MtbModule::jsonCommand(QTcpSocket *socket, const QJsonObject &request) {
 		this->jsonReboot(socket, request);
 	else if (command == "module_specific_command")
 		this->jsonSpecificCommand(socket, request);
+	else if (command == "module_beacon")
+		this->jsonBeacon(socket, request);
 }
 
 void MtbModule::jsonSetOutput(QTcpSocket*, const QJsonObject&) {}
@@ -421,6 +426,25 @@ void MtbModule::jsonSpecificCommand(QTcpSocket *socket, const QJsonObject &reque
 			}},
 			{[socket, request](Mtb::CmdError error, void*) {
 				sendError(socket, request, static_cast<int>(error)+0x1000, Mtb::cmdErrorToStr(error));
+			}}
+		)
+	);
+}
+
+void MtbModule::jsonBeacon(QTcpSocket *socket, const QJsonObject &request) {
+	bool beacon = request["beacon"].toBool();
+
+	mtbusb.send(
+		Mtb::CmdMtbModuleBeacon(
+			this->address, beacon,
+			{[this, socket, request, beacon](uint8_t, void*) {
+				this->beacon = beacon;
+				QJsonObject response = jsonOkResponse(request);
+				response["beacon"] = beacon;
+				server.send(socket, response);
+			}},
+			{[socket, request](Mtb::CmdError error, void*) {
+				sendError(socket, request, error);
 			}}
 		)
 	);

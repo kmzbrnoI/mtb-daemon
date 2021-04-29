@@ -42,6 +42,9 @@ protected:
 	static QJsonObject outputsToJson(const std::array<uint8_t, UNI_IO_CNT>&);
 	static QJsonObject inputsToJson(uint16_t inputs);
 
+	void jsonSetOutput(QTcpSocket*, const QJsonObject&) override;
+	void jsonUpgradeFw(QTcpSocket*, const QJsonObject&) override;
+
 	void setOutputs();
 	void mtbBusOutputsSet(const std::vector<uint8_t> &data);
 	void mtbBusOutputsNotSet(Mtb::CmdError);
@@ -64,9 +67,7 @@ public:
 	void mtbBusActivate(Mtb::ModuleInfo) override;
 	void mtbBusInputsChanged(const std::vector<uint8_t>&) override;
 
-	void jsonSetOutput(QTcpSocket*, const QJsonObject&) override;
 	void jsonSetConfig(QTcpSocket*, const QJsonObject&) override;
-	void jsonUpgradeFw(QTcpSocket*, const QJsonObject&) override;
 	void clientDisconnected(QTcpSocket*) override;
 
 	void loadConfig(const QJsonObject&) override;
