@@ -40,8 +40,12 @@ def main() -> None:
     }
     s.send((json.dumps(to_send)+'\n').encode('utf-8'))
 
-    message = s.recv(0xFFFF).decode('utf-8').strip()
-    print(message)
+    while True:
+        data = json.loads(s.recv(0xFFFF).decode('utf-8').strip())
+        print(data)
+        if data.get('command', '') == 'module_upgrade_fw':
+            sys.exit(0 if data.get('status', '') == 'ok' else 1)
+
 
 if __name__ == '__main__':
     main()
