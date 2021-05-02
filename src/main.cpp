@@ -52,6 +52,7 @@ DaemonCoreApplication::DaemonCoreApplication(int &argc, char **argv)
 				}},
 				{"mtb-usb", QJsonObject{
 					{"port", "auto"},
+					{"keepAlive", true},
 				}},
 			};
 			this->saveConfig(configFileName);
@@ -62,6 +63,7 @@ DaemonCoreApplication::DaemonCoreApplication(int &argc, char **argv)
 
 	Mtb::LogLevel loglevel = static_cast<Mtb::LogLevel>(this->config["loglevel"].toInt());
 	mtbusb.loglevel = loglevel;
+	mtbusb.ping = this->config["mtb-usb"].toObject()["keepAlive"].toBool(true);
 	DaemonCoreApplication::loglevel = loglevel;
 
 	{ // Start server

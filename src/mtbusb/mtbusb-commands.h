@@ -136,6 +136,25 @@ struct CmdMtbUsbForward : public Cmd {
 	bool broadcast() const { return this->module == 0; }
 };
 
+struct CmdMtbUsbPing : public Cmd {
+	const CommandCallback<StdCallbackFunc> onOk;
+
+	CmdMtbUsbPing(const CommandCallback<StdCallbackFunc> &onOk = {[](void*){}},
+	              const CommandCallback<ErrCallbackFunc> &onError = {[](CmdError, void*){}})
+	  : Cmd(onError), onOk(onOk) {}
+
+	std::vector<uint8_t> getBytes() const override { return {0x30}; }
+	QString msg() const override { return "MTB-USB Ping"; }
+
+	bool processUsbResponse(MtbUsbRecvCommand usbCommand, const std::vector<uint8_t>&) const override {
+		if (usbCommand == MtbUsbRecvCommand::Ack) {
+			onOk.func(onOk.data);
+			return true;
+		}
+		return false;
+	}
+};
+
 /* MTBbus commands -----------------------------------------------------------*/
 
 struct ModuleInfo {

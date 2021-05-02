@@ -24,6 +24,7 @@ constexpr size_t _HIST_SEND_MAX = 3;
 constexpr size_t _BUF_IN_TIMEOUT = 50; // ms
 constexpr size_t _MAX_HIST_BUF_COUNT = 3;
 constexpr size_t _OUT_TIMER_INTERVAL = 20; // 20 ms
+constexpr size_t _PING_SEND_PERIOD_MS = 5000;
 
 struct EOpenError : public MtbUsbError {
 	EOpenError(const std::string &str) : MtbUsbError(str) {}
@@ -91,6 +92,7 @@ class MtbUsb : public QObject {
 
 public:
 	LogLevel loglevel = LogLevel::None;
+	bool ping = true;
 
 	MtbUsb(QObject *parent = nullptr);
 
@@ -114,6 +116,7 @@ private slots:
 	void spAboutToClose();
 	void histTimerTick();
 	void outTimerTick();
+	void pingTimerTick();
 
 signals:
 	void onLog(QString message, Mtb::LogLevel loglevel);
@@ -129,6 +132,7 @@ private:
 	QByteArray m_readData;
 	QTimer m_histTimer;
 	QTimer m_outTimer;
+	QTimer m_pingTimer;
 	std::deque<HistoryItem> m_hist;
 	std::deque<std::unique_ptr<const Cmd>> m_out;
 	QDateTime m_lastSent;
