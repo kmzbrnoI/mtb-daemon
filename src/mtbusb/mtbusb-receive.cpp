@@ -175,14 +175,18 @@ void MtbUsb::parseMtbBusMessage(uint8_t module, uint8_t attempts, uint8_t comman
 		break;
 	}
 
-	// Find appropriate history item & call it's ok callback
-	auto it = m_hist.begin();
-	for (size_t i = 0; i < m_hist.size(); i++, ++it) {
+	// Find appropriate history item & call its ok callback
+	for (size_t i = 0; i < m_hist.size(); i++) {
 		if (is<CmdMtbUsbForward>(*m_hist[i].cmd)) {
 			const CmdMtbUsbForward &forward = dynamic_cast<const CmdMtbUsbForward&>(*m_hist[i].cmd);
 			if ((forward.module == module) &&
 			    (forward.processBusResponse(static_cast<MtbBusRecvCommand>(command_code), data))) {
-				m_hist.erase(it);
+				for (auto it = m_hist.begin(); it != m_hist.end(); ++it) {
+					if (it->cmd.get() == m_hist[i].cmd.get()) {
+						m_hist.erase(it);
+						return;
+					}
+				}
 				return;
 			}
 		}
