@@ -25,6 +25,8 @@ DaemonCoreApplication::DaemonCoreApplication(int &argc, char **argv)
      : QCoreApplication(argc, argv) {
 	QObject::connect(&server, SIGNAL(jsonReceived(QTcpSocket*, const QJsonObject&)),
 	                 this, SLOT(serverReceived(QTcpSocket*, const QJsonObject&)));
+	QObject::connect(&server, SIGNAL(clientDisconnected(QTcpSocket*)),
+	                 this, SLOT(serverClientDisconnected(QTcpSocket*)));
 
 	QObject::connect(&t_reconnect, SIGNAL(timeout()), this, SLOT(tReconnectTick()));
 
@@ -507,4 +509,51 @@ bool DaemonCoreApplication::saveConfig(const QString &filename) {
 	file.write(doc.toJson(QJsonDocument::JsonFormat::Indented));
 	file.close();
 	return true;
+}
+
+std::vector<QTcpSocket*> outputSetters() {
+	std::vector<QTcpSocket*> result;
+	for (const auto& modulePtr : modules) {
+		if (modulePtr != nullptr) {
+			for (QTcpSocket* socket : modulePtr->outputSetters())
+				if (std::find(result.begin(), result.end(), socket) == result.end())
+					result.push_back(socket);
+		}
+	}
+	return result;
+}
+
+void DaemonCoreApplication::serverClientDisconnected(QTcpSocket* socket) {
+	for (size_t i = 0; i < Mtb::_MAX_MODULES; i++) {
+		if (subscribes[i].find(socket) != subscribes[i].end())
+			subscribes[i].erase(socket);
+		if (modules[i] != nullptr)
+			modules[i]->clientDisconnected(socket);
+	}
+
+	this->clientResetOutputs(socket);
+}
+
+void DaemonCoreApplication::clientResetOutputs(QTcpSocket* socket) {
+	const std::vector<QTcpSocket*>& setters = outputSetters();
+
+	if (setters.size() >= 2) {
+		for (size_t i = 0; i < Mtb::_MAX_MODULES; i++)
+			if (modules[i] != nullptr)
+				modules[i]->resetOutputsOfClient(socket);
+	} else if (setters.size() == 1) {
+		// Reset outputs of all modules with broadcast
+		for (size_t i = 0; i < Mtb::_MAX_MODULES; i++)
+			if (modules[i] != nullptr)
+				modules[i]->allOutputsReset();
+
+		mtbusb.send(
+			Mtb::CmdMtbModuleResetOutputs(
+				{[](void*) { }},
+				{[](Mtb::CmdError, void*) {
+					log("Unable to reset MTB modules outputs!", Mtb::LogLevel::Error);
+				}}
+			)
+		);
+	}
 }

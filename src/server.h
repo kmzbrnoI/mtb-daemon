@@ -46,6 +46,7 @@ private:
 
 signals:
 	void jsonReceived(QTcpSocket*, const QJsonObject&);
+	void clientDisconnected(QTcpSocket*);
 
 };
 

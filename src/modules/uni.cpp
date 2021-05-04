@@ -5,7 +5,9 @@
 #include "../main.h"
 #include "../errors.h"
 
-MtbUni::MtbUni(uint8_t addr) : MtbModule(addr) {}
+MtbUni::MtbUni(uint8_t addr) : MtbModule(addr) {
+	std::fill(this->whoSetOutput.begin(), this->whoSetOutput.end(), nullptr);
+}
 
 bool MtbUni::isIrSupport() const { return this->type == MtbModuleType::Univ2ir; }
 
@@ -327,8 +329,8 @@ void MtbUni::alignFirmware(std::map<size_t, std::vector<uint8_t>> &fw, size_t pa
 
 /* -------------------------------------------------------------------------- */
 
-void MtbUni::clientDisconnected(QTcpSocket *socket) {
-	MtbModule::clientDisconnected(socket);
+void MtbUni::resetOutputsOfClient(QTcpSocket *socket) {
+	MtbModule::resetOutputsOfClient(socket);
 
 	bool reset = false;
 	for (size_t i = 0; i < UNI_IO_CNT; i++) {
@@ -344,6 +346,14 @@ void MtbUni::clientDisconnected(QTcpSocket *socket) {
 		if (this->setOutputsSent.empty())
 			this->setOutputs();
 	}
+}
+
+std::vector<QTcpSocket*> MtbUni::outputSetters() const {
+	std::vector<QTcpSocket*> result;
+	for (QTcpSocket* socket : this->whoSetOutput)
+		if ((socket != nullptr) && (std::find(result.begin(), result.end(), socket) == result.end()))
+			result.push_back(socket);
+	return result;
 }
 
 std::vector<uint8_t> MtbUni::mtbBusOutputsData() const {
@@ -394,6 +404,14 @@ std::array<uint8_t, UNI_IO_CNT> MtbUni::moduleOutputsData(const std::vector<uint
 	}
 
 	return result;
+}
+
+void MtbUni::allOutputsReset() {
+	for (size_t i = 0; i < UNI_IO_CNT; i++) {
+		this->outputsWant[i] = 0;
+		this->outputsConfirmed[i] = 0;
+		this->whoSetOutput[i] = nullptr;
+	}
 }
 
 /* MTB-UNI activation ---------------------------------------------------------
@@ -498,6 +516,12 @@ void MtbUni::outputsReset() {
 void MtbUni::mtbBusInputsChanged(const std::vector<uint8_t> &data) {
 	this->storeInputsState(data);
 	this->sendInputsChanged(inputsToJson(this->inputs));
+}
+
+void MtbUni::mtbUsbDisconnected() {
+	MtbModule::mtbUsbDisconnected();
+	this->allOutputsReset();
+	this->inputs = 0;
 }
 
 /* -------------------------------------------------------------------------- */

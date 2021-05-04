@@ -66,12 +66,16 @@ public:
 
 	void mtbBusActivate(Mtb::ModuleInfo) override;
 	void mtbBusInputsChanged(const std::vector<uint8_t>&) override;
+	void mtbUsbDisconnected() override;
 
 	void jsonSetConfig(QTcpSocket*, const QJsonObject&) override;
-	void clientDisconnected(QTcpSocket*) override;
 
 	void loadConfig(const QJsonObject&) override;
 	void saveConfig(QJsonObject&) const override;
+
+	std::vector<QTcpSocket*> outputSetters() const override;
+	void resetOutputsOfClient(QTcpSocket*) override;
+	void allOutputsReset() override;
 
 	static uint8_t jsonOutputToByte(const QJsonObject&);
 };

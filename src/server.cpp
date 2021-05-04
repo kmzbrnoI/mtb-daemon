@@ -35,12 +35,7 @@ void DaemonServer::clientDisconnected() {
 	if (this->clients.find(client) != this->clients.end())
 		this->clients.erase(client);
 
-	for (size_t i = 0; i < Mtb::_MAX_MODULES; i++) {
-		if (modules[i] != nullptr)
-			modules[i]->clientDisconnected(client);
-		if (subscribes[i].find(client) != subscribes[i].end())
-			subscribes[i].erase(client);
-	}
+	clientDisconnected(client);
 }
 
 void DaemonServer::clientReadyRead() {

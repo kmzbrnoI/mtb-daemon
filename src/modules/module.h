@@ -89,10 +89,14 @@ public:
 
 	virtual void jsonCommand(QTcpSocket*, const QJsonObject&);
 	virtual void jsonSetConfig(QTcpSocket*, const QJsonObject&);
-	virtual void clientDisconnected(QTcpSocket*);
 
 	virtual void loadConfig(const QJsonObject&);
 	virtual void saveConfig(QJsonObject&) const;
+
+	virtual std::vector<QTcpSocket*> outputSetters() const;
+	virtual void resetOutputsOfClient(QTcpSocket*);
+	virtual void allOutputsReset();
+	virtual void clientDisconnected(QTcpSocket*);
 
 private:
 

@@ -185,9 +185,17 @@ void MtbModule::sendModuleInfo(QTcpSocket *ignore) const {
 	}
 }
 
+void MtbModule::resetOutputsOfClient(QTcpSocket*) {}
+
 void MtbModule::clientDisconnected(QTcpSocket *socket) {
 	if ((this->configWriting.has_value()) && (this->configWriting.value().socket == socket))
-		this->configWriting.reset();
+		this->configWriting->socket = nullptr;
+	if ((this->fwUpgrade.fwUpgrading.has_value()) && (this->fwUpgrade.fwUpgrading.value().socket == socket))
+		this->fwUpgrade.fwUpgrading->socket = nullptr;
+}
+
+std::vector<QTcpSocket*> MtbModule::outputSetters() const {
+	return {};
 }
 
 bool MtbModule::isConfigSetting() const { return this->configWriting.has_value(); }
@@ -450,4 +458,7 @@ void MtbModule::jsonBeacon(QTcpSocket *socket, const QJsonObject &request) {
 			}}
 		)
 	);
+}
+
+void MtbModule::allOutputsReset() {
 }

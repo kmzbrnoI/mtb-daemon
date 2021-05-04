@@ -17,6 +17,7 @@ constexpr size_t T_RECONNECT_PERIOD = 1000; // 1 s
 const QString DEFAULT_CONFIG_FILENAME = "mtb-daemon.json";
 
 void log(const QString&, Mtb::LogLevel);
+std::vector<QTcpSocket*> outputSetters();
 
 class DaemonCoreApplication : public QCoreApplication {
 	Q_OBJECT
@@ -48,6 +49,8 @@ private:
 
 	void mtbUsbConnect();
 
+	void clientResetOutputs(QTcpSocket*);
+
 private slots:
 	void mtbUsbOnLog(QString message, Mtb::LogLevel loglevel);
 	void mtbUsbOnConnect();
@@ -57,6 +60,7 @@ private slots:
 	void mtbUsbOnInputsChange(uint8_t addr, const std::vector<uint8_t> &data);
 
 	void serverReceived(QTcpSocket*, const QJsonObject&);
+	void serverClientDisconnected(QTcpSocket*);
 
 	void tReconnectTick();
 };
