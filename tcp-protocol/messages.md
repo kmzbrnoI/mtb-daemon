@@ -317,6 +317,25 @@ Response in same as *Daemon Status* response.
 }
 ```
 
+### Reset all outputs set by client
+
+```json
+{
+    "command": "reset_my_outputs",
+    "type": "request",
+    "id": 12
+}
+```
+
+```json
+{
+    "command": "reset_my_outputs",
+    "type": "response",
+    "id": 12,
+    "status": "ok"
+}
+```
+
 ## Events
 
 ### Module input/s changed

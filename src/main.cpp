@@ -429,6 +429,14 @@ void DaemonCoreApplication::serverReceived(QTcpSocket *socket, const QJsonObject
 		} else {
 			sendError(socket, request, MTB_MODULE_INVALID_ADDR, "Invalid module address");
 		}
+
+	} else if (command == "reset_my_outputs") {
+		this->clientResetOutputs(
+			socket,
+			[socket, request]() { server.send(socket, jsonOkResponse(request)); },
+			[socket, request]() { sendError(socket, request, Mtb::CmdError::BusNoResponse); }
+		);
+
 	}
 }
 
@@ -534,13 +542,17 @@ void DaemonCoreApplication::serverClientDisconnected(QTcpSocket* socket) {
 	this->clientResetOutputs(socket);
 }
 
-void DaemonCoreApplication::clientResetOutputs(QTcpSocket* socket) {
+void DaemonCoreApplication::clientResetOutputs(
+		QTcpSocket* socket,
+		std::function<void()> onOk,
+		std::function<void()> onError) {
 	const std::vector<QTcpSocket*>& setters = outputSetters();
 
 	if (setters.size() >= 2) {
 		for (size_t i = 0; i < Mtb::_MAX_MODULES; i++)
 			if (modules[i] != nullptr)
 				modules[i]->resetOutputsOfClient(socket);
+			onOk();
 	} else if (setters.size() == 1) {
 		// Reset outputs of all modules with broadcast
 		for (size_t i = 0; i < Mtb::_MAX_MODULES; i++)
@@ -549,11 +561,14 @@ void DaemonCoreApplication::clientResetOutputs(QTcpSocket* socket) {
 
 		mtbusb.send(
 			Mtb::CmdMtbModuleResetOutputs(
-				{[](void*) { }},
-				{[](Mtb::CmdError, void*) {
+				{[onOk](void*) { onOk(); }},
+				{[onError](Mtb::CmdError, void*) {
 					log("Unable to reset MTB modules outputs!", Mtb::LogLevel::Error);
+					onError();
 				}}
 			)
 		);
+	} else {
+		onOk();
 	}
 }
