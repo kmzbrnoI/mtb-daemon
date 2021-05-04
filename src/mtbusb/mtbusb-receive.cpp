@@ -31,7 +31,13 @@ void MtbUsb::spHandleReadyRead() {
 		++begin;
 
 		std::vector<uint8_t> data(begin, begin + length - 1);
-		parseMtbUsbMessage(m_readData[3], data); // without 0x2A 0x42 length; just command code & data
+		try {
+			parseMtbUsbMessage(m_readData[3], data); // without 0x2A 0x42 length; just command code & data
+		} catch (const std::logic_error& err) {
+			log("MTB received data Exception: "+QString(err.what()), LogLevel::Error);
+		} catch (...) {
+			log("MTB received data Exception: unknown", LogLevel::Error);
+		}
 		m_readData.remove(0, static_cast<int>(length + 3));
 	}
 }

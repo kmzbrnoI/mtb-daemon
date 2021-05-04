@@ -49,7 +49,13 @@ void DaemonServer::clientReadyRead() {
 		QByteArray data = client->readLine();
 		if (data.size() > 0) {
 			QJsonObject json = QJsonDocument::fromJson(data).object();
-			jsonReceived(client, json);
+			try {
+				jsonReceived(client, json);
+			} catch (const std::logic_error& err) {
+				log("Client received data Exception: "+QString(err.what()), Mtb::LogLevel::Error);
+			} catch (...) {
+				log("Client received data Exception: unknown", Mtb::LogLevel::Error);
+			}
 		}
 	}
 }
