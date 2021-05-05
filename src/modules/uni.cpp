@@ -585,11 +585,17 @@ QJsonObject MtbUniConfig::json(bool withIrs) const {
 void MtbUniConfig::fromJson(const QJsonObject &json) {
 	const QJsonArray &jsonOutputsSafe = json["outputsSafe"].toArray();
 	const QJsonArray &jsonInputsDelay = json["inputsDelay"].toArray();
+	const QJsonArray &jsonIrs = json["irs"].toArray();
+	this->irs = 0;
 	for (size_t i = 0; i < UNI_IO_CNT; i++) {
 		if (i < static_cast<size_t>(jsonOutputsSafe.size()))
 			this->outputsSafe[i] = MtbUni::jsonOutputToByte(jsonOutputsSafe[i].toObject());
 		if (i < static_cast<size_t>(jsonInputsDelay.size()))
 			this->inputsDelay[i] = jsonInputsDelay[i].toDouble()*10;
+		if (i < static_cast<size_t>(jsonIrs.size())) {
+			if (jsonIrs[i].toBool())
+				this->irs |= (1 << i);
+		}
 	}
 }
 
