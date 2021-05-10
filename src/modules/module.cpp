@@ -431,6 +431,7 @@ void MtbModule::jsonSpecificCommand(QTcpSocket *socket, const QJsonObject &reque
 				for (const uint8_t byte : data)
 					dataAr.push_back(byte);
 				response["data"] = dataAr;
+				json["response"] = response;
 				server.send(socket, json);
 				return true;
 			}},
