@@ -563,7 +563,7 @@ void DaemonCoreApplication::clientResetOutputs(
 		for (size_t i = 0; i < Mtb::_MAX_MODULES; i++)
 			if (modules[i] != nullptr)
 				modules[i]->resetOutputsOfClient(socket);
-			onOk();
+		onOk();
 	} else if (setters.size() == 1) {
 		// Reset outputs of all modules with broadcast
 		for (size_t i = 0; i < Mtb::_MAX_MODULES; i++)
