@@ -27,7 +27,7 @@ QJsonObject MtbUni::moduleInfo(bool state, bool config) const {
 	};
 
 	if (config)
-		uni["config"] = this->config.json(this->isIrSupport());
+		uni["config"] = this->config.json(this->isIrSupport(), false);
 
 	if (state && this->active && !this->busModuleInfo.inBootloader()) {
 		uni["state"] = QJsonObject{
@@ -540,7 +540,7 @@ std::vector<uint8_t> MtbUniConfig::serializeForMtbUsb(bool withIrs) const {
 	return result;
 }
 
-QJsonObject MtbUniConfig::json(bool withIrs) const {
+QJsonObject MtbUniConfig::json(bool withIrs, bool file) const {
 	QJsonObject result;
 	{
 		QJsonArray array;
@@ -576,7 +576,8 @@ QJsonObject MtbUniConfig::json(bool withIrs) const {
 			irs >>= 1;
 		}
 		result["irs"] = array;
-		result["irsPacked"] = this->irs;
+		if (!file)
+			result["irsPacked"] = this->irs;
 	}
 
 	return result;
@@ -652,5 +653,5 @@ void MtbUni::loadConfig(const QJsonObject &json) {
 void MtbUni::saveConfig(QJsonObject &json) const {
 	MtbModule::saveConfig(json);
 	if (this->configLoaded)
-		json["config"] = this->config.json(this->isIrSupport());
+		json["config"] = this->config.json(this->isIrSupport(), true);
 }

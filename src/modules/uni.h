@@ -15,7 +15,7 @@ struct MtbUniConfig {
 	void fromMtbUsb(const std::vector<uint8_t>&);
 
 	void fromJson(const QJsonObject&);
-	QJsonObject json(bool withIrs) const;
+	QJsonObject json(bool withIrs, bool file) const;
 };
 
 class MtbUni : public MtbModule {
