@@ -10,14 +10,25 @@
 #include "modules/uni.h"
 #include "errors.h"
 
+#ifdef Q_OS_WIN
+#include <windows.h>
+#endif
+
 Mtb::MtbUsb mtbusb;
 DaemonServer server;
 std::array<std::unique_ptr<MtbModule>, Mtb::_MAX_MODULES> modules;
 std::array<std::map<QTcpSocket*, bool>, Mtb::_MAX_MODULES> subscribes;
 Mtb::LogLevel DaemonCoreApplication::loglevel = Mtb::LogLevel::Info;
 
+#ifdef Q_OS_WIN
+static BOOL WINAPI console_ctrl_handler(DWORD dwCtrlType);
+#endif
+
 int main(int argc, char *argv[]) {
 	DaemonCoreApplication a(argc, argv);
+#ifdef Q_OS_WIN
+	SetConsoleCtrlHandler(console_ctrl_handler, TRUE);
+#endif
 	return a.exec();
 }
 
@@ -572,3 +583,21 @@ void DaemonCoreApplication::clientResetOutputs(
 		onOk();
 	}
 }
+
+#ifdef Q_OS_WIN
+// Handler function will be called on separate thread!
+static BOOL WINAPI console_ctrl_handler(DWORD dwCtrlType) {
+    switch (dwCtrlType) {
+    case CTRL_C_EVENT: // Ctrl+C
+        QCoreApplication::quit();
+        return TRUE;
+    case CTRL_CLOSE_EVENT: // Closing the console window
+        QCoreApplication::quit();
+        return TRUE;
+    }
+
+    // Return TRUE if handled this message, further handler functions won't be called.
+    // Return FALSE to pass this message to further handlers until default handler calls ExitProcess().
+    return FALSE;
+}
+#endif
