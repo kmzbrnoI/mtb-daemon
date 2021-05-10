@@ -550,7 +550,7 @@ void DaemonCoreApplication::serverClientDisconnected(QTcpSocket* socket) {
 			modules[i]->clientDisconnected(socket);
 	}
 
-	this->clientResetOutputs(socket);
+	this->clientResetOutputs(socket, [](){}, [](){});
 }
 
 void DaemonCoreApplication::clientResetOutputs(

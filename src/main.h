@@ -50,8 +50,8 @@ private:
 	void mtbUsbConnect();
 
 	void clientResetOutputs(QTcpSocket*,
-	                        std::function<void()> onOk = [](){},
-	                        std::function<void()> onError = [](){});
+							std::function<void()> onOk,
+							std::function<void()> onError);
 
 private slots:
 	void mtbUsbOnLog(QString message, Mtb::LogLevel loglevel);
