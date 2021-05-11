@@ -438,14 +438,21 @@ void MtbUni::mtbBusActivate(Mtb::ModuleInfo info) {
 		return;
 	}
 
+	this->activate();
+}
+
+void MtbUni::activate() {
+	this->activating = true;
+
 	if (this->configLoaded) {
 		log("Config previously loaded from file, setting to module...", Mtb::LogLevel::Info);
 		mtbusb.send(
 			Mtb::CmdMtbModuleSetConfig(
 				this->address, this->config.serializeForMtbUsb(this->isIrSupport()),
 				{[this](uint8_t, void*) { this->configSet(); }},
-				{[](Mtb::CmdError, void*) {
+				{[this](Mtb::CmdError error, void*) {
 					log("Unable to set module config, module keeps disabled.", Mtb::LogLevel::Error);
+					this->activationError(error);
 				}}
 			)
 		);
@@ -459,8 +466,9 @@ void MtbUni::mtbBusActivate(Mtb::ModuleInfo info) {
 					this->configLoaded = true;
 					this->configSet();
 				}},
-				{[](Mtb::CmdError, void*) {
+				{[this](Mtb::CmdError error, void*) {
 					log("Unable to get module config, module keeps disabled.", Mtb::LogLevel::Error);
+					this->activationError(error);
 				}}
 			)
 		);
@@ -473,8 +481,9 @@ void MtbUni::configSet() {
 		Mtb::CmdMtbModuleGetInputs(
 			this->address,
 			{[this](uint8_t, const std::vector<uint8_t>& data, void*) { this->inputsRead(data); }},
-			{[](Mtb::CmdError, void*) {
+			{[this](Mtb::CmdError error, void*) {
 				log("Unable to get new module inputs, module keeps disabled.", Mtb::LogLevel::Error);
+				this->activationError(error);
 			}}
 		)
 	);
@@ -488,9 +497,10 @@ void MtbUni::inputsRead(const std::vector<uint8_t> &data) {
 		Mtb::CmdMtbModuleResetOutputs(
 			this->address,
 			{[this](uint8_t, void*) { this->outputsReset(); }},
-			{[](Mtb::CmdError, void*) {
+			{[this](Mtb::CmdError error, void*) {
 				log("Unable to reset new module outputs, module keeps disabled.",
 				    Mtb::LogLevel::Error);
+				this->activationError(error);
 			}}
 		)
 	);
@@ -640,6 +650,11 @@ size_t MtbUni::flickMtbUniToPerMin(uint8_t mtbUniFlick) {
 	case 8: return 66;
 	default: return 0;
 	}
+}
+
+void MtbUni::reactivateCheck() {
+	if ((!this->activating) && (this->activationsRemaining > 0) && (!this->active))
+		this->activate();
 }
 
 /* Configuration ------------------------------------------------------------ */

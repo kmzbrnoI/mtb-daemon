@@ -15,6 +15,7 @@ enum class MtbModuleType {
 	Univ42 = 0x16,
 };
 
+constexpr size_t MTB_MODULE_ACTIVATIONS = 5;
 QString moduleTypeToStr(MtbModuleType);
 
 class MtbModule {
@@ -26,6 +27,8 @@ protected:
 	Mtb::ModuleInfo busModuleInfo;
 	std::optional<ServerRequest> configWriting;
 	bool beacon = false;
+	size_t activationsRemaining = 0;
+	bool activating = false;
 
 	struct Rebooting {
 		bool rebooting = false;
@@ -70,6 +73,7 @@ protected:
 
 	void reboot(std::function<void()> onOk, std::function<void()> onError);
 	void fullyActivated();
+	void activationError(Mtb::CmdError);
 
 public:
 	MtbModule(uint8_t addr);
@@ -79,6 +83,7 @@ public:
 	bool isActive() const;
 	bool isRebooting() const;
 	bool isBeacon() const;
+	bool isActivating() const;
 
 	virtual QJsonObject moduleInfo(bool state, bool config) const;
 
@@ -97,6 +102,8 @@ public:
 	virtual void resetOutputsOfClient(QTcpSocket*);
 	virtual void allOutputsReset();
 	virtual void clientDisconnected(QTcpSocket*);
+
+	virtual void reactivateCheck();
 
 private:
 

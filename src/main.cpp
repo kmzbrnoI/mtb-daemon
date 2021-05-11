@@ -40,6 +40,7 @@ DaemonCoreApplication::DaemonCoreApplication(int &argc, char **argv)
 	                 this, SLOT(serverClientDisconnected(QTcpSocket*)));
 
 	QObject::connect(&t_reconnect, SIGNAL(timeout()), this, SLOT(tReconnectTick()));
+	QObject::connect(&t_reactivate, SIGNAL(timeout()), this, SLOT(tReactivateTick()));
 
 	QObject::connect(&mtbusb, SIGNAL(onLog(QString, Mtb::LogLevel)),
 	                 this, SLOT(mtbUsbOnLog(QString, Mtb::LogLevel)));
@@ -91,6 +92,7 @@ DaemonCoreApplication::DaemonCoreApplication(int &argc, char **argv)
 	this->mtbUsbConnect();
 	if (!mtbusb.connected())
 		this->t_reconnect.start(T_RECONNECT_PERIOD);
+	this->t_reactivate.start(T_REACTIVATE_PERIOD);
 }
 
 /* MTB-USB handling ----------------------------------------------------------*/
@@ -196,15 +198,21 @@ void DaemonCoreApplication::mtbUsbGotModules() {
 			this->activateModule(i);
 }
 
-void DaemonCoreApplication::activateModule(uint8_t addr) {
+void DaemonCoreApplication::activateModule(uint8_t addr, size_t attemptsRemaining) {
 	log("New module "+QString::number(addr)+" discovered, activating...", Mtb::LogLevel::Info);
 	mtbusb.send(
 		Mtb::CmdMtbModuleInfoRequest(
 			addr,
 			{[this](uint8_t addr, Mtb::ModuleInfo info, void*) { this->moduleGotInfo(addr, info); }},
-			{[](Mtb::CmdError, void*) {
+			{[this, addr, attemptsRemaining](Mtb::CmdError, void*) {
 				log("Did not get info from newly discovered module, module keeps disabled.",
 				    Mtb::LogLevel::Error);
+				if (attemptsRemaining > 0) {
+					QTimer::singleShot(500, [this, addr, attemptsRemaining]() {
+						if ((modules[addr] == nullptr) || (!modules[addr]->isActive() && !modules[addr]->isActivating()))
+							this->activateModule(addr, attemptsRemaining-1);
+					});
+				}
 			}}
 		)
 	);
@@ -288,6 +296,12 @@ void DaemonCoreApplication::tReconnectTick() {
 	this->mtbUsbConnect();
 	if (mtbusb.connected())
 		this->t_reconnect.stop();
+}
+
+void DaemonCoreApplication::tReactivateTick() {
+	for (size_t i = 0; i < Mtb::_MAX_MODULES; i++)
+		if (modules[i] != nullptr)
+			modules[i]->reactivateCheck();
 }
 
 /* JSON server handling ------------------------------------------------------*/
@@ -593,17 +607,17 @@ void DaemonCoreApplication::clientResetOutputs(
 #ifdef Q_OS_WIN
 // Handler function will be called on separate thread!
 static BOOL WINAPI console_ctrl_handler(DWORD dwCtrlType) {
-    switch (dwCtrlType) {
-    case CTRL_C_EVENT: // Ctrl+C
-        QCoreApplication::quit();
-        return TRUE;
-    case CTRL_CLOSE_EVENT: // Closing the console window
-        QCoreApplication::quit();
-        return TRUE;
-    }
+	switch (dwCtrlType) {
+	case CTRL_C_EVENT: // Ctrl+C
+		QCoreApplication::quit();
+		return TRUE;
+	case CTRL_CLOSE_EVENT: // Closing the console window
+		QCoreApplication::quit();
+		return TRUE;
+	}
 
-    // Return TRUE if handled this message, further handler functions won't be called.
-    // Return FALSE to pass this message to further handlers until default handler calls ExitProcess().
-    return FALSE;
+	// Return TRUE if handled this message, further handler functions won't be called.
+	// Return FALSE to pass this message to further handlers until default handler calls ExitProcess().
+	return FALSE;
 }
 #endif

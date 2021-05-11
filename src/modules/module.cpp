@@ -7,10 +7,9 @@ MtbModule::MtbModule(uint8_t addr) : address(addr), name("Module "+QString::numb
 MtbModuleType MtbModule::moduleType() const { return this->type; }
 
 bool MtbModule::isActive() const { return this->active; }
-
 bool MtbModule::isRebooting() const { return this->rebooting.rebooting; }
-
 bool MtbModule::isBeacon() const { return this->beacon; }
+bool MtbModule::isActivating() const { return this->activating; }
 
 QJsonObject MtbModule::moduleInfo(bool, bool) const {
 	QJsonObject obj;
@@ -44,6 +43,7 @@ QJsonObject MtbModule::moduleInfo(bool, bool) const {
 }
 
 void MtbModule::mtbBusActivate(Mtb::ModuleInfo moduleInfo) {
+	this->activationsRemaining = MTB_MODULE_ACTIVATIONS;
 	this->busModuleInfo = moduleInfo;
 	this->rebooting.activatedByMtbUsb = true;
 	if (this->type == MtbModuleType::Uknown)
@@ -51,7 +51,9 @@ void MtbModule::mtbBusActivate(Mtb::ModuleInfo moduleInfo) {
 }
 
 void MtbModule::mtbBusLost() {
+	this->activating = false;
 	this->active = false;
+	this->activationsRemaining = 0;
 	this->sendModuleInfo();
 }
 
@@ -404,6 +406,8 @@ void MtbModule::reboot(std::function<void()> onOk, std::function<void()> onError
 }
 
 void MtbModule::fullyActivated() {
+	this->activating = false;
+	this->activationsRemaining = 0;
 	this->active = true;
 	log("Module "+QString::number(this->address)+" activated", Mtb::LogLevel::Info);
 	this->sendModuleInfo();
@@ -461,5 +465,15 @@ void MtbModule::jsonBeacon(QTcpSocket *socket, const QJsonObject &request) {
 	);
 }
 
-void MtbModule::allOutputsReset() {
+void MtbModule::allOutputsReset() {}
+
+void MtbModule::reactivateCheck() {}
+
+void MtbModule::activationError(Mtb::CmdError) {
+	this->activating = false;
+	if (this->activationsRemaining > 0) {
+		this->activationsRemaining--;
+		if (this->activationsRemaining <= 0)
+			log("Out of attempts for activation!", Mtb::LogLevel::Error);
+	}
 }

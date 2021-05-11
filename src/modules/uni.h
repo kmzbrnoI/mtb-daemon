@@ -51,6 +51,8 @@ protected:
 	void mtbBusConfigWritten();
 	void mtbBusConfigNotWritten(Mtb::CmdError);
 
+	void activate();
+
 	std::vector<uint8_t> mtbBusOutputsData() const;
 	static std::array<uint8_t, UNI_IO_CNT> moduleOutputsData(const std::vector<uint8_t>& mtbBusData);
 
@@ -76,6 +78,7 @@ public:
 	std::vector<QTcpSocket*> outputSetters() const override;
 	void resetOutputsOfClient(QTcpSocket*) override;
 	void allOutputsReset() override;
+	void reactivateCheck() override;
 
 	static uint8_t jsonOutputToByte(const QJsonObject&);
 };

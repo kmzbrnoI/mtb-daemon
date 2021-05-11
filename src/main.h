@@ -13,6 +13,7 @@ extern std::array<std::unique_ptr<MtbModule>, Mtb::_MAX_MODULES> modules;
 extern std::array<std::map<QTcpSocket*, bool>, Mtb::_MAX_MODULES> subscribes;
 
 constexpr size_t T_RECONNECT_PERIOD = 1000; // 1 s
+constexpr size_t T_REACTIVATE_PERIOD = 500; // 500 ms
 
 const QString DEFAULT_CONFIG_FILENAME = "mtb-daemon.json";
 
@@ -33,6 +34,7 @@ private:
 	QJsonObject config;
 	QString configFileName;
 	QTimer t_reconnect;
+	QTimer t_reactivate;
 
 	QJsonObject mtbUsbJson() const;
 	void mtbUsbGotInfo();
@@ -40,7 +42,7 @@ private:
 	void mtbUsbGotModules();
 	void mtbUsbDidNotGetModules(Mtb::CmdError);
 
-	void activateModule(uint8_t addr);
+	void activateModule(uint8_t addr, size_t attemptsRemaining = 5);
 	void moduleGotInfo(uint8_t addr, Mtb::ModuleInfo);
 	void moduleDidNotGetInfo();
 
@@ -65,6 +67,7 @@ private slots:
 	void serverClientDisconnected(QTcpSocket*);
 
 	void tReconnectTick();
+	void tReactivateTick();
 };
 
 #endif
