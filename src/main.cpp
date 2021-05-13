@@ -281,15 +281,16 @@ void DaemonCoreApplication::tReconnectTick() {
 
 	const QJsonObject mtbUsbConfig = this->config["mtb-usb"].toObject();
 	QString port = mtbUsbConfig["port"].toString();
-	const std::vector<QSerialPortInfo> &mtbUsbPorts = Mtb::MtbUsb::ports();
 
 	if (port == "auto") {
+		const std::vector<QSerialPortInfo> &mtbUsbPorts = Mtb::MtbUsb::ports();
 		if (mtbUsbPorts.size() != 1)
 			return;
 	} else {
+		QList<QSerialPortInfo> ports(QSerialPortInfo::availablePorts());
 		bool found = false;
-		for (const QSerialPortInfo &portInfo : mtbUsbPorts)
-			if (portInfo.portName() == port)
+		for (const QSerialPortInfo &info : ports)
+			if (info.portName() == port)
 				found = true;
 		if (!found)
 			return;
