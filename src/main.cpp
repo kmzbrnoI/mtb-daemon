@@ -205,7 +205,7 @@ void DaemonCoreApplication::activateModule(uint8_t addr, size_t attemptsRemainin
 			addr,
 			{[this](uint8_t addr, Mtb::ModuleInfo info, void*) { this->moduleGotInfo(addr, info); }},
 			{[this, addr, attemptsRemaining](Mtb::CmdError, void*) {
-				log("Did not get info from newly discovered module, module keeps disabled.",
+				log("Did not get info from module "+QString::number(addr)+", trying again...",
 				    Mtb::LogLevel::Error);
 				if (attemptsRemaining > 0) {
 					QTimer::singleShot(500, [this, addr, attemptsRemaining]() {

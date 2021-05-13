@@ -73,8 +73,8 @@ void MtbUni::jsonSetOutput(QTcpSocket *socket, const QJsonObject &request) {
 		if (code != this->outputsWant[port]) {
 			changed = true;
 			if ((this->whoSetOutput[port] != nullptr) && (this->whoSetOutput[port] != socket))
-				log("Multiple clients set same output: "+QString::number(this->address)+":"+QString::number(port),
-				    Mtb::LogLevel::Warning);
+				this->mlog("Multiple clients set same output: "+QString::number(port),
+				           Mtb::LogLevel::Warning);
 			this->whoSetOutput[port] = socket;
 		}
 		this->outputsWant[port] = code;
@@ -433,7 +433,7 @@ void MtbUni::mtbBusActivate(Mtb::ModuleInfo info) {
 
 	if (info.inBootloader()) {
 		// In bootloader → mark as active, don't do anything else
-		log("Module is in bootloader!", Mtb::LogLevel::Info);
+		this->mlog("Module is in bootloader!", Mtb::LogLevel::Info);
 		this->outputsReset();
 		return;
 	}
@@ -445,19 +445,19 @@ void MtbUni::activate() {
 	this->activating = true;
 
 	if (this->configLoaded) {
-		log("Config previously loaded from file, setting to module...", Mtb::LogLevel::Info);
+		this->mlog("Config previously loaded from file, setting to module...", Mtb::LogLevel::Info);
 		mtbusb.send(
 			Mtb::CmdMtbModuleSetConfig(
 				this->address, this->config.serializeForMtbUsb(this->isIrSupport()),
 				{[this](uint8_t, void*) { this->configSet(); }},
 				{[this](Mtb::CmdError error, void*) {
-					log("Unable to set module config, module keeps disabled.", Mtb::LogLevel::Error);
+					this->mlog("Unable to set module config.", Mtb::LogLevel::Error);
 					this->activationError(error);
 				}}
 			)
 		);
 	} else {
-		log("Config of this module not loaded from file, getting config from module...", Mtb::LogLevel::Info);
+		this->mlog("Config of this module not loaded from file, getting config from module...", Mtb::LogLevel::Info);
 		mtbusb.send(
 			Mtb::CmdMtbModuleGetConfig(
 				this->address,
@@ -467,7 +467,7 @@ void MtbUni::activate() {
 					this->configSet();
 				}},
 				{[this](Mtb::CmdError error, void*) {
-					log("Unable to get module config, module keeps disabled.", Mtb::LogLevel::Error);
+					this->mlog("Unable to get module config.", Mtb::LogLevel::Error);
 					this->activationError(error);
 				}}
 			)
@@ -482,7 +482,7 @@ void MtbUni::configSet() {
 			this->address,
 			{[this](uint8_t, const std::vector<uint8_t>& data, void*) { this->inputsRead(data); }},
 			{[this](Mtb::CmdError error, void*) {
-				log("Unable to get new module inputs, module keeps disabled.", Mtb::LogLevel::Error);
+				this->mlog("Unable to get new module inputs.", Mtb::LogLevel::Error);
 				this->activationError(error);
 			}}
 		)
@@ -498,7 +498,7 @@ void MtbUni::inputsRead(const std::vector<uint8_t> &data) {
 			this->address,
 			{[this](uint8_t, void*) { this->outputsReset(); }},
 			{[this](Mtb::CmdError error, void*) {
-				log("Unable to reset new module outputs, module keeps disabled.",
+				this->mlog("Unable to reset new module outputs.",
 				    Mtb::LogLevel::Error);
 				this->activationError(error);
 			}}

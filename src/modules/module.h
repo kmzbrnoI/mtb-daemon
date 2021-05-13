@@ -3,7 +3,7 @@
 
 #include <QTcpSocket>
 #include <QJsonObject>
-#include "../mtbusb/mtbusb-commands.h"
+#include "../mtbusb/mtbusb.h"
 #include "../server.h"
 #include "../errors.h"
 
@@ -74,6 +74,8 @@ protected:
 	void reboot(std::function<void()> onOk, std::function<void()> onError);
 	void fullyActivated();
 	void activationError(Mtb::CmdError);
+
+	void mlog(const QString& message, Mtb::LogLevel) const;
 
 public:
 	MtbModule(uint8_t addr);

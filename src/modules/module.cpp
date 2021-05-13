@@ -100,7 +100,7 @@ void MtbModule::jsonReboot(QTcpSocket *socket, const QJsonObject &request) {
 
 	this->reboot(
 		{[this, socket, request]() {
-			log("Module successfully rebooted", Mtb::LogLevel::Info);
+			this->mlog("Module successfully rebooted", Mtb::LogLevel::Info);
 			QJsonObject response{
 				{"command", "module_reboot"},
 				{"type", "response"},
@@ -230,12 +230,12 @@ std::map<size_t, std::vector<uint8_t>> MtbModule::parseFirmware(const QJsonObjec
 bool MtbModule::isFirmwareUpgrading() const { return this->fwUpgrade.fwUpgrading.has_value(); }
 
 void MtbModule::fwUpgdInit() {
-	log("Initializing firmware upgrade of module "+QString::number(this->address), Mtb::LogLevel::Info);
+	this->mlog("Initializing firmware upgrade", Mtb::LogLevel::Info);
 	this->sendModuleInfo(this->fwUpgrade.fwUpgrading.value().socket);
 
 	if (this->busModuleInfo.inBootloader()) {
 		// Skip rebooting to bootloader
-		log("Module already in bootloader, skipping reboot", Mtb::LogLevel::Info);
+		this->mlog("Module already in bootloader, skipping reboot", Mtb::LogLevel::Info);
 		this->fwUpgdGotInfo(this->busModuleInfo);
 		return;
 	}
@@ -332,7 +332,7 @@ void MtbModule::fwUpgdError(const QString &error, size_t code) {
 }
 
 void MtbModule::fwUpgdAllWritten() {
-	log("Firmware programming finished, rebooting module...", Mtb::LogLevel::Info);
+	this->mlog("Firmware programming finished, rebooting module...", Mtb::LogLevel::Info);
 
 	this->reboot(
 		{[this]() { this->fwUpgdRebooted(); }},
@@ -346,7 +346,7 @@ void MtbModule::fwUpgdRebooted() {
 		return;
 	}
 
-	log("Firmware successfully upgraded", Mtb::LogLevel::Info);
+	this->mlog("Firmware successfully upgraded", Mtb::LogLevel::Info);
 
 	QJsonObject json{
 		{"command", "module_upgrade_fw"},
@@ -409,7 +409,7 @@ void MtbModule::fullyActivated() {
 	this->activating = false;
 	this->activationsRemaining = 0;
 	this->active = true;
-	log("Module "+QString::number(this->address)+" activated", Mtb::LogLevel::Info);
+	this->mlog("Activated", Mtb::LogLevel::Info);
 	this->sendModuleInfo();
 
 	if (this->isRebooting()) {
@@ -474,6 +474,10 @@ void MtbModule::activationError(Mtb::CmdError) {
 	if (this->activationsRemaining > 0) {
 		this->activationsRemaining--;
 		if (this->activationsRemaining <= 0)
-			log("Out of attempts for activation!", Mtb::LogLevel::Error);
+			this->mlog("Out of attempts for activation!", Mtb::LogLevel::Error);
 	}
+}
+
+void MtbModule::mlog(const QString& message, Mtb::LogLevel loglevel) const {
+	log("Module "+QString::number(this->address)+": "+message, loglevel);
 }
