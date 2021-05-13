@@ -1,18 +1,26 @@
 #!/usr/bin/env python3
 
+"""
+MTB Daemon Firmware Upgrade Command Line Utility
+
+Usage:
+  fw_upgrade.py [options] <module_addr> <hexfilename>
+
+Options:
+  -s <servername>    Specify MTB Daemon server address [default: localhost]
+  -p <port>          Specify MTB Daemon port [default: 3841]
+  -v                 Verbose
+  -h --help          Show this screen.
+"""
+
 import socket
 import sys
 import json
+from docopt import docopt  # type: ignore
 
 
-def main() -> None:
-    if len(sys.argv) < 5:
-        sys.stderr.write('Usage: fw_upgrade.py server port module_addr hexfile\n')
-        sys.exit(1)
-    server, port, module_addr, hexfilename = sys.argv[1:]
-    port = int(port)
-    module_addr = int(module_addr)
-
+def fw_upgrade(server: str, port: int, module_addr: int, hexfilename: str,
+               verbose: bool) -> int:
     firmware = {}
     offset = 0
     with open(hexfilename, 'r') as file:
@@ -33,7 +41,7 @@ def main() -> None:
     s.connect((server, port))
 
     to_send = {
-        'command':'module_upgrade_fw',
+        'command': 'module_upgrade_fw',
         'address': module_addr,
         'firmware': firmware,
         'id': 12,
@@ -42,11 +50,24 @@ def main() -> None:
 
     while True:
         data = json.loads(s.recv(0xFFFF).decode('utf-8').strip())
-        print(data)
+        if verbose:
+            print(data)
         if data.get('command', '') == 'module_upgrade_fw':
-            sys.exit(0 if data.get('status', '') == 'ok' else 1)
+            if data.get('status', '') != 'ok':
+                sys.stderr.write(
+                    data.get('error', {}).get('message', 'Uknown error!')+'\n'
+                )
+            return 0 if data.get('status', '') == 'ok' else 1
 
 
 if __name__ == '__main__':
-    main()
+    args = docopt(__doc__)
 
+    result = fw_upgrade(
+        args['-s'],
+        int(args['-p']),
+        int(args['<module_addr>']),
+        args['<hexfilename>'],
+        args['-v'],
+    )
+    sys.exit(result)
