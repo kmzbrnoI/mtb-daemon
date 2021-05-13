@@ -524,8 +524,10 @@ void MtbUni::outputsReset() {
 /* Inputs changed ----------------------------------------------------------- */
 
 void MtbUni::mtbBusInputsChanged(const std::vector<uint8_t> &data) {
-	this->storeInputsState(data);
-	this->sendInputsChanged(inputsToJson(this->inputs));
+	if (this->active || this->activating) {
+		this->storeInputsState(data);
+		this->sendInputsChanged(inputsToJson(this->inputs));
+	}
 }
 
 void MtbUni::mtbUsbDisconnected() {
