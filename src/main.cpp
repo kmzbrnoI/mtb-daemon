@@ -90,8 +90,10 @@ DaemonCoreApplication::DaemonCoreApplication(int &argc, char **argv)
 	}
 
 	this->mtbUsbConnect();
-	if (!mtbusb.connected())
+	if (!mtbusb.connected()) {
 		this->t_reconnect.start(T_RECONNECT_PERIOD);
+		log("Waiting for MTB-USB to appear...", Mtb::LogLevel::Info);
+	}
 	this->t_reactivate.start(T_REACTIVATE_PERIOD);
 }
 
@@ -255,6 +257,7 @@ void DaemonCoreApplication::mtbUsbOnDisconnect() {
 			modules[i]->mtbUsbDisconnected();
 
 	this->t_reconnect.start(T_RECONNECT_PERIOD);
+	log("Waiting for MTB-USB to appear...", Mtb::LogLevel::Info);
 }
 
 void DaemonCoreApplication::mtbUsbOnNewModule(uint8_t addr) {
@@ -285,7 +288,7 @@ void DaemonCoreApplication::tReconnectTick() {
 			return;
 	} else {
 		bool found = false;
-		for (const QSerialPortInfo &portInfo :  mtbUsbPorts)
+		for (const QSerialPortInfo &portInfo : mtbUsbPorts)
 			if (portInfo.portName() == port)
 				found = true;
 		if (!found)
