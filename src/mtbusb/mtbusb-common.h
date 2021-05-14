@@ -79,6 +79,7 @@ enum class CmdError {
 	SerialPortClosed = 0x10,
 	UsbNoResponse = 0x11,
 	BusNoResponse = 0x12,
+	HistoryConflict = 0x13,
 };
 
 QString cmdErrorToStr(CmdError);

@@ -15,7 +15,7 @@ void MtbUsb::send(std::vector<uint8_t> data) {
 		throw EWriteError("No data could we written!");
 }
 
-void MtbUsb::write(std::unique_ptr<const Cmd> cmd) {
+void MtbUsb::write(std::unique_ptr<const Cmd> cmd, size_t no_sent) {
 	assert(nullptr != cmd);
 	log("PUT: " + cmd->msg(), LogLevel::Commands);
 
@@ -24,7 +24,8 @@ void MtbUsb::write(std::unique_ptr<const Cmd> cmd) {
 		send(cmd->getBytes());
 		m_hist.emplace_back(
 			cmd,
-			QDateTime::currentDateTime().addMSecs(_HIST_TIMEOUT)
+			QDateTime::currentDateTime().addMSecs(_HIST_TIMEOUT),
+			no_sent
 		);
 	} catch (std::exception &) {
 		log("Fatal error when writing command: " + cmd->msg(), LogLevel::Error);

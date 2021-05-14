@@ -58,20 +58,24 @@ QString dataToStr(DataT data, size_t len = 0) {
 }
 
 struct HistoryItem {
-	HistoryItem(std::unique_ptr<const Cmd> &cmd, QDateTime timeout)
+	HistoryItem(std::unique_ptr<const Cmd> &cmd, QDateTime timeout, size_t no_sent)
 	    : cmd(std::move(cmd))
-	    , timeout(timeout) {}
+	    , timeout(timeout)
+		, no_sent(no_sent) {}
 	HistoryItem(HistoryItem &&hist) noexcept
 	    : cmd(std::move(hist.cmd))
-	    , timeout(hist.timeout) {}
+	    , timeout(hist.timeout)
+		, no_sent(hist.no_sent) {}
 	HistoryItem& operator=(HistoryItem &&hist) {
 		cmd = std::move(hist.cmd);
 		timeout = hist.timeout;
+		no_sent = hist.no_sent;
 		return *this;
 	}
 
 	std::unique_ptr<const Cmd> cmd;
 	QDateTime timeout;
+	size_t no_sent = 0;
 };
 
 struct MtbUsbInfo {
@@ -147,7 +151,7 @@ private:
 	void send(std::vector<uint8_t>);
 	void sendNextOut();
 
-	void write(std::unique_ptr<const Cmd> cmd);
+	void write(std::unique_ptr<const Cmd> cmd, size_t no_sent = 1);
 	void send(std::unique_ptr<const Cmd> &cmd, bool bypass_m_out_emptiness = false);
 
 	bool conflictWithHistory(const Cmd &) const;
@@ -156,6 +160,7 @@ private:
 	void handleMtbUsbError(uint8_t code, uint8_t out_command_code, uint8_t addr);
 	void handleMtbBusError(uint8_t errorCode, uint8_t addr);
 	void histTimeoutError(CmdError, size_t i = 0);
+	void histResend();
 };
 
 // Templated functions must be in header file to compile
