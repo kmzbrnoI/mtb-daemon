@@ -41,15 +41,17 @@ def request_response(socket, verbose,
     socket.send((json.dumps(to_send)+'\n').encode('utf-8'))
 
     while True:
-        data = json.loads(socket.recv(0xFFFF).decode('utf-8').strip())
-        if verbose:
-            print(data)
-        if data.get('command', '') == request['command']:
-            if data.get('status', '') != 'ok':
-                raise EDaemonResponse(
-                    data.get('error', {}).get('message', 'Uknown error!')
-                )
-            return data
+        data = socket.recv(0xFFFF).decode('utf-8').strip()
+        messages = [json.loads(msg) for msg in data.split('\n')]
+        for message in messages:
+            if verbose:
+                print(message)
+            if message.get('command', '') == request['command']:
+                if message.get('status', '') != 'ok':
+                    raise EDaemonResponse(
+                        message.get('error', {}).get('message', 'Uknown error!')
+                    )
+                return message
 
 
 def fw_upgrade(socket, module_addr: int, hexfilename: str,
@@ -131,7 +133,7 @@ def reboot(socket, verbose: bool, module_: int) -> None:
 
 
 def monitor(socket, verbose: bool, module: int) -> None:
-    response = request_response(socket, verbose, {
+    request_response(socket, verbose, {
         'command': 'module_subscribe',
         'addresses': [module],
     })
@@ -139,22 +141,24 @@ def monitor(socket, verbose: bool, module: int) -> None:
     get_inputs(socket, verbose, module)
 
     while True:
-        data = json.loads(socket.recv(0xFFFF).decode('utf-8').strip())
-        if verbose:
-            print('['+str(datetime.datetime.now().time())+']', end=' ')
-            print(data)
-        command = data.get('command', '')
+        data = socket.recv(0xFFFF).decode('utf-8').strip()
+        messages = [json.loads(msg) for msg in data.split('\n')]
+        for message in messages:
+            if verbose:
+                print('['+str(datetime.datetime.now().time())+']', end=' ')
+                print(message)
+            command = message.get('command', '')
 
-        if command == 'module_inputs_changed':
-            print('['+str(datetime.datetime.now().time())+']', end=' ')
-            print(uni_inputs_str(data['module_inputs_changed']['inputs']))
+            if command == 'module_inputs_changed':
+                print('['+str(datetime.datetime.now().time())+']', end=' ')
+                print(uni_inputs_str(message['module_inputs_changed']['inputs']))
 
-        if command == 'module_outputs_changed':
-            print('['+str(datetime.datetime.now().time())+'] Outputs changed')
+            if command == 'module_outputs_changed':
+                print('['+str(datetime.datetime.now().time())+'] Outputs changed')
 
-        if command == 'module' and int(data['module']['address']) == module:
-            print('['+str(datetime.datetime.now().time())+']', end=' ')
-            print(f'state : {data["module"]["state"]}')
+            if command == 'module' and int(message['module']['address']) == module:
+                print('['+str(datetime.datetime.now().time())+']', end=' ')
+                print(f'state : {message["module"]["state"]}')
 
 
 def beacon(socket, verbose: bool, module_: int, beacon: bool) -> None:
