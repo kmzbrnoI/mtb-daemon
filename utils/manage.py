@@ -27,6 +27,7 @@ import sys
 import json
 from docopt import docopt  # type: ignore
 from typing import Dict, Any
+import datetime
 
 
 class EDaemonResponse(Exception):
@@ -134,16 +135,21 @@ def monitor(socket, verbose: bool, module: int) -> None:
         'command': 'module_subscribe',
         'addresses': [module],
     })
+    print('['+str(datetime.datetime.now().time())+']', end=' ')
+    get_inputs(socket, verbose, module)
 
     while True:
         data = json.loads(socket.recv(0xFFFF).decode('utf-8').strip())
         if verbose:
+            print('['+str(datetime.datetime.now().time())+']', end=' ')
             print(data)
 
         if data.get('command', '') == 'module_inputs_changed':
+            print('['+str(datetime.datetime.now().time())+']', end=' ')
             print(uni_inputs_str(data['module_inputs_changed']['inputs']))
 
         if data.get('command', '') == 'module_outputs_changed':
+            print('['+str(datetime.datetime.now().time())+']', end=' ')
             print('Outputs changed')
 
 
