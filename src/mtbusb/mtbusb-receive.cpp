@@ -13,6 +13,8 @@ void MtbUsb::spHandleReadyRead() {
 	m_readData.append(m_serialPort.readAll());
 	m_receiveTimeout = QDateTime::currentDateTime().addMSecs(_BUF_IN_TIMEOUT);
 
+	log("BUF: " + dataToStr<QByteArray, uint8_t>(m_readData, m_readData.size()), LogLevel::Debug);
+
 	// remove message till 0x2A 0x42
 	int pos = m_readData.indexOf(QByteArray("\x2A\x42"));
 	if (pos != 0)
