@@ -143,14 +143,18 @@ def monitor(socket, verbose: bool, module: int) -> None:
         if verbose:
             print('['+str(datetime.datetime.now().time())+']', end=' ')
             print(data)
+        command = data.get('command', '')
 
-        if data.get('command', '') == 'module_inputs_changed':
+        if command == 'module_inputs_changed':
             print('['+str(datetime.datetime.now().time())+']', end=' ')
             print(uni_inputs_str(data['module_inputs_changed']['inputs']))
 
-        if data.get('command', '') == 'module_outputs_changed':
+        if command == 'module_outputs_changed':
+            print('['+str(datetime.datetime.now().time())+'] Outputs changed')
+
+        if command == 'module' and int(data['module']['address']) == module:
             print('['+str(datetime.datetime.now().time())+']', end=' ')
-            print('Outputs changed')
+            print(f'state : {data["module"]["state"]}')
 
 
 def beacon(socket, verbose: bool, module_: int, beacon: bool) -> None:
