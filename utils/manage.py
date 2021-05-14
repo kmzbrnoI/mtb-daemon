@@ -159,6 +159,11 @@ def monitor(socket, verbose: bool, module: int) -> None:
             if command == 'module' and int(message['module']['address']) == module:
                 print('['+str(datetime.datetime.now().time())+']', end=' ')
                 print(f'state : {message["module"]["state"]}')
+                type_ = message['module']['type']
+                if 'state' in message['module'][type_]:
+                    state = message['module'][type_]['state']
+                    print('['+str(datetime.datetime.now().time())+']', end=' ')
+                    print(uni_inputs_str(state['inputs']))
 
 
 def beacon(socket, verbose: bool, module_: int, beacon: bool) -> None:
