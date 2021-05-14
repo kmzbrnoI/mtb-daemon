@@ -15,6 +15,8 @@ void MtbUsb::spHandleReadyRead() {
 
 	// remove message till 0x2A 0x42
 	int pos = m_readData.indexOf(QByteArray("\x2A\x42"));
+	if (pos != 0)
+		log("Removing incoming message leading data!", LogLevel::Warning);
 	if (pos == -1)
 		pos = m_readData.size();
 	m_readData.remove(0, pos);
