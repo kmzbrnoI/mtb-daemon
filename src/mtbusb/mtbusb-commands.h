@@ -527,6 +527,8 @@ struct CmdMtbModuleSpecific : public CmdMtbUsbForward {
 	std::vector<uint8_t> getBytes() const override { return this->data; }
 
 	QString msg() const override {
+		if (this->broadcast())
+			return "Broadcast module-specific command";
 		return "Module "+QString::number(module)+" specific command";
 	}
 

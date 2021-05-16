@@ -46,8 +46,7 @@ void MtbModule::mtbBusActivate(Mtb::ModuleInfo moduleInfo) {
 	this->activationsRemaining = MTB_MODULE_ACTIVATIONS;
 	this->busModuleInfo = moduleInfo;
 	this->rebooting.activatedByMtbUsb = true;
-	if (this->type == MtbModuleType::Uknown)
-		this->type = static_cast<MtbModuleType>(moduleInfo.type);
+	this->type = static_cast<MtbModuleType>(moduleInfo.type);
 }
 
 void MtbModule::mtbBusLost() {

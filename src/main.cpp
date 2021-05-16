@@ -457,6 +457,26 @@ void DaemonCoreApplication::serverReceived(QTcpSocket *socket, const QJsonObject
 		// Change config of active module
 		modules[addr]->jsonSetConfig(socket, request);
 
+	} else if ((command == "module_specific_command") && ((!request.contains("address")) || (request["address"].toInt() == 0))) {
+		// Module-specific broadcast
+		const QJsonArray &dataAr = request["data"].toArray();
+		std::vector<uint8_t> data;
+		for (const auto var : dataAr)
+			data.push_back(var.toInt());
+
+		mtbusb.send(
+			Mtb::CmdMtbModuleSpecific(
+				data,
+				{[request, socket](void*) {
+					QJsonObject json = jsonOkResponse(request);
+					server.send(socket, json);
+				}},
+				{[socket, request](Mtb::CmdError error, void*) {
+					sendError(socket, request, static_cast<int>(error)+0x1000, Mtb::cmdErrorToStr(error));
+				}}
+			)
+		);
+
 	} else if (command.startsWith("module_")) {
 		size_t addr = request["address"].toInt();
 		if ((Mtb::isValidModuleAddress(addr)) && (modules[addr] != nullptr)) {
