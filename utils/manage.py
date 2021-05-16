@@ -8,11 +8,13 @@ Usage:
   manage.py [options] mtbusb speed <speed>
   manage.py [options] module <module_addr>
   manage.py [options] inputs <module_addr>
+  manage.py [options] outputs <module_addr>
   manage.py [options] reboot <module_addr>
   manage.py [options] monitor <module_addr>
   manage.py [options] beacon <module_addr> <state>
   manage.py [options] fw_upgrade <module_addr> <hexfilename>
   manage.py [options] ir <module_addr> (yes|no|auto)
+  manage.py [options] set_output <module_addr> <port> <value>
   manage.py --help
 
 Options:
@@ -108,6 +110,18 @@ def uni_inputs_str(inputs: Dict[str, Any]) -> str:
             (''.join(str(int(val)) for val in inputs['full'][8:])))
 
 
+def uni_outputs_str(outputs: Dict[str, Any]) -> str:
+    result = ''
+    for i, (port, value) in enumerate(outputs.items()):
+        if value['type'] == 'plain' or value['value'] == 0:
+            result += str(value['value'])
+        else:
+            result += value['type'][0]
+        if i == 7:
+            result += ' '
+    return result
+
+
 def get_inputs(socket, verbose: bool, module: int) -> None:
     response = request_response(socket, verbose, {
         'command': 'module',
@@ -122,6 +136,22 @@ def get_inputs(socket, verbose: bool, module: int) -> None:
         )
     inputs = module_spec['state']['inputs']
     print(uni_inputs_str(inputs))
+
+
+def get_outputs(socket, verbose: bool, module: int) -> None:
+    response = request_response(socket, verbose, {
+        'command': 'module',
+        'address': module,
+        'state': True,
+    })
+    module = response['module']
+    module_spec = module[module['type']]
+    if 'state' not in module_spec:
+        raise EDaemonResponse(
+            'No state received - is module active? Is it in bootloader?'
+        )
+    outputs = module_spec['state']['outputs']
+    print(uni_outputs_str(outputs))
 
 
 def reboot(socket, verbose: bool, module_: int) -> None:
@@ -190,6 +220,25 @@ def ir(socket, verbose: bool, module_: int, type_: str) -> None:
     })
 
 
+def set_output(socket, verbose: bool, module: int, port: int, value: int) -> None:
+    if value < 2:
+        portdata = {'type': 'plain', 'value': value}
+    else:
+        portdata = {'type': 'flicker', 'value': value}
+
+    request_response(socket, verbose, {
+        'command': 'module_set_outputs',
+        'address': module,
+        'outputs': {
+            port: portdata,
+        },
+    })
+
+    # Wait because disconnect causes output reset
+    while True:
+        socket.recv(0xFFFF).decode('utf-8').strip()
+
+
 if __name__ == '__main__':
     args = docopt(__doc__)
 
@@ -217,6 +266,9 @@ if __name__ == '__main__':
         elif args['inputs']:
             get_inputs(sock, args['-v'], int(args['<module_addr>']))
 
+        elif args['outputs']:
+            get_outputs(sock, args['-v'], int(args['<module_addr>']))
+
         elif args['reboot']:
             reboot(sock, args['-v'], int(args['<module_addr>']))
 
@@ -236,6 +288,10 @@ if __name__ == '__main__':
             elif args['no']:
                 type_ = 'no'
             ir(sock, args['-v'], int(args['<module_addr>']), type_)
+
+        elif args['set_output']:
+            set_output(sock, args['-v'], int(args['<module_addr>']),
+                       int(args['<port>']), int(args['<value>']))
 
     except EDaemonResponse as e:
         sys.stderr.write(str(e)+'\n')
