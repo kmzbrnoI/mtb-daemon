@@ -211,6 +211,8 @@ void DaemonCoreApplication::activateModule(uint8_t addr, size_t attemptsRemainin
 				    Mtb::LogLevel::Error);
 				if (attemptsRemaining > 0) {
 					QTimer::singleShot(500, [this, addr, attemptsRemaining]() {
+						if (!mtbusb.connected())
+							return;
 						if ((modules[addr] == nullptr) || (!modules[addr]->isActive() && !modules[addr]->isActivating()))
 							this->activateModule(addr, attemptsRemaining-1);
 					});

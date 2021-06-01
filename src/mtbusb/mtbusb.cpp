@@ -94,6 +94,9 @@ void MtbUsb::connect(const QString &portname, int32_t br, QSerialPort::FlowContr
 }
 
 void MtbUsb::disconnect() {
+	if (!this->connected())
+		return;
+
 	log("Disconnecting...", LogLevel::Info);
 	m_serialPort.close();
 	onDisconnect();
