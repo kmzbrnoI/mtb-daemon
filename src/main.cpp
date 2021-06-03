@@ -51,6 +51,8 @@ DaemonCoreApplication::DaemonCoreApplication(int &argc, char **argv)
 	QObject::connect(&mtbusb, SIGNAL(onModuleInputsChange(uint8_t, const std::vector<uint8_t>&)),
 	                 this, SLOT(mtbUsbOnInputsChange(uint8_t, const std::vector<uint8_t>&)));
 
+	log("Starting MTB Daemon v"+QString(VERSION)+"...", Mtb::LogLevel::Info);
+
 	{ // Load config file
 		this->configFileName = (argc > 1) ? argv[1] : DEFAULT_CONFIG_FILENAME;
 		bool configLoaded = this->loadConfig(this->configFileName);
