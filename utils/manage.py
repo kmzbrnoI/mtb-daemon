@@ -197,6 +197,10 @@ def monitor(socket, verbose: bool, module: int) -> None:
                     print('['+str(datetime.datetime.now().time())+']', end=' ')
                     print(uni_inputs_str(state['inputs']))
 
+            if command == 'mtbusb':
+                print('['+str(datetime.datetime.now().time())+']', end=' ')
+                print(f'MTB-USB: {message["mtbusb"]}')
+
 
 def beacon(socket, verbose: bool, module_: int, beacon: bool) -> None:
     request_response(socket, verbose, {
