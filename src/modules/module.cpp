@@ -379,7 +379,7 @@ void MtbModule::reboot(std::function<void()> onOk, std::function<void()> onError
 		Mtb::CmdMtbModuleReboot(
 			this->address,
 			{[this](uint8_t, void*) {
-				QTimer::singleShot(500, [this](){
+				QTimer::singleShot(1000, [this](){
 					if (this->rebooting.activatedByMtbUsb)
 						return;
 					mtbusb.send(
