@@ -20,6 +20,11 @@ const QString DEFAULT_CONFIG_FILENAME = "mtb-daemon.json";
 void log(const QString&, Mtb::LogLevel);
 std::vector<QTcpSocket*> outputSetters();
 
+struct JsonParseError : public std::logic_error {
+	JsonParseError(const std::string &str) : std::logic_error(str) {}
+	JsonParseError(const QString &str) : logic_error(str.toStdString()) {}
+};
+
 class DaemonCoreApplication : public QCoreApplication {
 	Q_OBJECT
 public:

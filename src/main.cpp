@@ -531,7 +531,12 @@ bool DaemonCoreApplication::loadConfig(const QString& filename) {
 		return false;
 	QString content = file.readAll();
 	file.close();
-	this->config = QJsonDocument::fromJson(content.toUtf8()).object();
+
+	QJsonParseError parseError;
+	QJsonDocument doc = QJsonDocument::fromJson(content.toUtf8(), &parseError);
+	if (doc.isNull())
+		throw JsonParseError("Unable to parse config file "+filename+": "+parseError.errorString());
+	this->config = doc.object();
 
 	{
 		// Load modules
