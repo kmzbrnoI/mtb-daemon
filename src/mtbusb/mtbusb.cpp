@@ -76,7 +76,7 @@ void MtbUsb::pingTimerTick() {
 
 void MtbUsb::connect(const QString &portname, int32_t br, QSerialPort::FlowControl fc) {
 	log("Connecting to " + portname + ", br=" + QString::number(br) +
-	    ", fc=" + flowControlToStr(fc) + ") ...", LogLevel::Info);
+	    ", fc=" + flowControlToStr(fc) + "...", LogLevel::Info);
 
 	m_serialPort.setBaudRate(br);
 	m_serialPort.setFlowControl(fc);
