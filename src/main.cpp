@@ -568,7 +568,7 @@ bool DaemonCoreApplication::saveConfig(const QString &filename) {
 		if (modules[i] != nullptr) {
 			QJsonObject module;
 			modules[i]->saveConfig(module);
-			jsonModules[QString::number(i)] = module;
+			jsonModules[QString("%3").arg(i, 3, 10, QChar('0'))] = module;
 		}
 	}
 	root["modules"] = jsonModules;
