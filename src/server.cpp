@@ -43,7 +43,15 @@ void DaemonServer::clientReadyRead() {
 	while (client->canReadLine()) {
 		QByteArray data = client->readLine();
 		if (data.size() > 0) {
-			QJsonObject json = QJsonDocument::fromJson(data).object();
+			QJsonParseError parseError;
+			QJsonDocument doc = QJsonDocument::fromJson(data, &parseError);
+			if (doc.isNull()) {
+				log("Invalid json received from client "+client->peerAddress().toString()+"!",
+				    Mtb::LogLevel::Warning);
+				return;
+			}
+
+			QJsonObject json = doc.object();
 			try {
 				jsonReceived(client, json);
 			} catch (const std::logic_error& err) {
