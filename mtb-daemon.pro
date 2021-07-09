@@ -10,12 +10,14 @@ SOURCES += \
 	src/mtbusb/mtbusb-receive.cpp \
 	src/mtbusb/mtbusb-hist.cpp \
 	src/mtbusb/mtbusb-common.cpp \
+	src/mtbusb/mtbusb-win-com-discover.cpp \
 	src/server.cpp \
 	src/modules/module.cpp \
 	src/modules/uni.cpp
 
 HEADERS += \
 	src/main.h \
+	src/mtbusb/mtbusb-win-com-discover.h \
 	src/mtbusb/mtbusb.h \
 	src/mtbusb/mtbusb-commands.h \
 	src/mtbusb/mtbusb-common.h \
@@ -30,10 +32,12 @@ QMAKE_CXXFLAGS += -Wall -Wextra -pedantic -std=c++17
 win32 {
 	QMAKE_LFLAGS += -Wl,--kill-at
 	QMAKE_CXXFLAGS += -enable-stdcall-fixup
+	LIBS += -lsetupapi
 }
 win64 {
 	QMAKE_LFLAGS += -Wl,--kill-at
 	QMAKE_CXXFLAGS += -enable-stdcall-fixup
+	LIBS += -lsetupapi
 }
 
 QT -= gui

@@ -96,7 +96,7 @@ DaemonCoreApplication::DaemonCoreApplication(int &argc, char **argv)
 		this->t_reconnect.start(T_RECONNECT_PERIOD);
 		log("Waiting for MTB-USB to appear...", Mtb::LogLevel::Info);
 	}
-	this->t_reactivate.start(T_REACTIVATE_PERIOD);
+	this->t_reactivate.start(T_REACTIVATE_PERIOD);	
 }
 
 /* MTB-USB handling ----------------------------------------------------------*/
@@ -108,11 +108,6 @@ void DaemonCoreApplication::mtbUsbConnect() {
 	if (port == "auto") {
 		const std::vector<QSerialPortInfo> &mtbUsbPorts = Mtb::MtbUsb::ports();
 		log("Automatic MTB-USB port detected", Mtb::LogLevel::Info);
-
-#ifdef Q_OS_WIN
-		log("Automatic MTB-USB port detection on Windows probably won't work, you need to specify COM port manually",
-			Mtb::LogLevel::Warning);
-#endif
 
 		if (mtbUsbPorts.size() == 1) {
 			log("Found single port "+mtbUsbPorts[0].portName(), Mtb::LogLevel::Info);

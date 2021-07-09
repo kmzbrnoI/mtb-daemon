@@ -1,5 +1,6 @@
 #include <QSerialPortInfo>
 #include "mtbusb.h"
+#include "mtbusb-win-com-discover.h"
 
 namespace Mtb {
 
@@ -105,12 +106,16 @@ void MtbUsb::disconnect() {
 bool MtbUsb::connected() const { return m_serialPort.isOpen(); }
 
 std::vector<QSerialPortInfo> MtbUsb::ports() {
+#ifdef Q_OS_WIN
+	return winMtbUsbPorts();
+#elif
 	std::vector<QSerialPortInfo> result;
 	QList<QSerialPortInfo> ports(QSerialPortInfo::availablePorts());
 	for (const QSerialPortInfo &info : ports)
 		if (info.description() == "MTB-USB v4")
 			result.push_back(info);
 	return result;
+#endif
 }
 
 void MtbUsb::changeSpeed(MtbBusSpeed newSpeed, std::function<void()> onOk, std::function<void(Mtb::CmdError)> onError) {
