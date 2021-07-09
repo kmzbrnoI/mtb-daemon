@@ -108,7 +108,7 @@ bool MtbUsb::connected() const { return m_serialPort.isOpen(); }
 std::vector<QSerialPortInfo> MtbUsb::ports() {
 #ifdef Q_OS_WIN
 	return winMtbUsbPorts();
-#elif
+#else
 	std::vector<QSerialPortInfo> result;
 	QList<QSerialPortInfo> ports(QSerialPortInfo::availablePorts());
 	for (const QSerialPortInfo &info : ports)
