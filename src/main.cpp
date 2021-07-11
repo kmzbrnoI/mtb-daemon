@@ -445,7 +445,7 @@ void DaemonCoreApplication::serverReceived(QTcpSocket *socket, const QJsonObject
 			return sendAccessDenied(socket, request);
 
 		size_t addr = request["address"].toInt();
-		uint8_t type = request["type"].toInt();
+		uint8_t type = request["type_code"].toInt();
 		if (!Mtb::isValidModuleAddress(addr))
 			return sendError(socket, request, MTB_MODULE_INVALID_ADDR, "Invalid module address");
 

@@ -180,6 +180,8 @@ Response in same as *Daemon Status* response.
     "type": "request",
     "id": 10,
     "address": 5,
+    "type_code" 15,
+    "name": "Klobouky MTB DK",
     "config": {
         # Config specific for module, see module definition above
     }

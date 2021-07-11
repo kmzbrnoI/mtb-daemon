@@ -83,8 +83,8 @@ void MtbModule::jsonCommand(QTcpSocket *socket, const QJsonObject &request) {
 void MtbModule::jsonSetOutput(QTcpSocket*, const QJsonObject&) {}
 
 void MtbModule::jsonSetConfig(QTcpSocket*, const QJsonObject &json) {
-	if (json.contains("type"))
-		this->type = static_cast<MtbModuleType>(json["type"].toInt());
+	if (json.contains("type_code"))
+		this->type = static_cast<MtbModuleType>(json["type_code"].toInt());
 	if (json.contains("name"))
 		this->name = json["name"].toString();
 }
