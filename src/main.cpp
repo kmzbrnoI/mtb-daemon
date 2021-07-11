@@ -32,6 +32,20 @@ int main(int argc, char *argv[]) {
 	return a.exec();
 }
 
+const QJsonObject DEFAULT_CONFIG = {
+	{"loglevel", static_cast<int>(Mtb::LogLevel::Info)},
+	{"server", QJsonObject{
+		{"host", "127.0.0.1"},
+		{"port", static_cast<int>(SERVER_DEFAULT_PORT)},
+		{"keepAlive", true},
+	}},
+	{"mtb-usb", QJsonObject{
+		{"port", "auto"},
+		{"keepAlive", true},
+	}},
+};
+
+
 DaemonCoreApplication::DaemonCoreApplication(int &argc, char **argv)
      : QCoreApplication(argc, argv) {
 	QObject::connect(&server, SIGNAL(jsonReceived(QTcpSocket*, const QJsonObject&)),
@@ -59,18 +73,7 @@ DaemonCoreApplication::DaemonCoreApplication(int &argc, char **argv)
 		if (!configLoaded) {
 			log("Unable to load config file "+configFileName+", resetting config, writing new config file...",
 				Mtb::LogLevel::Info);
-			this->config = QJsonObject{
-				{"loglevel", static_cast<int>(Mtb::LogLevel::Info)},
-				{"server", QJsonObject{
-					{"host", "127.0.0.1"},
-					{"port", static_cast<int>(SERVER_DEFAULT_PORT)},
-					{"keepAlive", true},
-				}},
-				{"mtb-usb", QJsonObject{
-					{"port", "auto"},
-					{"keepAlive", true},
-				}},
-			};
+			this->config = DEFAULT_CONFIG;
 			this->saveConfig(configFileName);
 		} else {
 			log("Config file "+configFileName+" successfully loaded.", Mtb::LogLevel::Info);
