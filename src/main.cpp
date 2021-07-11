@@ -69,14 +69,15 @@ DaemonCoreApplication::DaemonCoreApplication(int &argc, char **argv)
 
 	{ // Load config file
 		this->configFileName = (argc > 1) ? argv[1] : DEFAULT_CONFIG_FILENAME;
-		bool configLoaded = this->loadConfig(this->configFileName);
-		if (!configLoaded) {
-			log("Unable to load config file "+configFileName+", resetting config, writing new config file...",
+		try {
+			this->loadConfig(this->configFileName);
+			log("Config file "+configFileName+" successfully loaded.", Mtb::LogLevel::Info);
+		} catch (const ConfigNotFound&) {
+			log("Unable to load config file "+configFileName+
+			    ", resetting config, writing default config file...",
 				Mtb::LogLevel::Info);
 			this->config = DEFAULT_CONFIG;
 			this->saveConfig(configFileName);
-		} else {
-			log("Config file "+configFileName+" successfully loaded.", Mtb::LogLevel::Info);
 		}
 	}
 
@@ -356,7 +357,12 @@ void DaemonCoreApplication::serverReceived(QTcpSocket *socket, const QJsonObject
 		QString filename = this->configFileName;
 		if (request.contains("filename"))
 			filename = request["filename"].toString();
-		bool ok = this->saveConfig(filename);
+		bool ok = true;
+		try {
+			this->saveConfig(filename);
+		} catch (...) {
+			ok = false;
+		}
 		QJsonObject response {
 			{"command", "save_config"},
 			{"type", "response"},
@@ -523,10 +529,10 @@ QJsonObject DaemonCoreApplication::mtbUsbJson() const {
 
 /* Configuration ------------------------------------------------------------ */
 
-bool DaemonCoreApplication::loadConfig(const QString& filename) {
+void DaemonCoreApplication::loadConfig(const QString& filename) {
 	QFile file(filename);
 	if (!file.open(QIODevice::ReadOnly | QIODevice::Text))
-		return false;
+		throw ConfigNotFound(QString("Configuration file not found!"));
 	QString content = file.readAll();
 	file.close();
 
@@ -554,10 +560,9 @@ bool DaemonCoreApplication::loadConfig(const QString& filename) {
 	}
 
 	this->config.remove("modules");
-	return true;
 }
 
-bool DaemonCoreApplication::saveConfig(const QString &filename) {
+void DaemonCoreApplication::saveConfig(const QString &filename) {
 	log("Saving config to "+filename+"...", Mtb::LogLevel::Info);
 
 	QJsonObject root = this->config;
@@ -575,10 +580,9 @@ bool DaemonCoreApplication::saveConfig(const QString &filename) {
 
 	QFile file(filename);
 	if (!file.open(QIODevice::WriteOnly | QIODevice::Text))
-		return false;
+		throw FileWriteError("Unable to open "+filename+" for writing!");
 	file.write(doc.toJson(QJsonDocument::JsonFormat::Indented));
 	file.close();
-	return true;
 }
 
 std::vector<QTcpSocket*> outputSetters() {

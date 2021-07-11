@@ -20,6 +20,16 @@ const QString DEFAULT_CONFIG_FILENAME = "mtb-daemon.json";
 void log(const QString&, Mtb::LogLevel);
 std::vector<QTcpSocket*> outputSetters();
 
+struct ConfigNotFound : public std::logic_error {
+	ConfigNotFound(const std::string &str) : std::logic_error(str) {}
+	ConfigNotFound(const QString &str) : logic_error(str.toStdString()) {}
+};
+
+struct FileWriteError : public std::logic_error {
+	FileWriteError(const std::string &str) : std::logic_error(str) {}
+	FileWriteError(const QString &str) : logic_error(str.toStdString()) {}
+};
+
 struct JsonParseError : public std::logic_error {
 	JsonParseError(const std::string &str) : std::logic_error(str) {}
 	JsonParseError(const QString &str) : logic_error(str.toStdString()) {}
@@ -51,8 +61,8 @@ private:
 	void moduleGotInfo(uint8_t addr, Mtb::ModuleInfo);
 	void moduleDidNotGetInfo();
 
-	bool loadConfig(const QString &filename);
-	bool saveConfig(const QString &filename);
+	void loadConfig(const QString &filename);
+	void saveConfig(const QString &filename);
 
 	void mtbUsbConnect();
 
