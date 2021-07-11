@@ -446,10 +446,8 @@ void DaemonCoreApplication::serverReceived(QTcpSocket *socket, const QJsonObject
 
 		size_t addr = request["address"].toInt();
 		uint8_t type = request["type"].toInt();
-		if (!Mtb::isValidModuleAddress(addr)) {
-			sendError(socket, request, MTB_MODULE_INVALID_ADDR, "Invalid module address");
-			return;
-		}
+		if (!Mtb::isValidModuleAddress(addr))
+			return sendError(socket, request, MTB_MODULE_INVALID_ADDR, "Invalid module address");
 
 		if (modules[addr] == nullptr) {
 			if ((type&0xF0) == 0x10)
@@ -460,10 +458,8 @@ void DaemonCoreApplication::serverReceived(QTcpSocket *socket, const QJsonObject
 			return;
 		}
 
-		if ((modules[addr]->isActive()) && (type != static_cast<size_t>(modules[addr]->moduleType()))) {
-			sendError(socket, request, MTB_ALREADY_STARTED, "Cannot change type of active module!");
-			return;
-		}
+		if ((modules[addr]->isActive()) && (type != static_cast<size_t>(modules[addr]->moduleType())))
+			return sendError(socket, request, MTB_ALREADY_STARTED, "Cannot change type of active module!");
 
 		// Change config of active module
 		modules[addr]->jsonSetConfig(socket, request);
