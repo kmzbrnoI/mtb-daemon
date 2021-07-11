@@ -44,12 +44,14 @@ public:
 	~DaemonCoreApplication() override = default;
 
 	static void log(const QString&, Mtb::LogLevel);
+	bool hasWriteAccess(const QTcpSocket*);
 
 private:
 	QJsonObject config;
 	QString configFileName;
 	QTimer t_reconnect;
 	QTimer t_reactivate;
+	std::vector<QHostAddress> writeAccess;
 
 	QJsonObject mtbUsbJson() const;
 	void mtbUsbGotInfo();

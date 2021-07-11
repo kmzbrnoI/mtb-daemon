@@ -38,6 +38,7 @@ const QJsonObject DEFAULT_CONFIG = {
 		{"host", "127.0.0.1"},
 		{"port", static_cast<int>(SERVER_DEFAULT_PORT)},
 		{"keepAlive", true},
+		{"allowedClients", QJsonArray{"127.0.0.1"}}
 	}},
 	{"mtb-usb", QJsonObject{
 		{"port", "auto"},
@@ -100,7 +101,7 @@ DaemonCoreApplication::DaemonCoreApplication(int &argc, char **argv)
 		this->t_reconnect.start(T_RECONNECT_PERIOD);
 		log("Waiting for MTB-USB to appear...", Mtb::LogLevel::Info);
 	}
-	this->t_reactivate.start(T_REACTIVATE_PERIOD);	
+	this->t_reactivate.start(T_REACTIVATE_PERIOD);
 }
 
 /* MTB-USB handling ----------------------------------------------------------*/
@@ -323,15 +324,13 @@ void DaemonCoreApplication::serverReceived(QTcpSocket *socket, const QJsonObject
 		if (request.contains("mtbusb")) { // Changing MTB-USB
 			QJsonObject jsonMtbUsb = request["mtbusb"].toObject();
 			if (jsonMtbUsb.contains("speed")) { // Change MTBbus speed
-				if (!mtbusb.connected() || !mtbusb.mtbUsbInfo().has_value()) {
-					sendError(socket, request, MTB_DEVICE_DISCONNECTED, "Disconnected from MTB-USB!");
-					return;
-				}
+				if (!this->hasWriteAccess(socket))
+					return sendAccessDenied(socket, request);
+				if (!mtbusb.connected() || !mtbusb.mtbUsbInfo().has_value())
+					return sendError(socket, request, MTB_DEVICE_DISCONNECTED, "Disconnected from MTB-USB!");
 				size_t speed = jsonMtbUsb["speed"].toInt();
-				if (!Mtb::mtbBusSpeedValid(speed)) {
-					sendError(socket, request, MTB_INVALID_SPEED, "Invalid MTBbus speed!");
-					return;
-				}
+				if (!Mtb::mtbBusSpeedValid(speed))
+					return sendError(socket, request, MTB_INVALID_SPEED, "Invalid MTBbus speed!");
 				Mtb::MtbBusSpeed mtbUsbSpeed = mtbusb.mtbUsbInfo().value().speed;
 				Mtb::MtbBusSpeed newSpeed = Mtb::intToMtbBusSpeed(speed);
 				if (mtbUsbSpeed != newSpeed) {
@@ -354,6 +353,9 @@ void DaemonCoreApplication::serverReceived(QTcpSocket *socket, const QJsonObject
 		server.send(socket, response);
 
 	} else if (command == "save_config") {
+		if (!this->hasWriteAccess(socket))
+			return sendAccessDenied(socket, request);
+
 		QString filename = this->configFileName;
 		if (request.contains("filename"))
 			filename = request["filename"].toString();
@@ -439,6 +441,8 @@ void DaemonCoreApplication::serverReceived(QTcpSocket *socket, const QJsonObject
 
 	} else if (command == "module_set_config") {
 		// Set config can change module type
+		if (!this->hasWriteAccess(socket))
+			return sendAccessDenied(socket, request);
 
 		size_t addr = request["address"].toInt();
 		uint8_t type = request["type"].toInt();
@@ -467,6 +471,9 @@ void DaemonCoreApplication::serverReceived(QTcpSocket *socket, const QJsonObject
 
 	} else if ((command == "module_specific_command") && ((!request.contains("address")) || (request["address"].toInt() == 0))) {
 		// Module-specific broadcast
+		if (!this->hasWriteAccess(socket))
+			return sendAccessDenied(socket, request);
+
 		const QJsonArray &dataAr = request["data"].toArray();
 		std::vector<uint8_t> data;
 		for (const auto var : dataAr)
@@ -486,6 +493,9 @@ void DaemonCoreApplication::serverReceived(QTcpSocket *socket, const QJsonObject
 		);
 
 	} else if (command.startsWith("module_")) {
+		if (!this->hasWriteAccess(socket))
+			return sendAccessDenied(socket, request);
+
 		size_t addr = request["address"].toInt();
 		if ((Mtb::isValidModuleAddress(addr)) && (modules[addr] != nullptr)) {
 			modules[addr]->jsonCommand(socket, request);
@@ -494,6 +504,9 @@ void DaemonCoreApplication::serverReceived(QTcpSocket *socket, const QJsonObject
 		}
 
 	} else if (command == "reset_my_outputs") {
+		if (!this->hasWriteAccess(socket))
+			return sendAccessDenied(socket, request);
+
 		this->clientResetOutputs(
 			socket,
 			[socket, request]() { server.send(socket, jsonOkResponse(request)); },
@@ -560,6 +573,14 @@ void DaemonCoreApplication::loadConfig(const QString& filename) {
 	}
 
 	this->config.remove("modules");
+
+	{
+		// Load allowed clients
+		const QJsonObject serverConfig = this->config["server"].toObject();
+		this->writeAccess.clear();
+		for (const auto& value : serverConfig["allowedClients"].toArray())
+			this->writeAccess.push_back(QHostAddress(value.toString()));
+	}
 }
 
 void DaemonCoreApplication::saveConfig(const QString &filename) {
@@ -637,6 +658,14 @@ void DaemonCoreApplication::clientResetOutputs(
 	} else {
 		onOk();
 	}
+}
+
+bool DaemonCoreApplication::hasWriteAccess(const QTcpSocket *socket) {
+	if (this->writeAccess.empty())
+		return true;
+	return (std::find(this->writeAccess.begin(), this->writeAccess.end(),
+	        socket->peerAddress()) != this->writeAccess.end());
+
 }
 
 #ifdef Q_OS_WIN

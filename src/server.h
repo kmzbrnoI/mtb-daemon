@@ -55,5 +55,7 @@ QJsonObject jsonError(Mtb::CmdError);
 QJsonObject jsonOkResponse(const QJsonObject &request);
 void sendError(QTcpSocket*, const QJsonObject&, size_t code, const QString&);
 void sendError(QTcpSocket*, const QJsonObject&, Mtb::CmdError);
+void sendError(QTcpSocket*, const QJsonObject &request, const QJsonObject &error);
+void sendAccessDenied(QTcpSocket*, const QJsonObject&);
 
 #endif

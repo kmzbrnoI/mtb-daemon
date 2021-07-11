@@ -97,13 +97,16 @@ QJsonObject jsonError(size_t code, const QString &msg) {
 	};
 }
 
-void sendError(QTcpSocket *socket, const QJsonObject &request, size_t code,
-                      const QString& message) {
+QJsonObject jsonError(Mtb::CmdError error) {
+	return jsonError(static_cast<int>(error)+0x1000, Mtb::cmdErrorToStr(error));
+}
+
+void sendError(QTcpSocket *socket, const QJsonObject &request, const QJsonObject &error) {
 	QJsonObject response {
 		{"command", request["command"]},
 		{"type", "response"},
 		{"status", "error"},
-		{"error", jsonError(code, message)},
+		{"error", error},
 	};
 	if (request.contains("id"))
 		response["id"] = request["id"];
@@ -112,18 +115,17 @@ void sendError(QTcpSocket *socket, const QJsonObject &request, size_t code,
 	server.send(*socket, response);
 }
 
+void sendError(QTcpSocket *socket, const QJsonObject &request, size_t code,
+               const QString& message) {
+	sendError(socket, request, jsonError(code, message));
+}
+
 void sendError(QTcpSocket *socket, const QJsonObject &request, Mtb::CmdError cmdError) {
-	QJsonObject response {
-		{"command", request["command"]},
-		{"type", "response"},
-		{"status", "error"},
-		{"error", jsonError(cmdError)},
-	};
-	if (request.contains("id"))
-		response["id"] = request["id"];
-	if (request.contains("address"))
-		response["address"] = request["address"];
-	server.send(*socket, response);
+	sendError(socket, request, jsonError(cmdError));
+}
+
+void sendAccessDenied(QTcpSocket *socket, const QJsonObject &request) {
+	sendError(socket, request, jsonError(403, "Forbidden"));
 }
 
 QJsonObject jsonOkResponse(const QJsonObject &request) {
@@ -137,8 +139,4 @@ QJsonObject jsonOkResponse(const QJsonObject &request) {
 	if (request.contains("address"))
 		response["address"] = request["address"];
 	return response;
-}
-
-QJsonObject jsonError(Mtb::CmdError error) {
-	return jsonError(static_cast<int>(error)+0x1000, Mtb::cmdErrorToStr(error));
 }
