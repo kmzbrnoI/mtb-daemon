@@ -17,6 +17,8 @@ Usage:
   manage.py [options] set_output <module_addr> <port> <value>
   manage.py [options] load_config
   manage.py [options] save_config
+  manage.py [options] config <module_addr> ports <ports_range> (plaini|plaino|s-com|ir) [<delay>]
+  manage.py [options] config <module_addr> name <module_name>
   manage.py --help
 
 Options:
@@ -30,7 +32,7 @@ import socket
 import sys
 import json
 from docopt import docopt  # type: ignore
-from typing import Dict, Any
+from typing import Dict, Any, Optional
 import datetime
 
 
@@ -105,6 +107,18 @@ def module(socket, verbose: bool, module: int) -> None:
     })
     for key, val in response['module'].items():
         print(key, ':', val)
+
+
+def uni_print_config(config: Dict[str, Any]) -> None:
+    print('Inputs:')
+    for i, delay in enumerate(config['inputsDelay']):
+        ir = config['irs'][i] if 'irs' in config else False
+        irstr = 'IR' if ir else ''
+        print(f'  {i}: {delay} {irstr}')
+
+    print('Outputs:')
+    for i, d in enumerate(config['outputsSafe']):
+        print(f'  {i}: {d["type"]} {d["value"]}')
 
 
 def uni_inputs_str(inputs: Dict[str, Any]) -> str:
@@ -257,6 +271,53 @@ def save_config(socket, verbose: bool) -> None:
     })
 
 
+def module_config_ports(socket, verbose: bool, module: int, rg, io_type: str,
+                        delay: Optional[int]) -> None:
+    response = request_response(socket, verbose, {
+        'command': 'module',
+        'address': module,
+    })
+    type_ = response['module']['type']
+    config = response['module'][type_]['config']
+
+    if io_type == 'ir' or io_type == 'plaini':
+        for i in rg:
+            config['irs'][i] = (io_type == 'ir')
+        for i in rg:
+            config['inputsDelay'][i] = delay
+
+    if io_type == 's-com' or io_type == 'plaino':
+        for i in rg:
+            config['outputsSafe'][i]['type'] = io_type[:5]
+
+    print(f'Module {module} – {response["module"]["name"]}:')
+    uni_print_config(config)
+    request_response(socket, verbose, {
+        'command': 'module_set_config',
+        'address': module,
+        'type_code': response['module']['type_code'],
+        'name': response['module']['name'],
+        'config': config,
+    })
+
+
+def module_config_name(socket, verbose: bool, module: int, name: str) -> None:
+    response = request_response(socket, verbose, {
+        'command': 'module',
+        'address': module,
+    })
+    type_ = response['module']['type']
+    config = response['module'][type_]['config']
+
+    request_response(socket, verbose, {
+        'command': 'module_set_config',
+        'address': module,
+        'type_code': response['module']['type_code'],
+        'name': name,
+        'config': config,
+    })
+
+
 if __name__ == '__main__':
     args = docopt(__doc__)
 
@@ -297,7 +358,7 @@ if __name__ == '__main__':
             beacon(sock, args['-v'], int(args['<module_addr>']),
                    bool(int(args['<state>'])))
 
-        elif args['ir']:
+        elif args['ir'] and not args['config']:
             type_ = ''
             if args['auto']:
                 type_ = 'auto'
@@ -316,6 +377,29 @@ if __name__ == '__main__':
 
         elif args['save_config']:
             save_config(sock, args['-v'])
+
+        elif args['config'] and args['ports']:
+            start, end = map(int, args['<ports_range>'].split(':'))
+            if args['s-com']:
+                type_ = 's-com'
+            elif args['ir']:
+                type_ = 'ir'
+            elif args['plaini']:
+                type_ = 'plaini'
+            elif args['plaino']:
+                type_ = 'plaino'
+            else:
+                raise Exception('Provide IO type!')
+            module_config_ports(
+                sock, args['-v'], int(args['<module_addr>']),
+                range(start, end+1), type_, args['<delay>']
+            )
+
+        elif args['config'] and args['name']:
+            module_config_name(
+                sock, args['-v'], int(args['<module_addr>']), args['<module_name>']
+            )
+
 
     except EDaemonResponse as e:
         sys.stderr.write(str(e)+'\n')
