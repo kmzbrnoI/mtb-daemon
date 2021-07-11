@@ -16,6 +16,14 @@ struct MtbUniConfig {
 
 	void fromJson(const QJsonObject&);
 	QJsonObject json(bool withIrs, bool file) const;
+
+	bool operator==(const MtbUniConfig& other) const {
+		return ((this->outputsSafe == other.outputsSafe) &&
+		        (this->inputsDelay == other.inputsDelay) &&
+		        (this->irs == other.irs));
+	}
+
+	bool operator!=(const MtbUniConfig& other) const { return !(*this == other); }
 };
 
 class MtbUni : public MtbModule {

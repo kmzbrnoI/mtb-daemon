@@ -238,10 +238,11 @@ void MtbUni::jsonSetConfig(QTcpSocket *socket, const QJsonObject &request) {
 
 	MtbModule::jsonSetConfig(socket, request);
 
+	MtbUniConfig oldConfig = this->configToWrite;
 	this->configToWrite.fromJson(request["config"].toObject());
 	this->configWriting = ServerRequest(socket, request);
 
-	if (this->active) {
+	if ((this->active) && (oldConfig != this->configToWrite)) {
 		mtbusb.send(
 			Mtb::CmdMtbModuleSetConfig(
 				this->address, this->configToWrite.serializeForMtbUsb(this->isIrSupport()),
