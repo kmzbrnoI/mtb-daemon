@@ -413,7 +413,6 @@ if __name__ == '__main__':
                 sock, args['-v'], int(args['<module_addr>']), args['<module_name>']
             )
 
-
     except EDaemonResponse as e:
         sys.stderr.write(str(e)+'\n')
         sys.exit(1)
