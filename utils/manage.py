@@ -3,6 +3,11 @@
 """
 MTB Daemon Command Line Utility
 
+This utility connects to MTB Daemon server and allows user to interact with
+the server, e.g. configure modules, read inputs, set outputs, upgrade firmware
+etc. It provides nice high-level command-line interface to interact with
+MTB Daemon.
+
 Usage:
   manage.py [options] save_config
   manage.py [options] mtbusb
