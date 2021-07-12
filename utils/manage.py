@@ -4,6 +4,7 @@
 MTB Daemon Command Line Utility
 
 Usage:
+  manage.py [options] save_config
   manage.py [options] mtbusb
   manage.py [options] mtbusb speed <speed>
   manage.py [options] module <module_addr>
@@ -15,7 +16,6 @@ Usage:
   manage.py [options] fw_upgrade <module_addr> <hexfilename>
   manage.py [options] ir <module_addr> (yes|no|auto)
   manage.py [options] set_output <module_addr> <port> <value>
-  manage.py [options] save_config
   manage.py [options] config <module_addr> ports
   manage.py [options] config <module_addr> ports <ports_range> (plaini|plaino|s-com|ir) [<delay>]
   manage.py [options] config <module_addr> name [<module_name>]
