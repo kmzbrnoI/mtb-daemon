@@ -110,7 +110,12 @@ def module(socket, verbose: bool, module: int) -> None:
         'command': 'module',
         'address': module,
     })
+    type_ = response['module']['type']
     for key, val in response['module'].items():
+        if (key == type_ and 'config' in val and type_.startswith('MTB-UNI')):
+            print('Config:')
+            uni_print_config(val['config'])
+            val.pop('config')
         print(key, ':', val)
 
 
