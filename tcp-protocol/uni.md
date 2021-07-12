@@ -13,7 +13,8 @@ Definition of messages for MTB-UNI
             {"type": "flicker", "value": 60},
             ... # 16 values
         ],
-        "inputsDelay": [0, 0.5, 0.2, ..., 0.3] # 16 values
+        "inputsDelay": [0, 0.5, 0.2, ..., 0.3], # 16 values
+        "irs": [False, False, True, True, ...] # 16 values, just for IR modules
     },
     "state": {
         "outputs": [
