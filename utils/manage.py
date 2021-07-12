@@ -275,6 +275,7 @@ def module_config_ports(socket, verbose: bool, module: int, rg, io_type: str,
         'address': module,
     })
     type_ = response['module']['type']
+    assert type_.startswith('MTB-UNI'), f'Nepodporovaný typ modulu: {type_}!'
     config = response['module'][type_]['config']
 
     if io_type == 'ir' or io_type == 'plaini':
