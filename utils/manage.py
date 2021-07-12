@@ -16,6 +16,7 @@ Usage:
   manage.py [options] ir <module_addr> (yes|no|auto)
   manage.py [options] set_output <module_addr> <port> <value>
   manage.py [options] save_config
+  manage.py [options] config <module_addr> ports
   manage.py [options] config <module_addr> ports <ports_range> (plaini|plaino|s-com|ir) [<delay>]
   manage.py [options] config <module_addr> name [<module_name>]
   manage.py --help
@@ -286,8 +287,6 @@ def module_config_ports(socket, verbose: bool, module: int, rg, io_type: str,
         for i in rg:
             config['outputsSafe'][i]['type'] = io_type[:5]
 
-    print(f'Module {module} – {response["module"]["name"]}:')
-    uni_print_config(config)
     request_response(socket, verbose, {
         'command': 'module_set_config',
         'address': module,
@@ -295,6 +294,20 @@ def module_config_ports(socket, verbose: bool, module: int, rg, io_type: str,
         'name': response['module']['name'],
         'config': config,
     })
+
+    module_print_config(socket, verbose, module)
+
+
+def module_print_config(socket, verbose: bool, module: int) -> None:
+    response = request_response(socket, verbose, {
+        'command': 'module',
+        'address': module,
+    })
+    type_ = response['module']['type']
+    assert type_.startswith('MTB-UNI'), f'Nepodporovaný typ modulu: {type_}!'
+    config = response['module'][type_]['config']
+    print(f'Module {module} – {response["module"]["name"]}:')
+    uni_print_config(config)
 
 
 def module_config_name(socket, verbose: bool, module: int, name: Optional[str]) -> None:
@@ -374,7 +387,10 @@ if __name__ == '__main__':
         elif args['save_config']:
             save_config(sock, args['-v'])
 
-        elif args['config'] and args['ports']:
+        elif args['config'] and args['ports'] and not args['<ports_range>']:
+            module_print_config(sock, args['-v'], int(args['<module_addr>']))
+
+        elif args['config'] and args['ports'] and args['<ports_range>']:
             start, end = map(int, args['<ports_range>'].split(':'))
             if args['s-com']:
                 type_ = 's-com'
