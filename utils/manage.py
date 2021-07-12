@@ -17,7 +17,7 @@ Usage:
   manage.py [options] set_output <module_addr> <port> <value>
   manage.py [options] save_config
   manage.py [options] config <module_addr> ports <ports_range> (plaini|plaino|s-com|ir) [<delay>]
-  manage.py [options] config <module_addr> name <module_name>
+  manage.py [options] config <module_addr> name [<module_name>]
   manage.py --help
 
 Options:
@@ -294,11 +294,14 @@ def module_config_ports(socket, verbose: bool, module: int, rg, io_type: str,
     })
 
 
-def module_config_name(socket, verbose: bool, module: int, name: str) -> None:
+def module_config_name(socket, verbose: bool, module: int, name: Optional[str]) -> None:
     response = request_response(socket, verbose, {
         'command': 'module',
         'address': module,
     })
+    if name is None:
+        print(response['module']['name'])
+        return
     type_ = response['module']['type']
     config = response['module'][type_]['config']
 
