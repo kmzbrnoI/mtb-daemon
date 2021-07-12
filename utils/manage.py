@@ -109,15 +109,18 @@ def module(socket, verbose: bool, module: int) -> None:
 
 
 def uni_print_config(config: Dict[str, Any]) -> None:
-    print('Inputs:')
+    inputs = ['Inputs:']
     for i, delay in enumerate(config['inputsDelay']):
         ir = config['irs'][i] if 'irs' in config else False
         irstr = 'IR' if ir else ''
-        print(f'  {i}: {delay} {irstr}')
+        inputs.append(f'{i}: {delay} {irstr}')
 
-    print('Outputs:')
+    outputs = ['Outputs:']
     for i, d in enumerate(config['outputsSafe']):
-        print(f'  {i}: {d["type"]} {d["value"]}')
+        outputs.append(f'{i}: {d["type"]} {d["value"]}')
+
+    for inp, out in zip(inputs, outputs):
+        print(inp.ljust(20), out)
 
 
 def uni_inputs_str(inputs: Dict[str, Any]) -> str:
