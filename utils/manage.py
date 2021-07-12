@@ -15,7 +15,6 @@ Usage:
   manage.py [options] fw_upgrade <module_addr> <hexfilename>
   manage.py [options] ir <module_addr> (yes|no|auto)
   manage.py [options] set_output <module_addr> <port> <value>
-  manage.py [options] load_config
   manage.py [options] save_config
   manage.py [options] config <module_addr> ports <ports_range> (plaini|plaino|s-com|ir) [<delay>]
   manage.py [options] config <module_addr> name <module_name>
@@ -259,12 +258,6 @@ def set_output(socket, verbose: bool, module: int, port: int, value: int) -> Non
         socket.recv(0xFFFF).decode('utf-8').strip()
 
 
-def load_config(socket, verbose: bool) -> None:
-    request_response(socket, verbose, {
-        'command': 'load_config',
-    })
-
-
 def save_config(socket, verbose: bool) -> None:
     request_response(socket, verbose, {
         'command': 'save_config',
@@ -371,9 +364,6 @@ if __name__ == '__main__':
         elif args['set_output']:
             set_output(sock, args['-v'], int(args['<module_addr>']),
                        int(args['<port>']), int(args['<value>']))
-
-        elif args['load_config']:
-            load_config(sock, args['-v'])
 
         elif args['save_config']:
             save_config(sock, args['-v'])
