@@ -42,9 +42,9 @@ void DaemonServer::clientReadyRead() {
 	auto client = dynamic_cast<QTcpSocket*>(QObject::sender());
 	while (client->canReadLine()) {
 		QByteArray data = client->readLine();
-		if (data.size() > 0) {
+		if (data.trimmed().size() > 0) {
 			QJsonParseError parseError;
-			QJsonDocument doc = QJsonDocument::fromJson(data, &parseError);
+			QJsonDocument doc = QJsonDocument::fromJson(data.trimmed(), &parseError);
 			if (doc.isNull()) {
 				log("Invalid json received from client "+client->peerAddress().toString()+"!",
 				    Mtb::LogLevel::Warning);
