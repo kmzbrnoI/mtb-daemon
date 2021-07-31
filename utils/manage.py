@@ -290,7 +290,12 @@ def module_config_ports(socket, verbose: bool, module: int, rg, io_type: str,
 
     if io_type == 'ir' or io_type == 'plaini':
         for i in rg:
-            config['irs'][i] = (io_type == 'ir')
+            if io_type == 'ir':
+                assert 'irs' in config
+                config['irs'][i] = True
+            else:
+                if 'irs' in config:
+                    config['irs'][i] = False
         for i in rg:
             config['inputsDelay'][i] = delay
 
@@ -415,7 +420,8 @@ if __name__ == '__main__':
                 raise Exception('Provide IO type!')
             module_config_ports(
                 sock, args['-v'], int(args['<module_addr>']),
-                range(start, end+1), type_, float(args['<delay>'])
+                range(start, end+1), type_,
+                float(args['<delay>']) if args['<delay>'] else None
             )
 
         elif args['config'] and args['name']:
