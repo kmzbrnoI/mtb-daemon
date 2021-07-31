@@ -279,7 +279,7 @@ def save_config(socket, verbose: bool) -> None:
 
 
 def module_config_ports(socket, verbose: bool, module: int, rg, io_type: str,
-                        delay: Optional[int]) -> None:
+                        delay: Optional[float]) -> None:
     response = request_response(socket, verbose, {
         'command': 'module',
         'address': module,
@@ -415,7 +415,7 @@ if __name__ == '__main__':
                 raise Exception('Provide IO type!')
             module_config_ports(
                 sock, args['-v'], int(args['<module_addr>']),
-                range(start, end+1), type_, args['<delay>']
+                range(start, end+1), type_, float(args['<delay>'])
             )
 
         elif args['config'] and args['name']:
