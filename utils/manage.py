@@ -157,8 +157,8 @@ def get_inputs(socket, verbose: bool, module: int) -> None:
         'address': module,
         'state': True,
     })
-    module = response['module']
-    module_spec = module[module['type']]
+    module_ = response['module']
+    module_spec = module_[module_['type']]
     if 'state' not in module_spec:
         raise EDaemonResponse(
             'No state received - is module active? Is it in bootloader?'
@@ -173,8 +173,8 @@ def get_outputs(socket, verbose: bool, module: int) -> None:
         'address': module,
         'state': True,
     })
-    module = response['module']
-    module_spec = module[module['type']]
+    module_ = response['module']
+    module_spec = module_[module_['type']]
     if 'state' not in module_spec:
         raise EDaemonResponse(
             'No state received - is module active? Is it in bootloader?'
