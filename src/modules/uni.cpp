@@ -409,8 +409,8 @@ std::array<uint8_t, UNI_IO_CNT> MtbUni::moduleOutputsData(const std::vector<uint
 
 void MtbUni::allOutputsReset() {
 	for (size_t i = 0; i < UNI_IO_CNT; i++) {
-		this->outputsWant[i] = 0;
-		this->outputsConfirmed[i] = 0;
+		this->outputsWant[i] = this->config.outputsSafe[i];
+		this->outputsConfirmed[i] = this->outputsWant[i];
 		this->whoSetOutput[i] = nullptr;
 	}
 }
