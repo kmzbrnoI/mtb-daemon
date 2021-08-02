@@ -333,16 +333,16 @@ void MtbUni::alignFirmware(std::map<size_t, std::vector<uint8_t>> &fw, size_t pa
 void MtbUni::resetOutputsOfClient(QTcpSocket *socket) {
 	MtbModule::resetOutputsOfClient(socket);
 
-	bool reset = false;
+	bool send = false;
 	for (size_t i = 0; i < UNI_IO_CNT; i++) {
 		if (this->whoSetOutput[i] == socket) {
 			this->outputsWant[i] = this->config.outputsSafe[i];
 			this->whoSetOutput[i] = nullptr;
-			reset = true;
+			send = true;
 		}
 	}
 
-	if (reset) {
+	if (send) {
 		this->setOutputsWaiting.push_back({nullptr});
 		if (this->setOutputsSent.empty())
 			this->setOutputs();
@@ -413,6 +413,7 @@ void MtbUni::allOutputsReset() {
 		this->outputsConfirmed[i] = this->outputsWant[i];
 		this->whoSetOutput[i] = nullptr;
 	}
+	this->sendOutputsChanged(outputsToJson(this->outputsConfirmed), {});
 }
 
 /* MTB-UNI activation ---------------------------------------------------------
