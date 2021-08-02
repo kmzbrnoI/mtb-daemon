@@ -141,7 +141,8 @@ def uni_inputs_str(inputs: Dict[str, Any]) -> str:
 
 def uni_outputs_str(outputs: Dict[str, Any]) -> str:
     result = ''
-    for i, (port, value) in enumerate(outputs.items()):
+    sorted_ = sorted(outputs.items(), key=lambda kv: int(kv[0]))
+    for i, (port, value) in enumerate(sorted_):
         if value['type'] == 'plain' or value['value'] == 0:
             result += str(value['value'])
         else:
@@ -213,7 +214,8 @@ def monitor(socket, verbose: bool, module: int) -> None:
                 print(uni_inputs_str(message['module_inputs_changed']['inputs']))
 
             if command == 'module_outputs_changed':
-                print('['+str(datetime.datetime.now().time())+'] Outputs changed')
+                print('['+str(datetime.datetime.now().time())+'] Outputs:', end=' ')
+                print(uni_outputs_str(message['module_outputs_changed']['outputs']))
 
             if command == 'module' and int(message['module']['address']) == module:
                 print('['+str(datetime.datetime.now().time())+']', end=' ')
