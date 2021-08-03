@@ -223,7 +223,7 @@ void MtbUsb::handleMtbUsbError(uint8_t code, uint8_t out_command_code, uint8_t a
 		log("GET: error not paired with outgoing command (code "+QString::number(code)+", out command code: 0x"+
 		    QString::number(out_command_code, 16)+", addr "+QString::number(addr)+")", LogLevel::Error);
 
-	} else if (error == MtbUsbRecvError::NoResponse) {
+	} else if (error == MtbUsbRecvError::FullBuffer) {
 		log("GET: error: full buffer (code "+QString::number(code)+", out command code: 0x"+
 		    QString::number(out_command_code, 16)+", addr "+QString::number(addr)+")", LogLevel::Error);
 		// TODO: resend? report as error?
