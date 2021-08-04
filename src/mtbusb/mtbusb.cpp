@@ -13,8 +13,6 @@ MtbUsb::MtbUsb(QObject *parent) : QObject(parent) {
 	QObject::connect(&m_serialPort, SIGNAL(aboutToClose()), this, SLOT(spAboutToClose()));
 
 	QObject::connect(&m_histTimer, SIGNAL(timeout()), this, SLOT(histTimerTick()));
-	m_outTimer.setInterval(_OUT_TIMER_INTERVAL);
-	QObject::connect(&m_outTimer, SIGNAL(timeout()), this, SLOT(outTimerTick()));
 	QObject::connect(&m_pingTimer, SIGNAL(timeout()), this, SLOT(pingTimerTick()));
 
 	m_pingTimer.setInterval(_PING_SEND_PERIOD_MS);
@@ -27,7 +25,6 @@ void MtbUsb::log(const QString &message, const LogLevel loglevel) {
 
 void MtbUsb::spAboutToClose() {
 	m_histTimer.stop();
-	m_outTimer.stop();
 	m_pingTimer.stop();
 	while (!m_hist.empty()) {
 		m_hist.front().cmd->callError(CmdError::SerialPortClosed);

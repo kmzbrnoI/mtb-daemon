@@ -42,33 +42,11 @@ void MtbUsb::send(std::unique_ptr<const Cmd> &cmd, bool bypass_m_out_emptiness) 
 		log("ENQUEUE: " + cmd->msg(), LogLevel::Debug);
 		m_out.emplace_back(std::move(cmd));
 	} else {
-		if (m_lastSent.addMSecs(_OUT_TIMER_INTERVAL) > QDateTime::currentDateTime()) {
-			// Last command sent too early, still space in hist buffer ->
-			// queue & activate timer for next send
-			log("ENQUEUE: " + cmd->msg(), LogLevel::Debug);
-			m_out.emplace_back(std::move(cmd));
-			if (!m_outTimer.isActive())
-				m_outTimer.start();
-		} else {
-			write(std::move(cmd));
-		}
+		write(std::move(cmd));
 	}
-}
-
-void MtbUsb::outTimerTick() {
-	if (m_out.empty())
-		m_outTimer.stop();
-	else
-		sendNextOut();
 }
 
 void MtbUsb::sendNextOut() {
-	if (m_lastSent.addMSecs(_OUT_TIMER_INTERVAL) > QDateTime::currentDateTime()) {
-		if (!m_outTimer.isActive())
-			m_outTimer.start();
-		return;
-	}
-
 	std::unique_ptr<const Cmd> out = std::move(m_out.front());
 	log("DEQUEUE: " + out->msg(), LogLevel::Debug);
 	m_out.pop_front();

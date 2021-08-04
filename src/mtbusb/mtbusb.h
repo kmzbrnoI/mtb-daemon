@@ -23,7 +23,6 @@ constexpr size_t _HIST_TIMEOUT = 300; // ms
 constexpr size_t _HIST_SEND_MAX = 3;
 constexpr size_t _BUF_IN_TIMEOUT = 50; // ms
 constexpr size_t _MAX_HIST_BUF_COUNT = 3;
-constexpr size_t _OUT_TIMER_INTERVAL = 20; // 20 ms
 constexpr size_t _PING_SEND_PERIOD_MS = 5000;
 
 struct EOpenError : public MtbUsbError {
@@ -119,7 +118,6 @@ private slots:
 	void spHandleError(QSerialPort::SerialPortError);
 	void spAboutToClose();
 	void histTimerTick();
-	void outTimerTick();
 	void pingTimerTick();
 
 signals:
@@ -135,7 +133,6 @@ private:
 	QSerialPort m_serialPort;
 	QByteArray m_readData;
 	QTimer m_histTimer;
-	QTimer m_outTimer;
 	QTimer m_pingTimer;
 	std::deque<HistoryItem> m_hist;
 	std::deque<std::unique_ptr<const Cmd>> m_out;

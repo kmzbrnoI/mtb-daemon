@@ -126,6 +126,8 @@ void MtbUsb::parseMtbUsbMessage(uint8_t command_code, const std::vector<uint8_t>
 			for (auto it = m_hist.begin(); it != m_hist.end(); ++it) {
 				if (it->cmd.get() == cmd) {
 					m_hist.erase(it);
+					if (!m_out.empty())
+						this->sendNextOut();
 					return;
 				}
 			}
@@ -194,6 +196,8 @@ void MtbUsb::parseMtbBusMessage(uint8_t module, uint8_t attempts, uint8_t comman
 				for (auto it = m_hist.begin(); it != m_hist.end(); ++it) {
 					if (it->cmd.get() == m_hist[i].cmd.get()) {
 						m_hist.erase(it);
+						if (!m_out.empty())
+							this->sendNextOut();
 						return;
 					}
 				}
