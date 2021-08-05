@@ -20,7 +20,7 @@ Usage:
   manage.py [options] beacon <module_addr> <state>
   manage.py [options] fw_upgrade <module_addr> <hexfilename>
   manage.py [options] ir <module_addr> (yes|no|auto)
-  manage.py [options] set_output <module_addr> <port> <value>
+  manage.py [options] set_output <module_addr> <port> <type> <value>
   manage.py [options] config <module_addr> ports
   manage.py [options] config <module_addr> ports <ports_range> (plaini|plaino|s-com|ir) [<delay>]
   manage.py [options] config <module_addr> name [<module_name>]
@@ -255,17 +255,12 @@ def ir(socket, verbose: bool, module_: int, type_: str) -> None:
     })
 
 
-def set_output(socket, verbose: bool, module: int, port: int, value: int) -> None:
-    if value < 2:
-        portdata = {'type': 'plain', 'value': value}
-    else:
-        portdata = {'type': 'flicker', 'value': value}
-
+def set_output(socket, verbose: bool, module: int, port: int, type_: str, value: int) -> None:
     request_response(socket, verbose, {
         'command': 'module_set_outputs',
         'address': module,
         'outputs': {
-            port: portdata,
+            port: {'type': type_, 'value': value},
         },
     })
 
@@ -400,7 +395,7 @@ if __name__ == '__main__':
 
         elif args['set_output']:
             set_output(sock, args['-v'], int(args['<module_addr>']),
-                       int(args['<port>']), int(args['<value>']))
+                       int(args['<port>']), args['<type>'], int(args['<value>']))
 
         elif args['save_config']:
             save_config(sock, args['-v'])
