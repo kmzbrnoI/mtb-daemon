@@ -172,11 +172,11 @@ void MtbModule::saveConfig(QJsonObject &json) const {
 	json["type"] = static_cast<int>(this->type);
 }
 
-void MtbModule::sendModuleInfo(QTcpSocket *ignore) const {
+void MtbModule::sendModuleInfo(QTcpSocket *ignore, bool sendConfig) const {
 	QJsonObject json{
 		{"command", "module"},
 		{"type", "event"},
-		{"module", this->moduleInfo(true, false)},
+		{"module", this->moduleInfo(true, sendConfig)},
 	};
 
 	for (auto pair : subscribes[this->address]) {
@@ -360,7 +360,7 @@ void MtbModule::fwUpgdRebooted() {
 
 	this->fwUpgrade.fwUpgrading.reset();
 	this->fwUpgrade.data.clear();
-	this->sendModuleInfo(request.socket);
+	this->sendModuleInfo(request.socket, true);
 }
 
 void MtbModule::reboot(std::function<void()> onOk, std::function<void()> onError) {
@@ -373,7 +373,7 @@ void MtbModule::reboot(std::function<void()> onOk, std::function<void()> onError
 	this->rebooting.activatedByMtbUsb = false;
 	this->mtbBusLost();
 
-	this->sendModuleInfo();
+	this->sendModuleInfo(nullptr, true);
 
 	mtbusb.send(
 		Mtb::CmdMtbModuleReboot(
@@ -388,7 +388,7 @@ void MtbModule::reboot(std::function<void()> onOk, std::function<void()> onError
 							{[this](uint8_t, Mtb::ModuleInfo info, void*) { this->mtbBusActivate(info); }},
 							{[this](Mtb::CmdError, void*) {
 								this->rebooting.rebooting = false;
-								this->sendModuleInfo();
+								this->sendModuleInfo(nullptr, true);
 								this->rebooting.onError();
 							}}
 						)
@@ -397,7 +397,7 @@ void MtbModule::reboot(std::function<void()> onOk, std::function<void()> onError
 			}},
 			{[this](Mtb::CmdError, void*) {
 				this->rebooting.rebooting = false;
-				this->sendModuleInfo();
+				this->sendModuleInfo(nullptr, true);
 				this->rebooting.onError();
 			}}
 		)
@@ -409,7 +409,7 @@ void MtbModule::fullyActivated() {
 	this->activationsRemaining = 0;
 	this->active = true;
 	this->mlog("Activated", Mtb::LogLevel::Info);
-	this->sendModuleInfo();
+	this->sendModuleInfo(nullptr, true);
 
 	if (this->isRebooting()) {
 		this->rebooting.rebooting = false;

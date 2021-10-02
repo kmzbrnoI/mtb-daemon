@@ -259,7 +259,7 @@ void MtbUni::mtbBusConfigWritten() {
 	this->config = this->configToWrite;
 	const ServerRequest request = this->configWriting.value();
 	this->configWriting.reset();
-	this->sendModuleInfo(request.socket);
+	this->sendModuleInfo(request.socket, true);
 
 	QJsonObject response{
 		{"command", "module_set_config"},
@@ -422,7 +422,7 @@ void MtbUni::allOutputsReset() {
  * 2) Config is SET
  * 3) Inputs are get
  * 4) Outputs are reset
- B) Module configuration was NOT previously loaded from file:
+ B) Module configuration was NOT previously loaded from file:
  * 1) General information are read
  * 2) Config is GET
  * 3) Inputs are get
