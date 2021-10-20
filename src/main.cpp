@@ -140,7 +140,7 @@ void DaemonCoreApplication::log(const QString &message, Mtb::LogLevel loglevel) 
 	std::cout << "[" << QTime::currentTime().toString("hh:mm:ss,zzz").toStdString() << "] ";
 	switch (loglevel) {
 		case Mtb::LogLevel::Error: std::cout << "[ERROR] "; break;
-		case Mtb::LogLevel::Warning: std::cout << "[warning] "; break;
+		case Mtb::LogLevel::Warning: std::cout << "[WARNING] "; break;
 		case Mtb::LogLevel::Info: std::cout << "[info] "; break;
 		case Mtb::LogLevel::Commands: std::cout << "[command] "; break;
 		case Mtb::LogLevel::RawData: std::cout << "[raw-data] "; break;
