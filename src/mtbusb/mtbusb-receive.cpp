@@ -77,6 +77,8 @@ void MtbUsb::parseMtbUsbMessage(uint8_t command_code, const std::vector<uint8_t>
 			log("GET: MTB-USB info: type 0x"+QString::number(info.type, 16)+", fw: "+info.fw_version()+
 			    ", speed: "+QString::number(mtbBusSpeedToInt(info.speed))+", protocol: "+info.proto_version(),
 			    LogLevel::Commands);
+			if (info.fw_deprecated())
+				log("MTB-USB firmware is deprecated! Upgrade to the newer firmware!", LogLevel::Warning);
 		}
 		break;
 
