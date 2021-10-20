@@ -50,6 +50,7 @@ void MtbModule::mtbBusActivate(Mtb::ModuleInfo moduleInfo) {
 }
 
 void MtbModule::mtbBusLost() {
+	this->mlog("Lost", Mtb::LogLevel::Info);
 	this->activating = false;
 	this->active = false;
 	this->activationsRemaining = 0;
