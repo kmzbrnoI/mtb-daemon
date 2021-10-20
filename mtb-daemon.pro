@@ -24,7 +24,8 @@ HEADERS += \
 	src/server.h \
 	src/modules/module.h \
 	src/modules/uni.h \
-	src/errors.h
+	src/errors.h \
+	lib/termcolor.h
 
 CONFIG += c++17
 QMAKE_CXXFLAGS += -Wall -Wextra -pedantic -std=c++17

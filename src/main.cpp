@@ -9,6 +9,7 @@
 #include "mtbusb/mtbusb-common.h"
 #include "modules/uni.h"
 #include "errors.h"
+#include "lib/termcolor.h"
 
 #ifdef Q_OS_WIN
 #include <windows.h>
@@ -137,6 +138,15 @@ void DaemonCoreApplication::log(const QString &message, Mtb::LogLevel loglevel) 
 	if (loglevel > DaemonCoreApplication::loglevel)
 		return;
 
+	switch (loglevel) {
+		case Mtb::LogLevel::Error: std::cout << termcolor::bold << termcolor::red; break;
+		case Mtb::LogLevel::Warning: std::cout << termcolor::bold << termcolor::yellow; break;
+		case Mtb::LogLevel::Info: std::cout << termcolor::bold; break;
+		case Mtb::LogLevel::RawData: std::cout << termcolor::cyan; break;
+		case Mtb::LogLevel::Debug: std::cout << termcolor::magenta; break;
+		default: break;
+	}
+
 	std::cout << "[" << QTime::currentTime().toString("hh:mm:ss,zzz").toStdString() << "] ";
 	switch (loglevel) {
 		case Mtb::LogLevel::Error: std::cout << "[ERROR] "; break;
@@ -147,7 +157,7 @@ void DaemonCoreApplication::log(const QString &message, Mtb::LogLevel loglevel) 
 		case Mtb::LogLevel::Debug: std::cout << "[debug] "; break;
 		default: break;
 	}
-	std::cout << message.toStdString() << std::endl;
+	std::cout << message.toStdString() << termcolor::reset << std::endl;
 }
 
 void DaemonCoreApplication::mtbUsbOnLog(QString message, Mtb::LogLevel loglevel) {
