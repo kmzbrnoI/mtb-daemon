@@ -51,9 +51,6 @@ protected:
 	void sendOutputsChanged(QJsonObject outputs, const std::vector<QTcpSocket*> &ignore) const;
 	void sendModuleInfo(QTcpSocket *ignore = nullptr, bool sendConfig = false) const;
 
-	bool isFirmwareUpgrading() const;
-	bool isConfigSetting() const;
-
 	virtual void jsonSetOutput(QTcpSocket*, const QJsonObject&);
 	virtual void jsonUpgradeFw(QTcpSocket*, const QJsonObject&);
 	virtual void jsonReboot(QTcpSocket*, const QJsonObject&);
@@ -86,6 +83,8 @@ public:
 	bool isRebooting() const;
 	bool isBeacon() const;
 	bool isActivating() const;
+	bool isFirmwareUpgrading() const;
+	bool isConfigSetting() const;
 
 	virtual QJsonObject moduleInfo(bool state, bool config) const;
 

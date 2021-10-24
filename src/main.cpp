@@ -251,12 +251,15 @@ void DaemonCoreApplication::mtbUsbOnDisconnect() {
 }
 
 void DaemonCoreApplication::mtbUsbOnNewModule(uint8_t addr) {
-	if ((modules[addr] == nullptr) || ((!modules[addr]->isActive()) && (!modules[addr]->isRebooting())))
+	if ((modules[addr] == nullptr) || ((!modules[addr]->isActive()) && (!modules[addr]->isRebooting()) &&
+	    (!modules[addr]->isFirmwareUpgrading())))
 		this->activateModule(addr);
 }
 
 void DaemonCoreApplication::mtbUsbOnModuleFail(uint8_t addr) {
-	if (modules[addr] != nullptr)
+	// Warning: any operation could be pending on module
+	// Beware module instance deletion!
+	if ((modules[addr] != nullptr) && (!modules[addr]->isFirmwareUpgrading()) && (!modules[addr]->isRebooting()))
 		modules[addr]->mtbBusLost();
 }
 
