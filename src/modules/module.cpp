@@ -33,6 +33,7 @@ QJsonObject MtbModule::moduleInfo(bool, bool) const {
 
 		obj["firmware_version"] = this->busModuleInfo.fw_version();
 		obj["protocol_version"] = this->busModuleInfo.proto_version();
+		obj["bootloader_version"] = this->busModuleInfo.bootloader_version();
 	} else {
 		if (this->isRebooting())
 			obj["state"] = "rebooting";

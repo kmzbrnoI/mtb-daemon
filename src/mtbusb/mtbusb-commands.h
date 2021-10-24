@@ -165,9 +165,12 @@ struct ModuleInfo {
 	uint8_t fw_minor;
 	uint8_t proto_major;
 	uint8_t proto_minor;
+	uint8_t bootloader_major;
+	uint8_t bootloader_minor;
 
 	QString fw_version() const { return QString::number(fw_major)+"."+QString::number(fw_minor); }
 	QString proto_version() const { return QString::number(proto_major)+"."+QString::number(proto_minor); }
+	QString bootloader_version() const { return QString::number(bootloader_major)+"."+QString::number(bootloader_minor); }
 	bool inBootloader() const { return this->bootloader_int || this->bootloader_unint; }
 };
 
@@ -194,6 +197,19 @@ struct CmdMtbModuleInfoRequest : public CmdMtbUsbForward {
 			info.fw_minor = data[3];
 			info.proto_major = data[4];
 			info.proto_minor = data[5];
+
+			if (data.size() >= 8) {
+				info.bootloader_major = data[6];
+				info.bootloader_minor = data[7];
+			} else {
+				if (info.inBootloader()) {
+					info.bootloader_major = info.fw_major;
+					info.bootloader_minor = info.fw_minor;
+				} else {
+					info.bootloader_major = 1;
+					info.bootloader_minor = 1;
+				}
+			}
 			onInfo.func(module, info, onInfo.data);
 			return true;
 		}

@@ -25,6 +25,7 @@ MTB daemon's TCP sever messages specification
         "speed": 115200,
         "firmware_version": "1.0",
         "protocol_version": "1.0",
+        "bootloader_version": "1.0",
         "active_modules": [1, 5, 2, 121]
     }
 }
