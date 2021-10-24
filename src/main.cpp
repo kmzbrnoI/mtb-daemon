@@ -72,6 +72,8 @@ DaemonCoreApplication::DaemonCoreApplication(int &argc, char **argv)
 	QObject::connect(&mtbusb, SIGNAL(onModuleFail(uint8_t)), this, SLOT(mtbUsbOnModuleFail(uint8_t)));
 	QObject::connect(&mtbusb, SIGNAL(onModuleInputsChange(uint8_t, const std::vector<uint8_t>&)),
 	                 this, SLOT(mtbUsbOnInputsChange(uint8_t, const std::vector<uint8_t>&)));
+	QObject::connect(&mtbusb, SIGNAL(onModuleDiagChange(uint8_t, const std::vector<uint8_t>&)),
+	                 this, SLOT(mtbUsbOnDiagChange(uint8_t, const std::vector<uint8_t>&)));
 
 	log("Starting MTB Daemon v"+QString(VERSION)+"...", Mtb::LogLevel::Info);
 
@@ -268,6 +270,11 @@ void DaemonCoreApplication::mtbUsbOnInputsChange(uint8_t addr, const std::vector
 		modules[addr]->mtbBusInputsChanged(data);
 }
 
+void DaemonCoreApplication::mtbUsbOnDiagChange(uint8_t addr, const std::vector<uint8_t> &data) {
+	if (modules[addr] != nullptr)
+		modules[addr]->mtbBusDiagChanged(data);
+}
+
 void DaemonCoreApplication::tReconnectTick() {
 	if (mtbusb.connected())
 		this->t_reconnect.stop();
@@ -371,7 +378,7 @@ void DaemonCoreApplication::serverReceived(QTcpSocket *socket, const QJsonObject
 
 		size_t addr = request["address"].toInt();
 		if ((Mtb::isValidModuleAddress(addr)) && (modules[addr] != nullptr)) {
-			response["module"] = modules[addr]->moduleInfo(request["state"].toBool(), true);
+			response["module"] = modules[addr]->moduleInfo(request["state"].toBool(), true, request["diag"].toBool());
 			response["status"] = "ok";
 		} else {
 			response["status"] = "error";
@@ -386,7 +393,9 @@ void DaemonCoreApplication::serverReceived(QTcpSocket *socket, const QJsonObject
 
 		for (size_t i = 0; i < Mtb::_MAX_MODULES; i++) {
 			if (modules[i] != nullptr)
-				jsonModules[QString::number(i)] = modules[i]->moduleInfo(request["state"].toBool(), true);
+				jsonModules[QString::number(i)] = modules[i]->moduleInfo(
+					request["state"].toBool(), true, request["diag"].toBool()
+				);
 		}
 		response["modules"] = jsonModules;
 

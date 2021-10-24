@@ -602,17 +602,14 @@ struct CmdMtbModuleReboot : public CmdMtbUsbForward {
 
 struct CmdMtbModuleGetDiag : public CmdMtbUsbForward {
 	static constexpr uint8_t _busCommandCode = 0xD0;
-	std::vector<uint8_t> data;
 	const CommandCallback<DataCallbackFunc> onInfo;
 
-	CmdMtbModuleGetDiag(uint8_t module, const std::vector<uint8_t> &data,
+	CmdMtbModuleGetDiag(uint8_t module,
 	                    const CommandCallback<DataCallbackFunc> onInfo = {[](uint8_t, const std::vector<uint8_t>&, void*) {}},
 	                    const CommandCallback<ErrCallbackFunc> onError = {[](CmdError, void*) {}})
 	 : CmdMtbUsbForward(module, _busCommandCode, onError), onInfo(onInfo) {
-		this->data = {usbCommandCode, module, _busCommandCode};
-		std::copy(data.begin(), data.end(), std::back_inserter(this->data));
 	}
-	std::vector<uint8_t> getBytes() const override { return data; }
+	std::vector<uint8_t> getBytes() const override { return {usbCommandCode, module, _busCommandCode}; }
 	QString msg() const override { return "Module "+QString::number(module)+" get diagnostic info"; }
 
 	bool processBusResponse(MtbBusRecvCommand busCommand, const std::vector<uint8_t> &data) const override {

@@ -12,7 +12,7 @@ bool MtbModule::isRebooting() const { return this->rebooting.rebooting; }
 bool MtbModule::isBeacon() const { return this->beacon; }
 bool MtbModule::isActivating() const { return this->activating; }
 
-QJsonObject MtbModule::moduleInfo(bool, bool) const {
+QJsonObject MtbModule::moduleInfo(bool, bool, bool) const {
 	QJsonObject obj;
 	obj["address"] = this->address;
 	obj["name"] = this->name;
@@ -68,6 +68,36 @@ void MtbModule::mtbUsbDisconnected() {
 }
 
 void MtbModule::mtbBusInputsChanged(const std::vector<uint8_t>&) {
+}
+
+void MtbModule::mtbBusDiagChanged(const std::vector<uint8_t>& data) {
+	if (data.size() < 1)
+		return;
+	bool changed = false;
+
+	uint8_t errorsCount = data[0];
+	size_t i = 1;
+
+	{
+		bool isError = false;
+		for (; i < errorsCount; i++)
+			if (data[i] > 0)
+				isError = true;
+		changed |= (isError != this->busModuleInfo.error);
+		this->busModuleInfo.error = isError;
+	}
+
+	{
+		bool isWarning = false;
+		for (; i < data.size(); i++)
+			if (data[i] > 0)
+				isWarning = true;
+		changed |= (isWarning != this->busModuleInfo.warning);
+		this->busModuleInfo.warning = isWarning;
+	}
+
+	if (changed)
+		this->sendModuleInfo();
 }
 
 void MtbModule::jsonCommand(QTcpSocket *socket, const QJsonObject &request) {
@@ -179,11 +209,11 @@ void MtbModule::saveConfig(QJsonObject &json) const {
 	json["type"] = static_cast<int>(this->type);
 }
 
-void MtbModule::sendModuleInfo(QTcpSocket *ignore, bool sendConfig) const {
+void MtbModule::sendModuleInfo(QTcpSocket *ignore, bool sendConfig, bool sendDiag) const {
 	QJsonObject json{
 		{"command", "module"},
 		{"type", "event"},
-		{"module", this->moduleInfo(true, sendConfig)},
+		{"module", this->moduleInfo(true, sendConfig, sendDiag)},
 	};
 
 	for (auto pair : subscribes[this->address]) {

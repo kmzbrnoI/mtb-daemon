@@ -49,7 +49,7 @@ protected:
 
 	void sendInputsChanged(QJsonObject inputs) const;
 	void sendOutputsChanged(QJsonObject outputs, const std::vector<QTcpSocket*> &ignore) const;
-	void sendModuleInfo(QTcpSocket *ignore = nullptr, bool sendConfig = false) const;
+	void sendModuleInfo(QTcpSocket *ignore = nullptr, bool sendConfig = false, bool sendDiag = false) const;
 
 	virtual void jsonSetOutput(QTcpSocket*, const QJsonObject&);
 	virtual void jsonUpgradeFw(QTcpSocket*, const QJsonObject&);
@@ -86,11 +86,12 @@ public:
 	bool isFirmwareUpgrading() const;
 	bool isConfigSetting() const;
 
-	virtual QJsonObject moduleInfo(bool state, bool config) const;
+	virtual QJsonObject moduleInfo(bool state, bool config, bool diag) const;
 
 	virtual void mtbBusActivate(Mtb::ModuleInfo);
 	virtual void mtbBusLost();
 	virtual void mtbBusInputsChanged(const std::vector<uint8_t>&);
+	virtual void mtbBusDiagChanged(const std::vector<uint8_t>&);
 	virtual void mtbUsbDisconnected();
 
 	virtual void jsonCommand(QTcpSocket*, const QJsonObject&);

@@ -12,7 +12,7 @@ Usage:
   manage.py [options] save_config
   manage.py [options] mtbusb
   manage.py [options] mtbusb speed <speed>
-  manage.py [options] module <module_addr>
+  manage.py [options] module <module_addr> [--diag]
   manage.py [options] inputs <module_addr>
   manage.py [options] outputs <module_addr>
   manage.py [options] reboot <module_addr>
@@ -105,10 +105,11 @@ def mtbusb_speed(socket, verbose: bool, speed: int) -> None:
         print(key, ':', val)
 
 
-def module(socket, verbose: bool, module: int) -> None:
+def module(socket, verbose: bool, module: int, diag: bool = False) -> None:
     response = request_response(socket, verbose, {
         'command': 'module',
         'address': module,
+        'diag': diag,
     })
     type_ = response['module']['type']
     for key, val in response['module'].items():
@@ -365,7 +366,7 @@ if __name__ == '__main__':
             mtbusb_speed(sock, args['-v'], int(args['<speed>']))
 
         elif args['module']:
-            module(sock, args['-v'], int(args['<module_addr>']))
+            module(sock, args['-v'], int(args['<module_addr>']), bool(args['--diag']))
 
         elif args['inputs']:
             get_inputs(sock, args['-v'], int(args['<module_addr>']))

@@ -60,7 +60,8 @@ Response in same as *Daemon Status* response.
     "type": "request",
     "id": 42,
     "address": 1,
-    "state": false
+    "state": false,
+    "diag": false
 }
 ```
 
@@ -121,7 +122,8 @@ Response in same as *Daemon Status* response.
     "command": "modules",
     "type": "request",
     "id": 10,
-    "state": false
+    "state": false,
+    "diag": false
 }
 ```
 
