@@ -137,7 +137,7 @@ void MtbUsb::parseMtbUsbMessage(uint8_t command_code, const std::vector<uint8_t>
 		}
 	}
 
-	log("GET: unknown MTB-USB command "+QString::number(command_code), LogLevel::Warning);
+	log("GET: unknown/unmatched MTB-USB command "+QString::number(command_code), LogLevel::Warning);
 }
 
 void MtbUsb::parseMtbBusMessage(uint8_t module, uint8_t attempts, uint8_t command_code,
@@ -208,7 +208,7 @@ void MtbUsb::parseMtbBusMessage(uint8_t module, uint8_t attempts, uint8_t comman
 		}
 	}
 
-	log("GET: unknown MTBbus command 0x"+QString::number(command_code, 16), LogLevel::Warning);
+	log("GET: unknown/unmatched MTBbus command 0x"+QString::number(command_code, 16), LogLevel::Warning);
 }
 
 void MtbUsb::handleMtbUsbError(uint8_t code, uint8_t out_command_code, uint8_t addr) {
