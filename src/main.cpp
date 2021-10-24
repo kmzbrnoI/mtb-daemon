@@ -42,6 +42,8 @@ const QJsonObject DEFAULT_CONFIG = {
 	{"mtb-usb", QJsonObject{
 		{"port", "auto"},
 		{"keepAlive", true},
+		// In case {"speed", 115200} is present, speed is forced to MTB-USB
+		// If not present, MTB-USB chooses speed based on its EEPROM-saved value
 	}},
 	{"production_logging", QJsonObject{
 		{"enabled", false},
@@ -146,23 +148,54 @@ void DaemonCoreApplication::mtbUsbOnConnect() {
 	mtbusb.send(
 		Mtb::CmdMtbUsbInfoRequest(
 			{[this](void*) { this->mtbUsbGotInfo(); }},
-			{[this](Mtb::CmdError cmdError, void*) { this->mtbUsbDidNotGetInfo(cmdError); }}
+			{[](Mtb::CmdError, void*) {
+				log("Did not get info from MTB-USB, disconnecting...", Mtb::LogLevel::Error);
+				mtbusb.disconnect();
+			}}
 		)
 	);
 }
 
 void DaemonCoreApplication::mtbUsbGotInfo() {
-	mtbusb.send(
-		Mtb::CmdMtbUsbActiveModulesRequest(
-			{[this](void*) { this->mtbUsbGotModules(); }},
-			{[this](Mtb::CmdError cmdError, void*) { this->mtbUsbDidNotGetModules(cmdError); }}
-		)
+	const QJsonObject& mtbusbObj = this->config["mtb-usb"].toObject();
+	if (!mtbusbObj.contains("speed"))
+		return this->mtbUsbProperSpeedSet();
+
+	const int fileSpeed = mtbusbObj["speed"].toInt();
+	if (!Mtb::mtbBusSpeedValid(fileSpeed)) {
+		log("Invalid MTBbus speed in config file: "+QString::number(mtbusbObj["speed"].toInt()),
+		    Mtb::LogLevel::Warning);
+		return this->mtbUsbProperSpeedSet();
+	}
+
+	Mtb::MtbBusSpeed newSpeed = Mtb::intToMtbBusSpeed(fileSpeed);
+
+	if (newSpeed == mtbusb.mtbUsbInfo().value().speed) {
+		log("Saved MTBbus speed matches current MTB-USB speed, ok.", Mtb::LogLevel::Info);
+		return this->mtbUsbProperSpeedSet();
+	}
+
+	log("Saved MTBbus speed does NOT match current MTB-USB speed, changing...", Mtb::LogLevel::Info);
+	mtbusb.changeSpeed(
+		newSpeed,
+		{[this]() { this->mtbUsbProperSpeedSet(); }},
+		{[](Mtb::CmdError) {
+			log("Unable to set MTBbus speed, disconnecting...", Mtb::LogLevel::Error);
+			mtbusb.disconnect();
+		}}
 	);
 }
 
-void DaemonCoreApplication::mtbUsbDidNotGetInfo(Mtb::CmdError) {
-	log("Did not get info from MTB-USB, disconnecting...", Mtb::LogLevel::Error);
-	mtbusb.disconnect();
+void DaemonCoreApplication::mtbUsbProperSpeedSet() {
+	mtbusb.send(
+		Mtb::CmdMtbUsbActiveModulesRequest(
+			{[this](void*) { this->mtbUsbGotModules(); }},
+			{[](Mtb::CmdError, void*) {
+				log("Did not get active modules from MTB-USB, disconnecting...", Mtb::LogLevel::Error);
+				mtbusb.disconnect();
+			}}
+		)
+	);
 }
 
 void DaemonCoreApplication::mtbUsbGotModules() {
@@ -230,11 +263,6 @@ void DaemonCoreApplication::moduleGotInfo(uint8_t addr, Mtb::ModuleInfo info) {
 	}
 
 	modules[addr]->mtbBusActivate(info);
-}
-
-void DaemonCoreApplication::mtbUsbDidNotGetModules(Mtb::CmdError) {
-	log("Did not get active modules from MTB-USB, disconnecting...", Mtb::LogLevel::Info);
-	mtbusb.disconnect();
 }
 
 void DaemonCoreApplication::mtbUsbOnDisconnect() {

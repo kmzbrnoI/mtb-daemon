@@ -51,10 +51,9 @@ private:
 	std::vector<QHostAddress> writeAccess;
 
 	QJsonObject mtbUsbJson() const;
+	void mtbUsbProperSpeedSet();
 	void mtbUsbGotInfo();
-	void mtbUsbDidNotGetInfo(Mtb::CmdError);
 	void mtbUsbGotModules();
-	void mtbUsbDidNotGetModules(Mtb::CmdError);
 
 	void activateModule(uint8_t addr, size_t attemptsRemaining = 5);
 	void moduleGotInfo(uint8_t addr, Mtb::ModuleInfo);
