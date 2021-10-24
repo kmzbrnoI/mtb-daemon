@@ -12,6 +12,7 @@ SOURCES += \
 	src/mtbusb/mtbusb-common.cpp \
 	src/mtbusb/mtbusb-win-com-discover.cpp \
 	src/server.cpp \
+	src/logging.cpp \
 	src/modules/module.cpp \
 	src/modules/uni.cpp
 
@@ -22,6 +23,7 @@ HEADERS += \
 	src/mtbusb/mtbusb-commands.h \
 	src/mtbusb/mtbusb-common.h \
 	src/server.h \
+	src/logging.h \
 	src/modules/module.h \
 	src/modules/uni.h \
 	src/errors.h \

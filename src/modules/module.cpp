@@ -1,6 +1,7 @@
 #include <QJsonArray>
 #include "module.h"
 #include "../main.h"
+#include "../logging.h"
 
 MtbModule::MtbModule(uint8_t addr) : address(addr), name("Module "+QString::number(addr)) {}
 

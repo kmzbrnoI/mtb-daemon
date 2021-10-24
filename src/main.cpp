@@ -4,12 +4,11 @@
 #include <QFile>
 #include <QIODevice>
 #include <QJsonDocument>
-#include <iostream>
 #include "main.h"
 #include "mtbusb/mtbusb-common.h"
 #include "modules/uni.h"
 #include "errors.h"
-#include "lib/termcolor.h"
+#include "logging.h"
 
 #ifdef Q_OS_WIN
 #include <windows.h>
@@ -19,7 +18,6 @@ Mtb::MtbUsb mtbusb;
 DaemonServer server;
 std::array<std::unique_ptr<MtbModule>, Mtb::_MAX_MODULES> modules;
 std::array<std::map<QTcpSocket*, bool>, Mtb::_MAX_MODULES> subscribes;
-Mtb::LogLevel DaemonCoreApplication::loglevel = Mtb::LogLevel::Info;
 
 #ifdef Q_OS_WIN
 static BOOL WINAPI console_ctrl_handler(DWORD dwCtrlType);
@@ -44,6 +42,14 @@ const QJsonObject DEFAULT_CONFIG = {
 	{"mtb-usb", QJsonObject{
 		{"port", "auto"},
 		{"keepAlive", true},
+	}},
+	{"production_logging", QJsonObject{
+		{"enabled", false},
+		{"loglevel", static_cast<int>(Mtb::LogLevel::RawData)},
+		{"history", 100},
+		{"future", 20},
+		{"directory", "prodLog"},
+		{"detectLevel", static_cast<int>(Mtb::LogLevel::Warning)},
 	}},
 };
 
@@ -83,10 +89,10 @@ DaemonCoreApplication::DaemonCoreApplication(int &argc, char **argv)
 		}
 	}
 
-	Mtb::LogLevel loglevel = static_cast<Mtb::LogLevel>(this->config["loglevel"].toInt());
-	mtbusb.loglevel = loglevel;
+	logger.loadConfig(this->config);
+
+	mtbusb.loglevel = Mtb::LogLevel::Debug; // get everything, filter ourself
 	mtbusb.ping = this->config["mtb-usb"].toObject()["keepAlive"].toBool(true);
-	DaemonCoreApplication::loglevel = loglevel;
 
 	{ // Start server
 		const QJsonObject serverConfig = this->config["server"].toObject();
@@ -128,36 +134,6 @@ void DaemonCoreApplication::mtbUsbConnect() {
 	try {
 		mtbusb.connect(port, 115200, QSerialPort::FlowControl::NoFlowControl);
 	} catch (const Mtb::EOpenError&) {}
-}
-
-void log(const QString &message, Mtb::LogLevel loglevel) {
-	DaemonCoreApplication::log(message, loglevel);
-}
-
-void DaemonCoreApplication::log(const QString &message, Mtb::LogLevel loglevel) {
-	if (loglevel > DaemonCoreApplication::loglevel)
-		return;
-
-	switch (loglevel) {
-		case Mtb::LogLevel::Error: std::cout << termcolor::bold << termcolor::red; break;
-		case Mtb::LogLevel::Warning: std::cout << termcolor::bold << termcolor::yellow; break;
-		case Mtb::LogLevel::Info: std::cout << termcolor::bold; break;
-		case Mtb::LogLevel::RawData: std::cout << termcolor::cyan; break;
-		case Mtb::LogLevel::Debug: std::cout << termcolor::magenta; break;
-		default: break;
-	}
-
-	std::cout << "[" << QTime::currentTime().toString("hh:mm:ss,zzz").toStdString() << "] ";
-	switch (loglevel) {
-		case Mtb::LogLevel::Error: std::cout << "[ERROR] "; break;
-		case Mtb::LogLevel::Warning: std::cout << "[WARNING] "; break;
-		case Mtb::LogLevel::Info: std::cout << "[info] "; break;
-		case Mtb::LogLevel::Commands: std::cout << "[command] "; break;
-		case Mtb::LogLevel::RawData: std::cout << "[raw-data] "; break;
-		case Mtb::LogLevel::Debug: std::cout << "[debug] "; break;
-		default: break;
-	}
-	std::cout << message.toStdString() << termcolor::reset << std::endl;
 }
 
 void DaemonCoreApplication::mtbUsbOnLog(QString message, Mtb::LogLevel loglevel) {

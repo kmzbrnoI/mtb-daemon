@@ -17,7 +17,6 @@ constexpr size_t T_REACTIVATE_PERIOD = 500; // 500 ms
 
 const QString DEFAULT_CONFIG_FILENAME = "mtb-daemon.json";
 
-void log(const QString&, Mtb::LogLevel);
 std::vector<QTcpSocket*> outputSetters();
 
 struct ConfigNotFound : public std::logic_error {
@@ -35,15 +34,13 @@ struct JsonParseError : public std::logic_error {
 	JsonParseError(const QString &str) : logic_error(str.toStdString()) {}
 };
 
+
 class DaemonCoreApplication : public QCoreApplication {
 	Q_OBJECT
 public:
-	static Mtb::LogLevel loglevel;
-
 	DaemonCoreApplication(int &argc, char **argv);
 	~DaemonCoreApplication() override = default;
 
-	static void log(const QString&, Mtb::LogLevel);
 	bool hasWriteAccess(const QTcpSocket*);
 
 private:

@@ -4,6 +4,7 @@
 #include "server.h"
 #include "mtbusb/mtbusb.h"
 #include "main.h"
+#include "logging.h"
 
 DaemonServer::DaemonServer(QObject *parent) : QObject(parent) {
 	QObject::connect(&m_server, SIGNAL(newConnection()), this, SLOT(serverNewConnection()));
