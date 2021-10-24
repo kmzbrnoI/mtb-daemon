@@ -15,7 +15,7 @@ namespace Mtb {
 using StdCallbackFunc = std::function<void(void *data)>;
 using StdModuleCallbackFunc = std::function<void(uint8_t addr, void *data)>;
 using ErrCallbackFunc = std::function<void(CmdError, void *data)>;
-using DataCallbackFunc = std::function<void(uint8_t addr, const std::vector<uint8_t>& outputs, void *data)>;
+using DataCallbackFunc = std::function<void(uint8_t addr, const std::vector<uint8_t>&, void *data)>;
 
 template <typename F>
 struct CommandCallback {
@@ -161,6 +161,8 @@ struct ModuleInfo {
 	uint8_t type;
 	bool bootloader_int;
 	bool bootloader_unint;
+	bool error;
+	bool warning;
 	uint8_t fw_major;
 	uint8_t fw_minor;
 	uint8_t proto_major;
@@ -193,6 +195,8 @@ struct CmdMtbModuleInfoRequest : public CmdMtbUsbForward {
 			info.type = data[0];
 			info.bootloader_int = data[1] & 1;
 			info.bootloader_unint = (data[1] >> 1) & 1;
+			info.warning = (data[1] >> 2) & 1;
+			info.error = (data[1] >> 3) & 1;
 			info.fw_major = data[2];
 			info.fw_minor = data[3];
 			info.proto_major = data[4];
@@ -591,6 +595,30 @@ struct CmdMtbModuleReboot : public CmdMtbUsbForward {
 				onOkModule.func(module, onOkModule.data);
 				return true;
 			}
+		}
+		return false;
+	}
+};
+
+struct CmdMtbModuleGetDiag : public CmdMtbUsbForward {
+	static constexpr uint8_t _busCommandCode = 0xD0;
+	std::vector<uint8_t> data;
+	const CommandCallback<DataCallbackFunc> onInfo;
+
+	CmdMtbModuleGetDiag(uint8_t module, const std::vector<uint8_t> &data,
+	                    const CommandCallback<DataCallbackFunc> onInfo = {[](uint8_t, const std::vector<uint8_t>&, void*) {}},
+	                    const CommandCallback<ErrCallbackFunc> onError = {[](CmdError, void*) {}})
+	 : CmdMtbUsbForward(module, _busCommandCode, onError), onInfo(onInfo) {
+		this->data = {usbCommandCode, module, _busCommandCode};
+		std::copy(data.begin(), data.end(), std::back_inserter(this->data));
+	}
+	std::vector<uint8_t> getBytes() const override { return data; }
+	QString msg() const override { return "Module "+QString::number(module)+" get diagnostic info"; }
+
+	bool processBusResponse(MtbBusRecvCommand busCommand, const std::vector<uint8_t> &data) const override {
+		if (busCommand == MtbBusRecvCommand::DiagInfo) {
+			onInfo.func(module, data, onInfo.data);
+			return true;
 		}
 		return false;
 	}

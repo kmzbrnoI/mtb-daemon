@@ -25,7 +25,6 @@ MTB daemon's TCP sever messages specification
         "speed": 115200,
         "firmware_version": "1.0",
         "protocol_version": "1.0",
-        "bootloader_version": "1.0",
         "active_modules": [1, 5, 2, 121]
     }
 }
@@ -79,6 +78,9 @@ Response in same as *Daemon Status* response.
         "state": "active",
         "firmware_version": "1.0",
         "protocol_version": "4.0",
+        "bootloader_version": "1.0",
+        "error": false,
+        "warning": false,
         "beacon": false,
         "MTB-UNI v4": {
             # data specific for module type, e.g.:

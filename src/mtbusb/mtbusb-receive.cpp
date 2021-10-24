@@ -156,7 +156,7 @@ void MtbUsb::parseMtbBusMessage(uint8_t module, uint8_t attempts, uint8_t comman
 		return;
 
 	case MtbBusRecvCommand::Acknowledgement:
-		log("GET: module "+QString::number(module)+" acknowldgement", LogLevel::Commands);
+		log("GET: module "+QString::number(module)+" acknowledgement", LogLevel::Commands);
 		break;
 
 	case MtbBusRecvCommand::ModuleInfo:
@@ -178,6 +178,10 @@ void MtbUsb::parseMtbBusMessage(uint8_t module, uint8_t attempts, uint8_t comman
 
 	case MtbBusRecvCommand::OutputSet:
 		log("GET: module "+QString::number(module)+" outputs set", LogLevel::Commands);
+		break;
+
+	case MtbBusRecvCommand::DiagInfo:
+		log("GET: module "+QString::number(module)+" diagnostic information", LogLevel::Commands);
 		break;
 
 	case MtbBusRecvCommand::FWWriteFlashStatus:
@@ -206,6 +210,12 @@ void MtbUsb::parseMtbBusMessage(uint8_t module, uint8_t attempts, uint8_t comman
 				return;
 			}
 		}
+	}
+
+	if (static_cast<MtbBusRecvCommand>(command_code) == MtbBusRecvCommand::DiagInfo) {
+		// asynchronous diagnostic information change
+		onModuleDiagChange(module, data);
+		return;
 	}
 
 	log("GET: unknown/unmatched MTBbus command 0x"+QString::number(command_code, 16), LogLevel::Warning);

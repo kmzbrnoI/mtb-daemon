@@ -53,6 +53,7 @@ enum class MtbBusRecvCommand {
 	InputChanged = 0x10,
 	InputState = 0x11,
 	OutputSet = 0x12,
+	DiagInfo = 0xD0,
 	FWWriteFlashStatus = 0xF2,
 	ModuleSpecific = 0xFE,
 };
