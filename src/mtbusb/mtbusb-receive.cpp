@@ -180,8 +180,9 @@ void MtbUsb::parseMtbBusMessage(uint8_t module, uint8_t attempts, uint8_t comman
 		log("GET: module "+QString::number(module)+" outputs set", LogLevel::Commands);
 		break;
 
-	case MtbBusRecvCommand::DiagInfo:
-		log("GET: module "+QString::number(module)+" diagnostic information", LogLevel::Commands);
+	case MtbBusRecvCommand::DiagValue:
+		if (data.size() > 0)
+			log("GET: module "+QString::number(module)+" DV "+QString::number(data[0]), LogLevel::Commands);
 		break;
 
 	case MtbBusRecvCommand::FWWriteFlashStatus:
@@ -212,9 +213,10 @@ void MtbUsb::parseMtbBusMessage(uint8_t module, uint8_t attempts, uint8_t comman
 		}
 	}
 
-	if (static_cast<MtbBusRecvCommand>(command_code) == MtbBusRecvCommand::DiagInfo) {
+	if ((static_cast<MtbBusRecvCommand>(command_code) == MtbBusRecvCommand::DiagValue) && (data.size() > 0)) {
 		// asynchronous diagnostic information change
-		onModuleDiagChange(module, data);
+		const std::vector<uint8_t> dvdata = {data.begin()+1, data.end()};
+		onModuleDiagStateChange(module, dvdata);
 		return;
 	}
 

@@ -61,7 +61,6 @@ Response in same as *Daemon Status* response.
     "id": 42,
     "address": 1,
     "state": false,
-    "diag": false
 }
 ```
 
@@ -123,7 +122,6 @@ Response in same as *Daemon Status* response.
     "type": "request",
     "id": 10,
     "state": false,
-    "diag": false
 }
 ```
 
@@ -342,6 +340,36 @@ Response in same as *Daemon Status* response.
     "status": "ok"
 }
 ```
+
+### Diagnostics
+
+```json
+{
+    "command": "module_diag",
+    "type": "request",
+    "id": 12,
+    "address": 32,
+    "DVkey": "mcu_voltage", / "DVnum": 10
+}
+```
+
+When `DVNum` is present, `DVKey` is ignored.
+
+```json
+{
+    "command": "module_diag",
+    "type": "response",
+    "id": 12,
+    "status": "ok",
+    "address": 32,
+    "DVkey": "mcu_voltage",
+    "DVvalue": {
+        "voltage": 5.05
+    },
+    "DVvalueRaw": [234]
+}
+```
+
 
 ## Events
 

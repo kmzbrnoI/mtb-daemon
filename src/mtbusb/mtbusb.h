@@ -130,7 +130,7 @@ signals:
 	void onNewModule(uint8_t addr);
 	void onModuleFail(uint8_t addr);
 	void onModuleInputsChange(uint8_t addr, const std::vector<uint8_t> &data);
-	void onModuleDiagChange(uint8_t addr, const std::vector<uint8_t> &data);
+	void onModuleDiagStateChange(uint8_t addr, const std::vector<uint8_t> &data);
 
 private:
 	QSerialPort m_serialPort;

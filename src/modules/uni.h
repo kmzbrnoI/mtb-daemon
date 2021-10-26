@@ -26,17 +26,6 @@ struct MtbUniConfig {
 	bool operator!=(const MtbUniConfig& other) const { return !(*this == other); }
 };
 
-union MtbUniWarnings {
-	uint8_t all;
-	struct {
-		bool extrf : 1;
-		bool borf : 1;
-		bool wdrf : 1;
-		bool _ : 1;
-		bool missed_timer : 1;
-	} sep;
-};
-
 class MtbUni : public MtbModule {
 protected:
 	uint16_t inputs;
@@ -46,12 +35,10 @@ protected:
 	MtbUniConfig configToWrite;
 	bool configLoaded = false;
 	std::array<QTcpSocket*, UNI_IO_CNT> whoSetOutput;
-	MtbUniWarnings warnings = {0};
 
 	std::vector<ServerRequest> setOutputsWaiting;
 	std::vector<ServerRequest> setOutputsSent;
 
-	void diagGot();
 	void configSet();
 	bool isIrSupport() const;
 	size_t pageSize() const;
@@ -62,7 +49,6 @@ protected:
 	void outputsSet(uint8_t, const std::vector<uint8_t>&);
 	static QJsonObject outputsToJson(const std::array<uint8_t, UNI_IO_CNT>&);
 	static QJsonObject inputsToJson(uint16_t inputs);
-	QJsonObject warnToJson() const;
 
 	void jsonSetOutput(QTcpSocket*, const QJsonObject&) override;
 	void jsonUpgradeFw(QTcpSocket*, const QJsonObject&) override;
@@ -83,14 +69,15 @@ protected:
 
 	static void alignFirmware(std::map<size_t, std::vector<uint8_t>>&, size_t pageSize);
 
+	QJsonObject dvRepr(uint8_t dvi, const std::vector<uint8_t> &data) const override;
+
 public:
 	MtbUni(uint8_t addr);
 	~MtbUni() override = default;
-	QJsonObject moduleInfo(bool state, bool config, bool diag) const override;
+	QJsonObject moduleInfo(bool state, bool config) const override;
 
 	void mtbBusActivate(Mtb::ModuleInfo) override;
 	void mtbBusInputsChanged(const std::vector<uint8_t>&) override;
-	void mtbBusDiagChanged(const std::vector<uint8_t>&) override;
 	void mtbUsbDisconnected() override;
 
 	void jsonSetConfig(QTcpSocket*, const QJsonObject&) override;

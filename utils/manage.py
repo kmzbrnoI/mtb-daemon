@@ -105,11 +105,10 @@ def mtbusb_speed(socket, verbose: bool, speed: int) -> None:
         print(key, ':', val)
 
 
-def module(socket, verbose: bool, module: int, diag: bool = False) -> None:
+def module(socket, verbose: bool, module: int) -> None:
     response = request_response(socket, verbose, {
         'command': 'module',
         'address': module,
-        'diag': diag,
     })
     type_ = response['module']['type']
     for key, val in response['module'].items():
@@ -118,6 +117,19 @@ def module(socket, verbose: bool, module: int, diag: bool = False) -> None:
             uni_print_config(val['config'])
             val.pop('config')
         print(key, ':', val)
+
+
+def module_diag(socket, verbose: bool, module: int) -> None:
+    DVS = ['warnings', 'errors', 'mcu_voltage']
+
+    for dvkey in DVS:
+        response = request_response(socket, verbose, {
+            'command': 'module_diag',
+            'address': module,
+            'DVkey': dvkey,
+        })
+        for key, val in response.get('DVvalue', {}).items():
+            print(key, ':', val)
 
 
 def uni_print_config(config: Dict[str, Any]) -> None:
@@ -366,7 +378,9 @@ if __name__ == '__main__':
             mtbusb_speed(sock, args['-v'], int(args['<speed>']))
 
         elif args['module']:
-            module(sock, args['-v'], int(args['<module_addr>']), bool(args['--diag']))
+            module(sock, args['-v'], int(args['<module_addr>']))
+            if bool(args['--diag']):
+                module_diag(sock, args['-v'], int(args['<module_addr>']))
 
         elif args['inputs']:
             get_inputs(sock, args['-v'], int(args['<module_addr>']))

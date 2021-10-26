@@ -75,7 +75,7 @@ private slots:
 	void mtbUsbOnNewModule(uint8_t addr);
 	void mtbUsbOnModuleFail(uint8_t addr);
 	void mtbUsbOnInputsChange(uint8_t addr, const std::vector<uint8_t> &data);
-	void mtbUsbOnDiagChange(uint8_t addr, const std::vector<uint8_t> &data);
+	void mtbUsbOnDiagStateChange(uint8_t addr, const std::vector<uint8_t> &data);
 
 	void serverReceived(QTcpSocket*, const QJsonObject&);
 	void serverClientDisconnected(QTcpSocket*);

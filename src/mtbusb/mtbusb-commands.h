@@ -16,6 +16,7 @@ using StdCallbackFunc = std::function<void(void *data)>;
 using StdModuleCallbackFunc = std::function<void(uint8_t addr, void *data)>;
 using ErrCallbackFunc = std::function<void(CmdError, void *data)>;
 using DataCallbackFunc = std::function<void(uint8_t addr, const std::vector<uint8_t>&, void *data)>;
+using DVCallbackFunc = std::function<void(uint8_t addr, uint8_t dvi, const std::vector<uint8_t>&, void *data)>;
 
 template <typename F>
 struct CommandCallback {
@@ -600,21 +601,24 @@ struct CmdMtbModuleReboot : public CmdMtbUsbForward {
 	}
 };
 
-struct CmdMtbModuleGetDiag : public CmdMtbUsbForward {
+struct CmdMtbModuleGetDiagValue : public CmdMtbUsbForward {
 	static constexpr uint8_t _busCommandCode = 0xD0;
-	const CommandCallback<DataCallbackFunc> onInfo;
+	const CommandCallback<DVCallbackFunc> onInfo;
+	const uint8_t dvi;
 
-	CmdMtbModuleGetDiag(uint8_t module,
-	                    const CommandCallback<DataCallbackFunc> onInfo = {[](uint8_t, const std::vector<uint8_t>&, void*) {}},
-	                    const CommandCallback<ErrCallbackFunc> onError = {[](CmdError, void*) {}})
-	 : CmdMtbUsbForward(module, _busCommandCode, onError), onInfo(onInfo) {
+	CmdMtbModuleGetDiagValue(uint8_t module, uint8_t dvi,
+	                         const CommandCallback<DVCallbackFunc> onInfo = {
+	                             [](uint8_t, uint8_t, const std::vector<uint8_t>&, void*) {}},
+	                         const CommandCallback<ErrCallbackFunc> onError = {[](CmdError, void*) {}})
+	 : CmdMtbUsbForward(module, _busCommandCode, onError), onInfo(onInfo), dvi(dvi) {
 	}
-	std::vector<uint8_t> getBytes() const override { return {usbCommandCode, module, _busCommandCode}; }
-	QString msg() const override { return "Module "+QString::number(module)+" get diagnostic info"; }
+	std::vector<uint8_t> getBytes() const override { return {usbCommandCode, module, _busCommandCode, dvi}; }
+	QString msg() const override { return "Module "+QString::number(module)+" get DV "+QString::number(dvi); }
 
 	bool processBusResponse(MtbBusRecvCommand busCommand, const std::vector<uint8_t> &data) const override {
-		if (busCommand == MtbBusRecvCommand::DiagInfo) {
-			onInfo.func(module, data, onInfo.data);
+		if ((busCommand == MtbBusRecvCommand::DiagValue) && (data.size() >= 1)) {
+			const std::vector<uint8_t> dvdata = {data.begin()+1, data.end()};
+			onInfo.func(module, data[0], dvdata, onInfo.data);
 			return true;
 		}
 		return false;

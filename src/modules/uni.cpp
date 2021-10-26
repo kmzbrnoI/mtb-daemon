@@ -19,8 +19,8 @@ size_t MtbUni::pageSize() const {
 
 /* JSON Module Info --------------------------------------------------------- */
 
-QJsonObject MtbUni::moduleInfo(bool state, bool config, bool diag) const {
-	QJsonObject response = MtbModule::moduleInfo(state, config, diag);
+QJsonObject MtbUni::moduleInfo(bool state, bool config) const {
+	QJsonObject response = MtbModule::moduleInfo(state, config);
 
 	QJsonObject uni{
 		{"ir", this->isIrSupport()},
@@ -36,9 +36,6 @@ QJsonObject MtbUni::moduleInfo(bool state, bool config, bool diag) const {
 			{"inputsPacked", this->inputs},
 		};
 	}
-
-	if (diag)
-		uni["warnings"] = this->warnToJson();
 
 	response[moduleTypeToStr(this->type)] = uni;
 	return response;
@@ -194,15 +191,6 @@ QJsonObject MtbUni::inputsToJson(uint16_t inputs) {
 		_inputs >>= 1;
 	}
 	return {{"full", json}, {"packed", inputs}};
-}
-
-QJsonObject MtbUni::warnToJson() const {
-	return {
-		{"extrf", this->warnings.sep.extrf},
-		{"borf", this->warnings.sep.borf},
-		{"wdrf", this->warnings.sep.wdrf},
-		{"missed_timer", this->warnings.sep.missed_timer},
-	};
 }
 
 void MtbUni::mtbBusOutputsNotSet(Mtb::CmdError error) {
@@ -431,13 +419,11 @@ void MtbUni::allOutputsReset() {
 /* MTB-UNI activation ---------------------------------------------------------
  A) Module configuration was previously laoded from file:
  * 1) General information are read
-    - Errors | warnings present? Read detailed diagnostic info.
  * 2) Config is SET
  * 3) Inputs are get
  * 4) Outputs are reset
  B) Module configuration was NOT previously loaded from file:
  * 1) General information are read
-    - Errors | warnings present? Read detailed diagnostic info.
  * 2) Config is GET
  * 3) Inputs are get
  * 4) Outputs are reset
@@ -460,28 +446,10 @@ void MtbUni::mtbBusActivate(Mtb::ModuleInfo info) {
 void MtbUni::activate() {
 	this->activating = true;
 
-	if (this->busModuleInfo.warning || this->busModuleInfo.error) {
+	if (this->busModuleInfo.warning || this->busModuleInfo.error)
 		this->mlog("Module warning="+QString::number(this->busModuleInfo.warning)+", error="+
 		           QString::number(this->busModuleInfo.error), Mtb::LogLevel::Warning);
-		mtbusb.send(
-			Mtb::CmdMtbModuleGetDiag(
-				this->address,
-				{[this](uint8_t, const std::vector<uint8_t> &data, void*) {
-					this->mtbBusDiagChanged(data);
-					this->diagGot();
-				}},
-				{[this](Mtb::CmdError error, void*) {
-					this->mlog("Unable to get module diagnostics.", Mtb::LogLevel::Error);
-					this->activationError(error);
-				}}
-			)
-		);
-	} else {
-		this->diagGot();
-	}
-}
 
-void MtbUni::diagGot() {
 	if (this->configLoaded) {
 		this->mlog("Config previously loaded from file, setting to module...", Mtb::LogLevel::Info);
 		mtbusb.send(
@@ -572,17 +540,6 @@ void MtbUni::mtbUsbDisconnected() {
 	MtbModule::mtbUsbDisconnected();
 	this->allOutputsReset();
 	this->inputs = 0;
-}
-
-void MtbUni::mtbBusDiagChanged(const std::vector<uint8_t> &data) {
-	if (data.size() < 1)
-		return;
-
-	uint8_t errorsCount = data[0];
-	if ((errorsCount == 0) && (data.size() > 1))
-		this->warnings.all = data[1];
-
-	MtbModule::mtbBusDiagChanged(data);
 }
 
 /* -------------------------------------------------------------------------- */
@@ -720,4 +677,32 @@ void MtbUni::saveConfig(QJsonObject &json) const {
 	MtbModule::saveConfig(json);
 	if (this->configLoaded)
 		json["config"] = this->config.json(this->isIrSupport(), true);
+}
+
+/* Diagnostic Values -------------------------------------------------------- */
+
+QJsonObject MtbUni::dvRepr(uint8_t dvi, const std::vector<uint8_t> &data) const {
+	if (data.size() < 1)
+		return {};
+
+	switch (dvi) {
+		case Mtb::DV::Version:
+			return {{"version", QString::number((data[0] >> 4) & 0x0F) + "." + QString::number(data[0] & 0x0F)}};
+
+		case Mtb::DV::State:
+			return {
+				{"warnings", static_cast<bool>(data[0] & 2)},
+				{"errors", static_cast<bool>(data[0] & 1)},
+			};
+
+		case Mtb::DV::Warnings:
+			return {
+				{"extrf", static_cast<bool>(data[0] & 0x1)},
+				{"borf", static_cast<bool>(data[0] & 0x2)},
+				{"wdrf", static_cast<bool>(data[0] & 0x4)},
+				{"timer_miss", static_cast<bool>(data[0] & 0x10)},
+			};
+
+		default: return {};
+	}
 }

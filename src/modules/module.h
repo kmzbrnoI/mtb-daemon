@@ -49,13 +49,14 @@ protected:
 
 	void sendInputsChanged(QJsonObject inputs) const;
 	void sendOutputsChanged(QJsonObject outputs, const std::vector<QTcpSocket*> &ignore) const;
-	void sendModuleInfo(QTcpSocket *ignore = nullptr, bool sendConfig = false, bool sendDiag = false) const;
+	void sendModuleInfo(QTcpSocket *ignore = nullptr, bool sendConfig = false) const;
 
 	virtual void jsonSetOutput(QTcpSocket*, const QJsonObject&);
 	virtual void jsonUpgradeFw(QTcpSocket*, const QJsonObject&);
 	virtual void jsonReboot(QTcpSocket*, const QJsonObject&);
 	virtual void jsonSpecificCommand(QTcpSocket*, const QJsonObject&);
 	virtual void jsonBeacon(QTcpSocket*, const QJsonObject&);
+	virtual void jsonGetDiag(QTcpSocket*, const QJsonObject&);
 
 	void fwUpgdInit();
 	void fwUpgdError(const QString&, size_t code = MTB_MODULE_FWUPGD_ERROR);
@@ -74,6 +75,8 @@ protected:
 
 	void mlog(const QString& message, Mtb::LogLevel) const;
 
+	virtual QJsonObject dvRepr(uint8_t dvi, const std::vector<uint8_t> &data) const;
+
 public:
 	MtbModule(uint8_t addr);
 	virtual ~MtbModule() = default;
@@ -86,12 +89,12 @@ public:
 	bool isFirmwareUpgrading() const;
 	bool isConfigSetting() const;
 
-	virtual QJsonObject moduleInfo(bool state, bool config, bool diag) const;
+	virtual QJsonObject moduleInfo(bool state, bool config) const;
 
 	virtual void mtbBusActivate(Mtb::ModuleInfo);
 	virtual void mtbBusLost();
 	virtual void mtbBusInputsChanged(const std::vector<uint8_t>&);
-	virtual void mtbBusDiagChanged(const std::vector<uint8_t>&);
+	virtual void mtbBusDiagStateChanged(const std::vector<uint8_t>&);
 	virtual void mtbUsbDisconnected();
 
 	virtual void jsonCommand(QTcpSocket*, const QJsonObject&);

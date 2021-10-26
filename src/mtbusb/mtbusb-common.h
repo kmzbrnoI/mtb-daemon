@@ -3,6 +3,7 @@
 
 #include <stdexcept>
 #include <QString>
+#include <optional>
 
 namespace Mtb {
 
@@ -53,7 +54,7 @@ enum class MtbBusRecvCommand {
 	InputChanged = 0x10,
 	InputState = 0x11,
 	OutputSet = 0x12,
-	DiagInfo = 0xD0,
+	DiagValue = 0xD0,
 	FWWriteFlashStatus = 0xF2,
 	ModuleSpecific = 0xFE,
 };
@@ -84,6 +85,17 @@ enum class CmdError {
 };
 
 QString cmdErrorToStr(CmdError);
+
+enum DV { // not class-enum by design
+	Version = 0,
+	State = 1,
+	Errors = 10,
+	Warnings = 11,
+	MCUVoltage = 12,
+};
+
+QString DVToStr(uint8_t dv); // also accepts DV dv
+std::optional<DV> StrToDV(const QString&);
 
 } // namespace Mtb
 

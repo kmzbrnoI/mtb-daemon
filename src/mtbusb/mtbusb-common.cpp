@@ -67,4 +67,29 @@ QString cmdErrorToStr(CmdError cmdError) {
 	}
 }
 
+QString DVToStr(uint8_t dv) {
+	switch (dv) {
+		case DV::Version: return "version";
+		case DV::State: return "state";
+		case DV::Errors: return "errors";
+		case DV::Warnings: return "warnings";
+		case DV::MCUVoltage: return "mcu_voltage";
+		default: return "unknown";
+	}
+}
+
+std::optional<DV> StrToDV(const QString& str) {
+	if (str == "version")
+		return {DV::Version};
+	if (str == "state")
+		return {DV::State};
+	if (str == "errors")
+		return {DV::Errors};
+	if (str == "warnings")
+		return {DV::Warnings};
+	if (str == "mcu_voltage")
+		return {DV::MCUVoltage};
+	return {};
+}
+
 } // namespace Mtb
