@@ -703,6 +703,17 @@ QJsonObject MtbUni::dvRepr(uint8_t dvi, const std::vector<uint8_t> &data) const 
 				{"timer_miss", static_cast<bool>(data[0] & 0x10)},
 			};
 
-		default: return {};
+		case Mtb::DV::MCUVoltage:
+			if (data.size() < 2)
+				return {};
+
+			uint16_t raw = (data[0] << 8) | data[1];
+			float value = (1.1 * 1024) / raw;
+			return {
+				{"mcu_voltage", value},
+				{"mcu_voltage_raw", raw},
+			};
 	}
+
+	return {};
 }
