@@ -34,7 +34,7 @@ void checkValidModuleAddress(size_t addr) {
 }
 
 bool isBusEvent(const MtbBusRecvCommand &command) {
-	return (command == MtbBusRecvCommand::InputChanged);
+	return (command == MtbBusRecvCommand::InputChanged) || (command == MtbBusRecvCommand::DiagValue);
 }
 
 QString mtbBusRecvErrorToStr(MtbBusRecvError error) {

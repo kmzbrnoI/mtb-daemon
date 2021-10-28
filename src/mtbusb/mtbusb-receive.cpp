@@ -142,7 +142,12 @@ void MtbUsb::parseMtbUsbMessage(uint8_t command_code, const std::vector<uint8_t>
 
 void MtbUsb::parseMtbBusMessage(uint8_t module, uint8_t attempts, uint8_t command_code,
                                 const std::vector<uint8_t> &data) {
-	if (isBusEvent(static_cast<MtbBusRecvCommand>(command_code))) {
+	MtbBusRecvCommand command = static_cast<MtbBusRecvCommand>(command_code);
+
+	if (command == MtbBusRecvCommand::DiagValue) {
+		if (attempts > 1)
+			log("Got attempts="+QString::number(attempts)+" for DiagValue command!", LogLevel::Warning);
+	} else if (isBusEvent(command)) {
 		if (attempts != 0)
 			log("Got attempts="+QString::number(attempts)+" for event!", LogLevel::Warning);
 	} else {
@@ -150,7 +155,7 @@ void MtbUsb::parseMtbBusMessage(uint8_t module, uint8_t attempts, uint8_t comman
 			log("Got attempts="+QString::number(attempts)+" for non-event!", LogLevel::Warning);
 	}
 
-	switch (static_cast<MtbBusRecvCommand>(command_code)) {
+	switch (command) {
 	case MtbBusRecvCommand::Error:
 		handleMtbBusError(data[0], module);
 		return;
@@ -199,7 +204,7 @@ void MtbUsb::parseMtbBusMessage(uint8_t module, uint8_t attempts, uint8_t comman
 		if (is<CmdMtbUsbForward>(*m_hist[i].cmd)) {
 			const CmdMtbUsbForward &forward = dynamic_cast<const CmdMtbUsbForward&>(*m_hist[i].cmd);
 			if ((forward.module == module) &&
-			    (forward.processBusResponse(static_cast<MtbBusRecvCommand>(command_code), data))) {
+			    (forward.processBusResponse(command, data))) {
 				for (auto it = m_hist.begin(); it != m_hist.end(); ++it) {
 					if (it->cmd.get() == m_hist[i].cmd.get()) {
 						m_hist.erase(it);
@@ -213,7 +218,7 @@ void MtbUsb::parseMtbBusMessage(uint8_t module, uint8_t attempts, uint8_t comman
 		}
 	}
 
-	if ((static_cast<MtbBusRecvCommand>(command_code) == MtbBusRecvCommand::DiagValue) && (data.size() > 0)) {
+	if ((command == MtbBusRecvCommand::DiagValue) && (data.size() > 0)) {
 		// asynchronous diagnostic information change
 		const std::vector<uint8_t> dvdata = {data.begin()+1, data.end()};
 		onModuleDiagStateChange(module, dvdata);
