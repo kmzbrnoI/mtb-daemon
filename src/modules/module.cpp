@@ -85,8 +85,11 @@ void MtbModule::mtbBusDiagStateChanged(const std::vector<uint8_t>& data) {
 		this->busModuleInfo.warning = data[0] & 2;
 	}
 
-	if (changed)
+	if (changed) {
 		this->sendModuleInfo();
+		this->mlog("Module diag state changed: warning="+QString::number(this->busModuleInfo.warning)+", error="+
+		           QString::number(this->busModuleInfo.error), Mtb::LogLevel::Warning);
+	}
 }
 
 void MtbModule::jsonCommand(QTcpSocket *socket, const QJsonObject &request) {
