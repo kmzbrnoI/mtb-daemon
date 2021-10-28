@@ -710,8 +710,12 @@ QJsonObject MtbUni::dvRepr(uint8_t dvi, const std::vector<uint8_t> &data) const 
 
 			uint16_t raw = (data[0] << 8) | data[1];
 			float value = (1.1 * 1024) / raw;
+			float value_min = (1.0 * 1024) / raw;
+			float value_max = (1.2 * 1024) / raw;
 			return {
 				{"mcu_voltage", value},
+				{"mcu_voltage_min", value_min},
+				{"mcu_voltage_max", value_max},
 				{"mcu_voltage_raw", raw},
 			};
 	}
