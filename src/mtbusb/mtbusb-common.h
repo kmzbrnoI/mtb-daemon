@@ -89,9 +89,11 @@ QString cmdErrorToStr(CmdError);
 enum DV { // not class-enum by design
 	Version = 0,
 	State = 1,
+	Uptime = 2,
 	Errors = 10,
 	Warnings = 11,
 	MCUVoltage = 12,
+	MCUTemperature = 13,
 };
 
 QString DVToStr(uint8_t dv); // also accepts DV dv

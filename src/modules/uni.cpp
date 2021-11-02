@@ -695,6 +695,15 @@ QJsonObject MtbUni::dvRepr(uint8_t dvi, const std::vector<uint8_t> &data) const 
 				{"errors", static_cast<bool>(data[0] & 1)},
 			};
 
+		case Mtb::DV::Uptime: {
+			int uptime = 0;
+			for (size_t i = 0; i < data.size(); i++) {
+				uptime <<= 8;
+				uptime |= data[i];
+			}
+			return {{"uptime_seconds", uptime}};
+		}
+
 		case Mtb::DV::Warnings:
 			return {
 				{"extrf", static_cast<bool>(data[0] & 0x1)},
@@ -704,7 +713,7 @@ QJsonObject MtbUni::dvRepr(uint8_t dvi, const std::vector<uint8_t> &data) const 
 				{"vcc_oscilating", static_cast<bool>(data[0] & 0x20)},
 			};
 
-		case Mtb::DV::MCUVoltage:
+		case Mtb::DV::MCUVoltage: {
 			if (data.size() < 2)
 				return {};
 
@@ -718,6 +727,23 @@ QJsonObject MtbUni::dvRepr(uint8_t dvi, const std::vector<uint8_t> &data) const 
 				{"mcu_voltage_max", value_max},
 				{"mcu_voltage_raw", raw},
 			};
+		}
+
+		case Mtb::DV::MCUTemperature: {
+			if (data.size() < 4)
+				return {};
+
+			uint16_t raw = (data[0] << 8) | data[1];
+			uint8_t ts_offset = data[2];
+			uint8_t ts_gain = data[3];
+			float temp = ((raw-(273+100-ts_offset))*128 / ts_gain) + 25;
+			return {
+				{"mcu_temp_celsius", temp},
+				{"mcu_temp_raw", raw},
+				{"mcu_ts_offset", ts_offset},
+				{"mcu_ts_gain", ts_gain},
+			};
+		}
 	}
 
 	return {};
