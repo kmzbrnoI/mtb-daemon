@@ -71,18 +71,20 @@ void MtbModule::mtbBusInputsChanged(const std::vector<uint8_t>&) {
 void MtbModule::mtbBusDiagStateChanged(const std::vector<uint8_t>& data) {
 	if (data.size() < 1)
 		return;
+	this->mtbBusDiagStateChanged(data[0] & 1, data[0] & 2);
+}
+
+void MtbModule::mtbBusDiagStateChanged(bool isError, bool isWarning) {
 	bool changed = false;
 
 	{
-		bool isError = data[0] & 1;
 		changed |= (isError != this->busModuleInfo.error);
 		this->busModuleInfo.error = isError;
 	}
 
 	{
-		bool isWarning = data[0] & 2;
 		changed |= (isWarning != this->busModuleInfo.warning);
-		this->busModuleInfo.warning = data[0] & 2;
+		this->busModuleInfo.warning = isWarning;
 	}
 
 	if (changed) {
@@ -256,6 +258,20 @@ void MtbModule::jsonGetDiag(QTcpSocket *socket, const QJsonObject &request) {
 				response["DVvalueRaw"] = dataAr;
 
 				server.send(socket, response);
+
+				if (dvi == Mtb::DV::State) {
+					this->mtbBusDiagStateChanged(data);
+				} else if ((dvi == Mtb::DV::Errors) || (dvi == Mtb::DV::Warnings)) {
+					bool anyNonZero = false;
+					for (uint8_t byte : data)
+						if (byte != 0)
+							anyNonZero = true;
+
+					if (dvi == Mtb::DV::Errors)
+						this->mtbBusDiagStateChanged(anyNonZero, this->busModuleInfo.warning);
+					else if (dvi == Mtb::DV::Warnings)
+						this->mtbBusDiagStateChanged(this->busModuleInfo.error, anyNonZero);
+				}
 			}},
 			{[socket, request](Mtb::CmdError error, void*) {
 				sendError(socket, request, error);

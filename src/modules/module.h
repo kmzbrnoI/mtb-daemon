@@ -77,6 +77,8 @@ protected:
 
 	virtual QJsonObject dvRepr(uint8_t dvi, const std::vector<uint8_t> &data) const;
 
+	void mtbBusDiagStateChanged(bool isError, bool isWarning);
+
 public:
 	MtbModule(uint8_t addr);
 	virtual ~MtbModule() = default;
