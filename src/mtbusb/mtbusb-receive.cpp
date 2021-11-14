@@ -97,7 +97,7 @@ void MtbUsb::parseMtbUsbMessage(uint8_t command_code, const std::vector<uint8_t>
 			log("GET: new module "+QString::number(data[0]), LogLevel::Commands);
 			if (m_activeModules.has_value()) {
 				m_activeModules.value()[data[0]] = true;
-				onNewModule(data[0]);
+                emit onNewModule(data[0]);
 			}
 		}
 		return; // event cannot be response to command
@@ -110,7 +110,7 @@ void MtbUsb::parseMtbUsbMessage(uint8_t command_code, const std::vector<uint8_t>
 				log("GET: module "+QString::number(data[0])+" failed", LogLevel::Commands);
 				if (m_activeModules.has_value()) {
 					m_activeModules.value()[data[0]] = false;
-					onModuleFail(data[0]);
+                    emit onModuleFail(data[0]);
 				}
 			}
 		}
@@ -174,7 +174,7 @@ void MtbUsb::parseMtbBusMessage(uint8_t module, uint8_t attempts, uint8_t comman
 
 	case MtbBusRecvCommand::InputChanged:
 		log("GET: module "+QString::number(module)+" inputs changed", LogLevel::Commands);
-		onModuleInputsChange(module, data);
+        emit onModuleInputsChange(module, data);
 		return; // event = return
 
 	case MtbBusRecvCommand::InputState:
@@ -221,7 +221,7 @@ void MtbUsb::parseMtbBusMessage(uint8_t module, uint8_t attempts, uint8_t comman
 	if ((command == MtbBusRecvCommand::DiagValue) && (data.size() > 1) && (data[0] == DV::State)) {
 		// asynchronous diagnostic information change
 		const std::vector<uint8_t> dvdata = {data.begin()+1, data.end()};
-		onModuleDiagStateChange(module, dvdata);
+        emit onModuleDiagStateChange(module, dvdata);
 		return;
 	}
 
