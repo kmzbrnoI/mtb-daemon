@@ -734,7 +734,7 @@ QJsonObject MtbUni::dvRepr(uint8_t dvi, const std::vector<uint8_t> &data) const 
 				return {};
 
 			uint16_t raw = (data[0] << 8) | data[1];
-			uint8_t ts_offset = data[2];
+			int8_t ts_offset = data[2];
 			uint8_t ts_gain = data[3];
 			float temp = ((raw-(273+100-ts_offset))*128 / ts_gain) + 25;
 			return {
