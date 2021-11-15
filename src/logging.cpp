@@ -1,5 +1,6 @@
 #include <iostream>
 #include <QJsonObject>
+#include <QDir>
 #include "logging.h"
 #include "lib/termcolor.h"
 
@@ -88,7 +89,9 @@ void Logger::prodLog(const QString& message, Mtb::LogLevel loglevel) {
 
 void Logger::prodInit() {
 	std::string filename = QDateTime::currentDateTime().toString("yyyy-MM-dd_hh:mm:ss").toStdString() + ".log";
-	this->prod.file = std::make_unique<std::ofstream>(this->prod.directory.toStdString() + "/" + filename);
+	this->prod.file = std::make_unique<std::ofstream>(
+		(this->prod.directory + QDir::separator()).toStdString() + filename
+	);
 	if (!this->prod.file->is_open()) {
 		this->prod.file = nullptr;
 		return;
