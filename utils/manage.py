@@ -120,7 +120,7 @@ def module(socket, verbose: bool, module: int) -> None:
 
 
 def module_diag(socket, verbose: bool, module: int) -> None:
-    DVS = ['warnings', 'errors']
+    DVS = ['warnings', 'errors', 'uptime', 'mcu_voltage', 'mcu_temperature']
 
     for dvkey in DVS:
         response = request_response(socket, verbose, {
