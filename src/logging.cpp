@@ -88,10 +88,9 @@ void Logger::prodLog(const QString& message, Mtb::LogLevel loglevel) {
 }
 
 void Logger::prodInit() {
-	std::string filename = QDateTime::currentDateTime().toString("yyyy-MM-dd_hh:mm:ss").toStdString() + ".log";
-	this->prod.file = std::make_unique<std::ofstream>(
-		(this->prod.directory + QDir::separator()).toStdString() + filename
-	);
+    const std::string filename = QDateTime::currentDateTime().toString("yyyy-MM-dd_hh-mm-ss").toStdString() + ".log";
+    const std::string path = (this->prod.directory + QDir::separator()).toStdString() + filename;
+    this->prod.file = std::make_unique<std::ofstream>(path);
 	if (!this->prod.file->is_open()) {
 		this->prod.file = nullptr;
 		return;
