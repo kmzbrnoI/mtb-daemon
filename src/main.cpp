@@ -77,6 +77,10 @@ DaemonCoreApplication::DaemonCoreApplication(int &argc, char **argv)
 	QObject::connect(&mtbusb, SIGNAL(onModuleDiagStateChange(uint8_t, const std::vector<uint8_t>&)),
 	                 this, SLOT(mtbUsbOnDiagStateChange(uint8_t, const std::vector<uint8_t>&)));
 
+#ifdef Q_OS_WIN
+	SetConsoleOutputCP(CP_UTF8);
+#endif
+
 	log("Starting MTB Daemon v"+QString(VERSION)+"...", Mtb::LogLevel::Info);
 
 	{ // Load config file
