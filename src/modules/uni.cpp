@@ -718,9 +718,9 @@ QJsonObject MtbUni::dvRepr(uint8_t dvi, const std::vector<uint8_t> &data) const 
 				return {};
 
 			uint16_t raw = (data[0] << 8) | data[1];
-			float value = (1.1 * 1024) / raw;
-			float value_min = (1.0 * 1024) / raw;
-			float value_max = (1.2 * 1024) / raw;
+			float value = (this->adcbg() * 1024) / raw;
+			float value_min = (this->adcbg()*0.9 * 1024) / raw;
+			float value_max = (this->adcbg()*1.1 * 1024) / raw;
 			return {
 				{"mcu_voltage", value},
 				{"mcu_voltage_min", value_min},
@@ -747,4 +747,17 @@ QJsonObject MtbUni::dvRepr(uint8_t dvi, const std::vector<uint8_t> &data) const 
 	}
 
 	return {};
+}
+
+float MtbUni::adcbg() const {
+	switch (this->type) {
+		case MtbModuleType::Univ2ir:
+		case MtbModuleType::Univ2noIr:
+			return 1.1;
+		case MtbModuleType::Univ40:
+		case MtbModuleType::Univ42:
+			return 1.22;
+		default:
+			return 1;
+	}
 }

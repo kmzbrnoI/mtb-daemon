@@ -71,6 +71,8 @@ protected:
 
 	QJsonObject dvRepr(uint8_t dvi, const std::vector<uint8_t> &data) const override;
 
+	float adcbg() const;
+
 public:
 	MtbUni(uint8_t addr);
 	~MtbUni() override = default;
