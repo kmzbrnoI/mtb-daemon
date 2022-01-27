@@ -49,6 +49,8 @@ def request_response(socket, verbose,
                      request: Dict[str, Any]) -> Dict[str, Any]:
     to_send = request
     to_send['type'] = 'request'
+    if verbose:
+        print(to_send)
     socket.send((json.dumps(to_send)+'\n').encode('utf-8'))
 
     while True:
