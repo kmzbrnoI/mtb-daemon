@@ -131,6 +131,8 @@ def module_diag(socket, verbose: bool, module: int) -> None:
             'DVkey': dvkey,
         })
         for key, val in response.get('DVvalue', {}).items():
+            if isinstance(val, float):
+                val = round(val, 2)
             print(key, ':', val)
 
 
