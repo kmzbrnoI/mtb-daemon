@@ -159,17 +159,17 @@ struct CmdMtbUsbPing : public Cmd {
 /* MTBbus commands -----------------------------------------------------------*/
 
 struct ModuleInfo {
-	uint8_t type;
-	bool bootloader_int;
-	bool bootloader_unint;
-	bool error;
-	bool warning;
-	uint8_t fw_major;
-	uint8_t fw_minor;
-	uint8_t proto_major;
-	uint8_t proto_minor;
-	uint8_t bootloader_major;
-	uint8_t bootloader_minor;
+	uint8_t type = 0;
+	bool bootloader_int = false;
+	bool bootloader_unint = false;
+	bool error = false;
+	bool warning = false;
+	uint8_t fw_major = 0;
+	uint8_t fw_minor = 0;
+	uint8_t proto_major = 0;
+	uint8_t proto_minor = 0;
+	uint8_t bootloader_major = 0;
+	uint8_t bootloader_minor = 0;
 
 	QString fw_version() const { return QString::number(fw_major)+"."+QString::number(fw_minor); }
 	QString proto_version() const { return QString::number(proto_major)+"."+QString::number(proto_minor); }
