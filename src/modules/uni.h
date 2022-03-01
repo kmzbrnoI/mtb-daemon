@@ -11,6 +11,9 @@ struct MtbUniConfig {
 	std::array<size_t, UNI_IO_CNT> inputsDelay; // 0 = 0s, 1 = 0.1s, 15 = 1.5s, min=0, max=15
 	uint16_t irs;
 
+	MtbUniConfig(const QJsonObject& json) { this->fromJson(json); }
+	MtbUniConfig(const std::vector<uint8_t>& mtbUsbData) { this->fromMtbUsb(mtbUsbData); }
+
 	std::vector<uint8_t> serializeForMtbUsb(bool withIrs) const;
 	void fromMtbUsb(const std::vector<uint8_t>&);
 
@@ -31,9 +34,8 @@ protected:
 	uint16_t inputs;
 	std::array<uint8_t, UNI_IO_CNT> outputsWant;
 	std::array<uint8_t, UNI_IO_CNT> outputsConfirmed;
-	MtbUniConfig config;
-	MtbUniConfig configToWrite;
-	bool configLoaded = false;
+	std::optional<MtbUniConfig> config;
+	std::optional<MtbUniConfig> configToWrite;
 	std::array<QTcpSocket*, UNI_IO_CNT> whoSetOutput;
 
 	std::vector<ServerRequest> setOutputsWaiting;

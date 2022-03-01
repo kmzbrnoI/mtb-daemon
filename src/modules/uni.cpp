@@ -26,8 +26,8 @@ QJsonObject MtbUni::moduleInfo(bool state, bool config) const {
 		{"ir", this->isIrSupport()},
 	};
 
-	if (config)
-		uni["config"] = this->config.json(this->isIrSupport(), false);
+	if ((config) && (this->config.has_value()))
+		uni["config"] = this->config.value().json(this->isIrSupport(), false);
 
 	if (state && this->active && !this->busModuleInfo.inBootloader()) {
 		uni["state"] = QJsonObject{
@@ -238,14 +238,14 @@ void MtbUni::jsonSetConfig(QTcpSocket *socket, const QJsonObject &request) {
 
 	MtbModule::jsonSetConfig(socket, request);
 
-	MtbUniConfig oldConfig = this->configToWrite;
-	this->configToWrite.fromJson(request["config"].toObject());
+	std::optional<MtbUniConfig> oldConfig = this->configToWrite;
+	this->configToWrite.emplace(MtbUniConfig(request["config"].toObject()));
 	this->configWriting = ServerRequest(socket, request);
 
 	if ((this->active) && (oldConfig != this->configToWrite)) {
 		mtbusb.send(
 			Mtb::CmdMtbModuleSetConfig(
-				this->address, this->configToWrite.serializeForMtbUsb(this->isIrSupport()),
+				this->address, this->configToWrite.value().serializeForMtbUsb(this->isIrSupport()),
 				{[this](uint8_t, void*) { this->mtbBusConfigWritten(); }},
 				{[this](Mtb::CmdError error, void*) { this->mtbBusConfigNotWritten(error); }}
 			)
@@ -334,11 +334,13 @@ void MtbUni::resetOutputsOfClient(QTcpSocket *socket) {
 	MtbModule::resetOutputsOfClient(socket);
 
 	bool send = false;
-	for (size_t i = 0; i < UNI_IO_CNT; i++) {
-		if (this->whoSetOutput[i] == socket) {
-			this->outputsWant[i] = this->config.outputsSafe[i];
-			this->whoSetOutput[i] = nullptr;
-			send = true;
+	if (this->config.has_value()) {
+		for (size_t i = 0; i < UNI_IO_CNT; i++) {
+			if (this->whoSetOutput[i] == socket) {
+				this->outputsWant[i] = this->config.value().outputsSafe[i];
+				this->whoSetOutput[i] = nullptr;
+				send = true;
+			}
 		}
 	}
 
@@ -409,7 +411,7 @@ std::array<uint8_t, UNI_IO_CNT> MtbUni::moduleOutputsData(const std::vector<uint
 
 void MtbUni::allOutputsReset() {
 	for (size_t i = 0; i < UNI_IO_CNT; i++) {
-		this->outputsWant[i] = this->config.outputsSafe[i];
+		this->outputsWant[i] = this->config.has_value() ? this->config.value().outputsSafe[i] : 0;
 		this->outputsConfirmed[i] = this->outputsWant[i];
 		this->whoSetOutput[i] = nullptr;
 	}
@@ -450,11 +452,11 @@ void MtbUni::activate() {
 		this->mlog("Module warning="+QString::number(this->busModuleInfo.warning)+", error="+
 		           QString::number(this->busModuleInfo.error), Mtb::LogLevel::Warning);
 
-	if (this->configLoaded) {
+	if (this->config.has_value()) {
 		this->mlog("Config previously loaded from file, setting to module...", Mtb::LogLevel::Info);
 		mtbusb.send(
 			Mtb::CmdMtbModuleSetConfig(
-				this->address, this->config.serializeForMtbUsb(this->isIrSupport()),
+				this->address, this->config.value().serializeForMtbUsb(this->isIrSupport()),
 				{[this](uint8_t, void*) { this->configSet(); }},
 				{[this](Mtb::CmdError error, void*) {
 					this->mlog("Unable to set module config.", Mtb::LogLevel::Error);
@@ -468,8 +470,7 @@ void MtbUni::activate() {
 			Mtb::CmdMtbModuleGetConfig(
 				this->address,
 				{[this](uint8_t, const std::vector<uint8_t>& data, void*) {
-					this->config.fromMtbUsb(data);
-					this->configLoaded = true;
+					this->config.emplace(MtbUniConfig(data));
 					this->configSet();
 				}},
 				{[this](Mtb::CmdError error, void*) {
@@ -518,8 +519,10 @@ void MtbUni::storeInputsState(const std::vector<uint8_t> &data) {
 }
 
 void MtbUni::outputsReset() {
-	this->outputsWant = this->config.outputsSafe;
-	this->outputsConfirmed = this->outputsWant;
+	for (size_t i = 0; i < UNI_IO_CNT; i++) {
+		this->outputsWant[i] = this->config.has_value() ? this->config.value().outputsSafe[i] : 0;
+		this->outputsConfirmed[i] = this->outputsWant[i];
+	}
 
 	for (size_t i = 0; i < UNI_IO_CNT; i++)
 		this->whoSetOutput[i] = nullptr;
@@ -669,14 +672,13 @@ void MtbUni::reactivateCheck() {
 
 void MtbUni::loadConfig(const QJsonObject &json) {
 	MtbModule::loadConfig(json);
-	this->config.fromJson(json["config"].toObject());
-	this->configLoaded = true;
+	this->config.emplace(MtbUniConfig(json["config"].toObject()));
 }
 
 void MtbUni::saveConfig(QJsonObject &json) const {
 	MtbModule::saveConfig(json);
-	if (this->configLoaded)
-		json["config"] = this->config.json(this->isIrSupport(), true);
+	if (this->config.has_value())
+		json["config"] = this->config.value().json(this->isIrSupport(), true);
 }
 
 /* Diagnostic Values -------------------------------------------------------- */
