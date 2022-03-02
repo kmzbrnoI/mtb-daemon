@@ -7,9 +7,9 @@
 constexpr size_t UNI_IO_CNT = 16;
 
 struct MtbUniConfig {
-	std::array<uint8_t, UNI_IO_CNT> outputsSafe;
-	std::array<size_t, UNI_IO_CNT> inputsDelay; // 0 = 0s, 1 = 0.1s, 15 = 1.5s, min=0, max=15
-	uint16_t irs;
+	std::array<uint8_t, UNI_IO_CNT> outputsSafe = {0, };
+	std::array<size_t, UNI_IO_CNT> inputsDelay = {0, }; // 0 = 0s, 1 = 0.1s, 15 = 1.5s, min=0, max=15
+	uint16_t irs = 0;
 
 	MtbUniConfig(const QJsonObject& json) { this->fromJson(json); }
 	MtbUniConfig(const std::vector<uint8_t>& mtbUsbData) { this->fromMtbUsb(mtbUsbData); }
