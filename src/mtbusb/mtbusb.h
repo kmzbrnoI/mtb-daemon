@@ -139,7 +139,6 @@ private:
 	QTimer m_pingTimer;
 	std::deque<HistoryItem> m_hist;
 	std::deque<std::unique_ptr<const Cmd>> m_out;
-	QDateTime m_lastSent;
 	QDateTime m_receiveTimeout;
 	std::optional<MtbUsbInfo> m_mtbUsbInfo;
 	std::optional<std::array<bool, _MAX_MODULES>> m_activeModules;
