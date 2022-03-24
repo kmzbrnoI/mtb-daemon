@@ -335,6 +335,9 @@ void DaemonCoreApplication::tReconnectTick() {
 }
 
 void DaemonCoreApplication::tReactivateTick() {
+	if (!mtbusb.connected())
+		return;
+
 	for (size_t i = 0; i < Mtb::_MAX_MODULES; i++)
 		if (modules[i] != nullptr)
 			modules[i]->reactivateCheck();
