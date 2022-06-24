@@ -66,16 +66,18 @@ DaemonCoreApplication::DaemonCoreApplication(int &argc, char **argv)
 	QObject::connect(&t_reconnect, SIGNAL(timeout()), this, SLOT(tReconnectTick()));
 	QObject::connect(&t_reactivate, SIGNAL(timeout()), this, SLOT(tReactivateTick()));
 
+	// Use Qt::DirectConnection in all mtbusb signals, because it is significantly faster.
+	// ASSERT: singnal must be emitted in the same thread!
 	QObject::connect(&mtbusb, SIGNAL(onLog(QString, Mtb::LogLevel)),
-	                 this, SLOT(mtbUsbOnLog(QString, Mtb::LogLevel)));
-	QObject::connect(&mtbusb, SIGNAL(onConnect()), this, SLOT(mtbUsbOnConnect()));
-	QObject::connect(&mtbusb, SIGNAL(onDisconnect()), this, SLOT(mtbUsbOnDisconnect()));
-	QObject::connect(&mtbusb, SIGNAL(onNewModule(uint8_t)), this, SLOT(mtbUsbOnNewModule(uint8_t)));
-	QObject::connect(&mtbusb, SIGNAL(onModuleFail(uint8_t)), this, SLOT(mtbUsbOnModuleFail(uint8_t)));
+					 this, SLOT(mtbUsbOnLog(QString, Mtb::LogLevel)), Qt::DirectConnection);
+	QObject::connect(&mtbusb, SIGNAL(onConnect()), this, SLOT(mtbUsbOnConnect()), Qt::DirectConnection);
+	QObject::connect(&mtbusb, SIGNAL(onDisconnect()), this, SLOT(mtbUsbOnDisconnect()), Qt::DirectConnection);
+	QObject::connect(&mtbusb, SIGNAL(onNewModule(uint8_t)), this, SLOT(mtbUsbOnNewModule(uint8_t)), Qt::DirectConnection);
+	QObject::connect(&mtbusb, SIGNAL(onModuleFail(uint8_t)), this, SLOT(mtbUsbOnModuleFail(uint8_t)), Qt::DirectConnection);
 	QObject::connect(&mtbusb, SIGNAL(onModuleInputsChange(uint8_t, const std::vector<uint8_t>&)),
-	                 this, SLOT(mtbUsbOnInputsChange(uint8_t, const std::vector<uint8_t>&)));
+					 this, SLOT(mtbUsbOnInputsChange(uint8_t, const std::vector<uint8_t>&)), Qt::DirectConnection);
 	QObject::connect(&mtbusb, SIGNAL(onModuleDiagStateChange(uint8_t, const std::vector<uint8_t>&)),
-	                 this, SLOT(mtbUsbOnDiagStateChange(uint8_t, const std::vector<uint8_t>&)));
+					 this, SLOT(mtbUsbOnDiagStateChange(uint8_t, const std::vector<uint8_t>&)), Qt::DirectConnection);
 
 #ifdef Q_OS_WIN
 	SetConsoleOutputCP(CP_UTF8);
