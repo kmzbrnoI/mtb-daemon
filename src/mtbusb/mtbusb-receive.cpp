@@ -45,6 +45,9 @@ void MtbUsb::spHandleReadyRead() {
 		}
 		m_readData.remove(0, static_cast<int>(length + 3));
 	}
+
+	// Set timeout again to avoid buf clear because of long processing time (long message)
+	m_receiveTimeout = QDateTime::currentDateTime().addMSecs(_BUF_IN_TIMEOUT);
 }
 
 void MtbUsb::parseMtbUsbMessage(uint8_t command_code, const std::vector<uint8_t> &data) {
