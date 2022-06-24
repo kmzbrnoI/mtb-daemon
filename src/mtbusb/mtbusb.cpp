@@ -20,7 +20,7 @@ MtbUsb::MtbUsb(QObject *parent) : QObject(parent) {
 
 void MtbUsb::log(const QString &message, const LogLevel loglevel) {
 	if (loglevel <= this->loglevel)
-        emit onLog(message, loglevel);
+		emit onLog(message, loglevel);
 }
 
 void MtbUsb::spAboutToClose() {
@@ -88,7 +88,7 @@ void MtbUsb::connect(const QString &portname, int32_t br, QSerialPort::FlowContr
 	m_histTimer.start(_HIST_CHECK_INTERVAL);
 	m_pingTimer.start();
 	log("Connected", LogLevel::Info);
-    emit onConnect();
+	emit onConnect();
 }
 
 void MtbUsb::disconnect() {
@@ -97,7 +97,7 @@ void MtbUsb::disconnect() {
 
 	log("Disconnecting...", LogLevel::Info);
 	m_serialPort.close();
-    emit onDisconnect();
+	emit onDisconnect();
 }
 
 bool MtbUsb::connected() const { return m_serialPort.isOpen(); }

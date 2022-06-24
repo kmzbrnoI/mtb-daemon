@@ -36,7 +36,7 @@ void DaemonServer::clientDisconnected() {
 	if (this->clients.find(client) != this->clients.end())
 		this->clients.erase(client);
 
-    emit clientDisconnected(client);
+	emit clientDisconnected(client);
 }
 
 void DaemonServer::clientReadyRead() {
@@ -54,7 +54,7 @@ void DaemonServer::clientReadyRead() {
 
 			QJsonObject json = doc.object();
 			try {
-                emit jsonReceived(client, json);
+				emit jsonReceived(client, json);
 			} catch (const std::logic_error& err) {
 				log("Client received data Exception: "+QString(err.what()), Mtb::LogLevel::Error);
 			} catch (...) {
