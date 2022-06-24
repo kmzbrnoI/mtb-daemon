@@ -5,8 +5,9 @@ namespace Mtb {
 
 void MtbUsb::spHandleReadyRead() {
 	// check timeout
-	if (m_receiveTimeout < QDateTime::currentDateTime() && m_readData.size() > 0) {
+	if ((m_receiveTimeout < QDateTime::currentDateTime()) && (m_readData.size() > 0)) {
 		// clear input buffer when data not received for a long time
+		log("Cleared BUF due to timeout", LogLevel::Debug);
 		m_readData.clear();
 	}
 
