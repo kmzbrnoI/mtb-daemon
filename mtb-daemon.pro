@@ -5,6 +5,7 @@ CONFIG -= app_bundle
 
 SOURCES += \
 	src/main.cpp \
+	src/modules/unis.cpp \
 	src/mtbusb/mtbusb.cpp \
 	src/mtbusb/mtbusb-send.cpp \
 	src/mtbusb/mtbusb-receive.cpp \
@@ -18,6 +19,7 @@ SOURCES += \
 
 HEADERS += \
 	src/main.h \
+	src/modules/unis.h \
 	src/mtbusb/mtbusb-win-com-discover.h \
 	src/mtbusb/mtbusb.h \
 	src/mtbusb/mtbusb-commands.h \

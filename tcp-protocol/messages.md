@@ -201,6 +201,28 @@ Response in same as *Daemon Status* response.
 }
 ```
 
+### Module set address (only for modules without hardware setting)
+
+```json
+{
+    "command": "module_set_address",
+    "type:" "request",
+    "id": 11,
+    "address": 1,     # only for readdress, can be ommited
+    "new_address": 8
+}
+```
+
+```json
+{
+    "command": "module_set_address",
+    "type": "response",
+    "id": 11,
+    "status": "ok",
+    "address": 8
+}
+```
+
 ### Module firmware upgrade request
 
 ```json
