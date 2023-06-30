@@ -66,24 +66,10 @@ $ # qmake CONFIG+=debug -spec linux-clang ..
 $ bear make
 ```
 
-## Cross-compiling for Windows
+## Compiling for Windows
 
-This library could be cross-compiled for Windows via [MXE](https://mxe.cc/).
-Follow [these instructions](https://stackoverflow.com/questions/14170590/building-qt-5-on-linux-for-windows)
-for building standalone `dll` file.
-
-You may want to use similar script as `activate.sh`:
-
-```bash
-$ export PATH="$HOME/...../mxe/usr/bin:$PATH"
-$ ~/...../mxe/usr/i686-w64-mingw32.static/qt5/bin/qmake ..
-```
-
-Make MXE this way:
-
-```bash
-$ make qtbase qtserialport
-```
+Just open the project in Qt Creator and compile it. This approach is currently
+used to build windows binaries in releases.
 
 ## Style checking
 
