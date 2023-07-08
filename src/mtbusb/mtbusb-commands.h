@@ -529,7 +529,7 @@ struct CmdMtbModuleFwWriteFlashStatusRequest : public CmdMtbUsbForward {
 	}
 };
 
-// Should return true iff response if valid.
+// Should return true if response is valid.
 using SpecificCallbackFunc =
     std::function<bool(uint8_t addr, MtbBusRecvCommand busCommand, const std::vector<uint8_t> &outputs, void *data)>;
 
