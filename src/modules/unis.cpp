@@ -407,7 +407,6 @@ std::vector<uint8_t> MtbUnis::mtbBusOutputsData() const {
     msg.append(QString::number(data[i], 16));
     msg.append(" ");
   }
-  this->mlog("output data "+msg, Mtb::LogLevel::Info);
   return data;
 }
 
@@ -578,8 +577,7 @@ std::vector<uint8_t> MtbUnisConfig::serializeForMtbUsb() const {
     result.push_back(this->inputsDelay[2*i] | (this->inputsDelay[2*i+1] << 4));
   result.push_back(this->servoEnabledMask & 0x3F);
   for (size_t i = 0; i < UNIS_SERVO_OUT_CNT; i++) {
-    result.push_back((this->servoPosition[i] >> 8) & 0xff);
-    result.push_back((this->servoPosition[i]     ) & 0xff);
+    result.push_back(this->servoPosition[i]);
   }
   for (size_t i = 0; i < UNIS_SERVO_CNT; i++) {
     result.push_back(this->servoSpeed[i]);
@@ -648,7 +646,7 @@ void MtbUnisConfig::fromJson(const QJsonObject &json) {
   this->servoEnabledMask = json["servoEnabledMask"].toInt(0);
   for (size_t i = 0; i < UNIS_SERVO_OUT_CNT; i++) {
     if (i < static_cast<size_t>(jsonServoPosition.size()))
-      this->servoPosition[i] = jsonServoPosition[i].toInt(8000);
+      this->servoPosition[i] = jsonServoPosition[i].toInt(80);
   }
   for (size_t i = 0; i < UNIS_SERVO_CNT; i++) {
     if (i < static_cast<size_t>(jsonServoSpeed.size()))
@@ -669,9 +667,9 @@ void MtbUnisConfig::fromMtbUsb(const std::vector<uint8_t> &data) {
   this->servoEnabledMask = data[pos];
   pos++;
   for (size_t i = 0; i < (UNIS_SERVO_OUT_CNT); i++) {
-    this->servoPosition[i] = (data[pos+i*2] << 8) | data[pos+i*2+1];
+    this->servoPosition[i] = data[pos+i];
   }
-  pos += UNIS_SERVO_OUT_CNT*2;
+  pos += UNIS_SERVO_OUT_CNT;
   for (size_t i = 0; i < (UNIS_SERVO_CNT); i++) {
     this->servoSpeed[i] = data[pos+i];
   }
