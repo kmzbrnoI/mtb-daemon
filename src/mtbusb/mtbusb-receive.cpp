@@ -72,7 +72,7 @@ void MtbUsb::parseMtbUsbMessage(uint8_t command_code, const std::vector<uint8_t>
 		if (data.size() >= 6) {
 			MtbUsbInfo info;
 			info.type = data[0];
-			info.speed = static_cast<MtbBusSpeed>(data[1] & 0x03);
+			info.speed = static_cast<MtbBusSpeed>(data[1] & 0x0F);
 			info.fw_major = data[2];
 			info.fw_minor = data[3];
 			info.proto_major = data[4];

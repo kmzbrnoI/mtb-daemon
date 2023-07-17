@@ -21,6 +21,7 @@ enum class MtbBusSpeed {
 	br38400 = 1,
 	br57600 = 2,
 	br115200 = 3,
+	br230400 = 4,
 };
 
 int mtbBusSpeedToInt(MtbBusSpeed speed);
