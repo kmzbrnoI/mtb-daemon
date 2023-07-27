@@ -419,6 +419,32 @@ void DaemonCoreApplication::serverReceived(QTcpSocket *socket, const QJsonObject
 
 		server.send(socket, response);
 
+	} else if (command == "load_config") {
+		if (!this->hasWriteAccess(socket))
+			return sendAccessDenied(socket, request);
+
+		QString filename = this->configFileName;
+		if (request.contains("filename"))
+			filename = request["filename"].toString();
+		bool ok = true;
+		try {
+			this->loadConfig(filename);
+			log("Config file "+filename+" successfully loaded.", Mtb::LogLevel::Info);
+		} catch (...) {
+			ok = false;
+		}
+		QJsonObject response {
+							  {"command", "load_config"},
+							  {"type", "response"},
+							  {"status", ok ? "ok" : "error"},
+							  };
+		if (!ok)
+			response["error"] = jsonError(MTB_FILE_CANNOT_ACCESS, "Cannot load file "+filename);
+		if (id)
+			response["id"] = static_cast<int>(id.value());
+
+		server.send(socket, response);
+
 	} else if (command == "module") {
 		QJsonObject response = jsonOkResponse(request);
 
@@ -593,7 +619,7 @@ void DaemonCoreApplication::loadConfig(const QString& filename) {
 	QJsonParseError parseError;
 	QJsonDocument doc = QJsonDocument::fromJson(content.toUtf8(), &parseError);
 	if (doc.isNull())
-		throw JsonParseError("Unable to parse config file "+filename+": "+parseError.errorString());
+		throw JsonParseError("Unable to parse config file "+filename+": "+parseError.errorString()+" offset: "+QString::number(parseError.offset));
 	this->config = doc.object();
 
 	{
