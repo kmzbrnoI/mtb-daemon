@@ -232,9 +232,9 @@ def get_outputs(socket, verbose: bool, module: int) -> None:
         )
     outputs = module_spec['state']['outputs']
     if module_['type'].startswith('MTB-UNIS'):
-      print(unis_outputs_str(outputs))
+        print(unis_outputs_str(outputs))
     else:
-      print(uni_outputs_str(outputs))
+        print(uni_outputs_str(outputs))
 
 
 def reboot(socket, verbose: bool, module_: int) -> None:
@@ -388,9 +388,9 @@ def module_print_config(socket, verbose: bool, module: int) -> None:
     config = response['module'][type_]['config']
     print(f'Module {module} – {response["module"]["name"]}:')
     if type_.startswith('MTB-UNIS'):
-      unis_print_config(config)
+        unis_print_config(config)
     else:
-      uni_print_config(config)
+        uni_print_config(config)
 
 
 def module_config_name(socket, verbose: bool, module: int, name: Optional[str]) -> None:
