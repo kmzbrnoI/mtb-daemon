@@ -57,12 +57,11 @@ const QJsonObject DEFAULT_CONFIG = {
 };
 
 
-DaemonCoreApplication::DaemonCoreApplication(int &argc, char **argv)
-     : QCoreApplication(argc, argv) {
+DaemonCoreApplication::DaemonCoreApplication(int &argc, char **argv) : QCoreApplication(argc, argv) {
 	QObject::connect(&server, SIGNAL(jsonReceived(QTcpSocket*, const QJsonObject&)),
-					 this, SLOT(serverReceived(QTcpSocket*, const QJsonObject&)), Qt::DirectConnection);
+	                 this, SLOT(serverReceived(QTcpSocket*, const QJsonObject&)), Qt::DirectConnection);
 	QObject::connect(&server, SIGNAL(clientDisconnected(QTcpSocket*)),
-					 this, SLOT(serverClientDisconnected(QTcpSocket*)), Qt::DirectConnection);
+	                 this, SLOT(serverClientDisconnected(QTcpSocket*)), Qt::DirectConnection);
 
 	QObject::connect(&t_reconnect, SIGNAL(timeout()), this, SLOT(tReconnectTick()));
 	QObject::connect(&t_reactivate, SIGNAL(timeout()), this, SLOT(tReactivateTick()));
@@ -70,15 +69,15 @@ DaemonCoreApplication::DaemonCoreApplication(int &argc, char **argv)
 	// Use Qt::DirectConnection in all mtbusb signals, because it is significantly faster.
 	// ASSERT: singnal must be emitted in the same thread!
 	QObject::connect(&mtbusb, SIGNAL(onLog(QString, Mtb::LogLevel)),
-					 this, SLOT(mtbUsbOnLog(QString, Mtb::LogLevel)), Qt::DirectConnection);
+	                 this, SLOT(mtbUsbOnLog(QString, Mtb::LogLevel)), Qt::DirectConnection);
 	QObject::connect(&mtbusb, SIGNAL(onConnect()), this, SLOT(mtbUsbOnConnect()), Qt::DirectConnection);
 	QObject::connect(&mtbusb, SIGNAL(onDisconnect()), this, SLOT(mtbUsbOnDisconnect()), Qt::DirectConnection);
 	QObject::connect(&mtbusb, SIGNAL(onNewModule(uint8_t)), this, SLOT(mtbUsbOnNewModule(uint8_t)), Qt::DirectConnection);
 	QObject::connect(&mtbusb, SIGNAL(onModuleFail(uint8_t)), this, SLOT(mtbUsbOnModuleFail(uint8_t)), Qt::DirectConnection);
 	QObject::connect(&mtbusb, SIGNAL(onModuleInputsChange(uint8_t, const std::vector<uint8_t>&)),
-					 this, SLOT(mtbUsbOnInputsChange(uint8_t, const std::vector<uint8_t>&)), Qt::DirectConnection);
+	                 this, SLOT(mtbUsbOnInputsChange(uint8_t, const std::vector<uint8_t>&)), Qt::DirectConnection);
 	QObject::connect(&mtbusb, SIGNAL(onModuleDiagStateChange(uint8_t, const std::vector<uint8_t>&)),
-					 this, SLOT(mtbUsbOnDiagStateChange(uint8_t, const std::vector<uint8_t>&)), Qt::DirectConnection);
+	                 this, SLOT(mtbUsbOnDiagStateChange(uint8_t, const std::vector<uint8_t>&)), Qt::DirectConnection);
 
 #ifdef Q_OS_WIN
 	SetConsoleOutputCP(CP_UTF8);
@@ -94,7 +93,7 @@ DaemonCoreApplication::DaemonCoreApplication(int &argc, char **argv)
 		} catch (const ConfigNotFound&) {
 			log("Unable to load config file "+configFileName+
 			    ", resetting config, writing default config file...",
-				Mtb::LogLevel::Info);
+			    Mtb::LogLevel::Info);
 			this->config = DEFAULT_CONFIG;
 			this->saveConfig(configFileName);
 		}
@@ -263,16 +262,16 @@ void DaemonCoreApplication::moduleGotInfo(uint8_t addr, Mtb::ModuleInfo info) {
 				modules[addr] = std::make_unique<MtbUni>(addr);
 			}
 		}
-	} else if ((info.type&0xF0) == 0x50) {
-		if (modules[addr] == nullptr) {
-			modules[addr] = std::make_unique<MtbUnis>(addr);
-		} else {
-			if (static_cast<size_t>(modules[addr]->moduleType()) != info.type) {
-				log("Detected module "+QString::number(addr)+" type & stored module type mismatch! Forgetting config...",
-				    Mtb::LogLevel::Warning);
-				modules[addr] = std::make_unique<MtbUnis>(addr);
-			}
-		}
+		} else if ((info.type&0xF0) == 0x50) {
+				if (modules[addr] == nullptr) {
+						modules[addr] = std::make_unique<MtbUnis>(addr);
+				} else {
+						if (static_cast<size_t>(modules[addr]->moduleType()) != info.type) {
+								log("Detected module "+QString::number(addr)+" type & stored module type mismatch! Forgetting config...",
+									Mtb::LogLevel::Warning);
+								modules[addr] = std::make_unique<MtbUnis>(addr);
+						}
+				}
 	} else {
 		log("Unknown module type: "+QString::number(addr)+": 0x"+
 			QString::number(info.type, 16)+"!", Mtb::LogLevel::Warning);
@@ -420,6 +419,32 @@ void DaemonCoreApplication::serverReceived(QTcpSocket *socket, const QJsonObject
 
 		server.send(socket, response);
 
+	} else if (command == "load_config") {
+		if (!this->hasWriteAccess(socket))
+			return sendAccessDenied(socket, request);
+
+		QString filename = this->configFileName;
+		if (request.contains("filename"))
+			filename = request["filename"].toString();
+		bool ok = true;
+		try {
+			this->loadConfig(filename);
+			log("Config file "+filename+" successfully loaded.", Mtb::LogLevel::Info);
+		} catch (...) {
+			ok = false;
+		}
+		QJsonObject response {
+							  {"command", "load_config"},
+							  {"type", "response"},
+							  {"status", ok ? "ok" : "error"},
+							  };
+		if (!ok)
+			response["error"] = jsonError(MTB_FILE_CANNOT_ACCESS, "Cannot load file "+filename);
+		if (id)
+			response["id"] = static_cast<int>(id.value());
+
+		server.send(socket, response);
+
 	} else if (command == "module") {
 		QJsonObject response = jsonOkResponse(request);
 
@@ -497,9 +522,9 @@ void DaemonCoreApplication::serverReceived(QTcpSocket *socket, const QJsonObject
 		if (modules[addr] == nullptr) {
 			if ((type&0xF0) == 0x10)
 				modules[addr] = std::make_unique<MtbUni>(addr);
-			else if ((type&0xF0) == 0x50)
-				modules[addr] = std::make_unique<MtbUnis>(addr);
-			else
+						else if ((type&0xF0) == 0x50)
+								modules[addr] = std::make_unique<MtbUnis>(addr);
+						else
 				modules[addr] = std::make_unique<MtbModule>(addr);
 			modules[addr]->jsonSetConfig(socket, request);
 			return;
@@ -594,7 +619,7 @@ void DaemonCoreApplication::loadConfig(const QString& filename) {
 	QJsonParseError parseError;
 	QJsonDocument doc = QJsonDocument::fromJson(content.toUtf8(), &parseError);
 	if (doc.isNull())
-		throw JsonParseError("Unable to parse config file "+filename+": "+parseError.errorString());
+		throw JsonParseError("Unable to parse config file "+filename+": "+parseError.errorString()+" offset: "+QString::number(parseError.offset));
 	this->config = doc.object();
 
 	{

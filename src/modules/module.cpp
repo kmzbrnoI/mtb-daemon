@@ -141,9 +141,17 @@ void MtbModule::jsonSetAddress(QTcpSocket *socket, const QJsonObject &request) {
 	uint8_t newaddr;
 	newaddr = request["new_address"].toInt(1);
 	if (request.contains("address")) {
-		mtbusb.send(Mtb::CmdMtbModuleChangeAddr(this->address, newaddr));
+		mtbusb.send(
+			Mtb::CmdMtbModuleChangeAddr(
+				this->address, newaddr
+			)
+		);
 	} else {
-		mtbusb.send(Mtb::CmdMtbModuleChangeAddr(newaddr));
+		mtbusb.send(
+			Mtb::CmdMtbModuleChangeAddr(
+				newaddr
+			)
+		);
 	}
 }
 
@@ -201,8 +209,7 @@ void MtbModule::sendInputsChanged(QJsonObject inputs) const {
 	}
 }
 
-void MtbModule::sendOutputsChanged(QJsonObject outputs,
-	const std::vector<QTcpSocket*>& ignore) const {
+void MtbModule::sendOutputsChanged(QJsonObject outputs, const std::vector<QTcpSocket*>& ignore) const {
 	QJsonObject json{
 		{"command", "module_outputs_changed"},
 		{"type", "event"},
