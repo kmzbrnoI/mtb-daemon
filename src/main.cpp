@@ -57,7 +57,8 @@ const QJsonObject DEFAULT_CONFIG = {
 };
 
 
-DaemonCoreApplication::DaemonCoreApplication(int &argc, char **argv) : QCoreApplication(argc, argv) {
+DaemonCoreApplication::DaemonCoreApplication(int &argc, char **argv)
+     : QCoreApplication(argc, argv) {
 	QObject::connect(&server, SIGNAL(jsonReceived(QTcpSocket*, const QJsonObject&)),
 	                 this, SLOT(serverReceived(QTcpSocket*, const QJsonObject&)), Qt::DirectConnection);
 	QObject::connect(&server, SIGNAL(clientDisconnected(QTcpSocket*)),
