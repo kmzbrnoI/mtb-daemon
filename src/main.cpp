@@ -253,31 +253,20 @@ void DaemonCoreApplication::activateModule(uint8_t addr, size_t attemptsRemainin
 }
 
 void DaemonCoreApplication::moduleGotInfo(uint8_t addr, Mtb::ModuleInfo info) {
+	if ((modules[addr] != nullptr) && (static_cast<size_t>(modules[addr]->moduleType()) != info.type))
+		log("Detected module "+QString::number(addr)+" type & stored module type mismatch! Forgetting config...",
+		    Mtb::LogLevel::Warning);
+
 	if ((info.type&0xF0) == 0x10) {
-		if (modules[addr] == nullptr) {
-			modules[addr] = std::make_unique<MtbUni>(addr);
-		} else {
-			if (static_cast<size_t>(modules[addr]->moduleType()) != info.type) {
-				log("Detected module "+QString::number(addr)+" type & stored module type mismatch! Forgetting config...",
-				    Mtb::LogLevel::Warning);
-				modules[addr] = std::make_unique<MtbUni>(addr);
-			}
-		}
-	} else if ((info.type&0xF0) == 0x50) {
-			if (modules[addr] == nullptr) {
-				modules[addr] = std::make_unique<MtbUnis>(addr);
-			} else {
-				if (static_cast<size_t>(modules[addr]->moduleType()) != info.type) {
-					log("Detected module "+QString::number(addr)+" type & stored module type mismatch! Forgetting config...",
-					    Mtb::LogLevel::Warning);
-					modules[addr] = std::make_unique<MtbUnis>(addr);
-				}
-			}
+		modules[addr] = std::make_unique<MtbUni>(addr);
+	} else if (info.type == 0x50) {
+		modules[addr] = std::make_unique<MtbUnis>(addr);
 	} else {
 		log("Unknown module type: "+QString::number(addr)+": 0x"+
-			QString::number(info.type, 16)+"!", Mtb::LogLevel::Warning);
+		    QString::number(info.type, 16)+"!", Mtb::LogLevel::Warning);
 		modules[addr] = std::make_unique<MtbModule>(addr);
 	}
+
 	modules[addr]->mtbBusActivate(info);
 }
 
