@@ -238,11 +238,9 @@ void MtbUnis::jsonSetConfig(QTcpSocket *socket, const QJsonObject &request) {
 	this->configWriting = ServerRequest(socket, request);
 
 	if ((this->active) && (oldConfig != this->configToWrite)) {
-		std::vector<uint8_t> cfg = this->configToWrite.value().serializeForMtbUsb();
-		this->mlog("from json to module: serialize config, length: "+QString::number(cfg.size()), Mtb::LogLevel::Info);
 		mtbusb.send(
 			Mtb::CmdMtbModuleSetConfig(
-				this->address, cfg,
+				this->address, this->configToWrite.value().serializeForMtbUsb(),
 				{[this](uint8_t, void*) { this->mtbBusConfigWritten(); }},
 				{[this](Mtb::CmdError error, void*) { this->mtbBusConfigNotWritten(error); }}
 			)
@@ -253,7 +251,6 @@ void MtbUnis::jsonSetConfig(QTcpSocket *socket, const QJsonObject &request) {
 }
 
 void MtbUnis::mtbBusConfigWritten() {
-	this->mlog("mtbBusConfigWritten()", Mtb::LogLevel::Info);
 	this->config = this->configToWrite;
 	const ServerRequest request = this->configWriting.value();
 	this->configWriting.reset();
@@ -385,20 +382,13 @@ std::vector<uint8_t> MtbUnis::mtbBusOutputsData() const {
 				data[2] |= (1 << (i-UNIS_IO_CNT-8));
 		}
 	}
-	QString msg;
-	msg.clear();
-	for (size_t i=0; i<data.size(); i++) {
-		msg.append(QString::number(data[i], 16));
-		msg.append(" ");
-	}
 	return data;
 }
 
 std::array<uint8_t, UNIS_OUT_CNT> MtbUnis::moduleOutputsData(const std::vector<uint8_t> &mtbBusData) {
 	std::array<uint8_t, UNIS_OUT_CNT> result;
-	if (mtbBusData.size() < 6) {
+	if (mtbBusData.size() < 6)
 		return result; // TODO: report error?
-	}
 
 	uint16_t mask = (mtbBusData[0] << 8) | mtbBusData[1];
 	uint32_t fullOutputs = (mtbBusData[2] << 24) | (mtbBusData[3] << 16) | (mtbBusData[4] << 8) | mtbBusData[5];
@@ -445,17 +435,20 @@ void MtbUnis::allOutputsReset() {
 void MtbUnis::mtbBusActivate(Mtb::ModuleInfo info) {
 	// Mtb module activated, got info → set config, then get inputs
 	MtbModule::mtbBusActivate(info);
+
 	if (info.inBootloader()) {
 		// In bootloader → mark as active, don't do anything else
 		this->mlog("Module is in bootloader!", Mtb::LogLevel::Info);
 		this->outputsReset();
 		return;
 	}
+
 	this->activate();
 }
 
 void MtbUnis::activate() {
 	this->activating = true;
+
 	if (this->busModuleInfo.warning || this->busModuleInfo.error)
 		this->mlog("Module warning="+QString::number(this->busModuleInfo.warning)+", error="+
 		           QString::number(this->busModuleInfo.error), Mtb::LogLevel::Warning);
@@ -478,7 +471,6 @@ void MtbUnis::activate() {
 			Mtb::CmdMtbModuleGetConfig(
 				this->address,
 				{[this](uint8_t, const std::vector<uint8_t>& data, void*) {
-					this->mlog("activate: got config from module, length: "+QString::number(data.size()), Mtb::LogLevel::Info);
 					this->config.emplace(MtbUnisConfig(data));
 					this->configSet();
 				}},
@@ -508,6 +500,7 @@ void MtbUnis::configSet() {
 void MtbUnis::inputsRead(const std::vector<uint8_t> &data) {
 	// Mtb module activation: got info & config set & inputs read → mark module as active
 	this->storeInputsState(data);
+
 	mtbusb.send(
 		Mtb::CmdMtbModuleResetOutputs(
 			this->address,
@@ -533,6 +526,7 @@ void MtbUnis::outputsReset() {
 
 	for (size_t i = 0; i < UNIS_OUT_CNT; i++)
 		this->whoSetOutput[i] = nullptr;
+
 	this->fullyActivated();
 }
 
@@ -559,12 +553,11 @@ std::vector<uint8_t> MtbUnisConfig::serializeForMtbUsb() const {
 	for (size_t i = 0; i < 8; i++)
 		result.push_back(this->inputsDelay[2*i] | (this->inputsDelay[2*i+1] << 4));
 	result.push_back(this->servoEnabledMask & 0x3F);
-	for (size_t i = 0; i < UNIS_SERVO_OUT_CNT; i++) {
+	for (size_t i = 0; i < UNIS_SERVO_OUT_CNT; i++)
 		result.push_back(this->servoPosition[i]);
-	}
-	for (size_t i = 0; i < UNIS_SERVO_CNT; i++) {
+	for (size_t i = 0; i < UNIS_SERVO_CNT; i++)
 		result.push_back(this->servoSpeed[i]);
-	}
+
 	return result;
 }
 
@@ -655,7 +648,6 @@ void MtbUnisConfig::fromMtbUsb(const std::vector<uint8_t> &data) {
 	for (size_t i = 0; i < (UNIS_SERVO_CNT); i++) {
 		this->servoSpeed[i] = data[pos+i];
 	}
-	//pos += UNIS_SERVO_CNT;
 }
 
 uint8_t MtbUnis::flickPerMinToMtbUnisValue(size_t flickPerMin) {
@@ -694,13 +686,11 @@ void MtbUnis::reactivateCheck() {
 /* Configuration ------------------------------------------------------------ */
 
 void MtbUnis::loadConfig(const QJsonObject &json) {
-	this->mlog("func loadConfig", Mtb::LogLevel::Info);
 	MtbModule::loadConfig(json);
 	this->config.emplace(MtbUnisConfig(json["config"].toObject()));
 }
 
 void MtbUnis::saveConfig(QJsonObject &json) const {
-	this->mlog("func saveConfig", Mtb::LogLevel::Info);
 	MtbModule::saveConfig(json);
 	if (this->config.has_value())
 		json["config"] = this->config.value().json();
