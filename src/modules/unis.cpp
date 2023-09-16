@@ -7,11 +7,6 @@
 
 MtbUnis::MtbUnis(uint8_t addr) : MtbModule(addr) {
 	std::fill(this->whoSetOutput.begin(), this->whoSetOutput.end(), nullptr);
-	this->mlog("constructor of module UNIS (addr "+QString::number(addr)+")", Mtb::LogLevel::Info);
-}
-
-size_t MtbUnis::pageSize() const {
-	return 256;
 }
 
 /* JSON Module Info --------------------------------------------------------- */
@@ -307,7 +302,7 @@ void MtbUnis::jsonUpgradeFw(QTcpSocket *socket, const QJsonObject &request) {
 
 	this->fwUpgrade.fwUpgrading = ServerRequest(socket, request);
 	this->fwUpgrade.data = parseFirmware(request["firmware"].toObject());
-	this->alignFirmware(this->fwUpgrade.data, this->pageSize());
+	this->alignFirmware(this->fwUpgrade.data, UNIS_PAGE_SIZE);
 
 	if (!this->configWriting.has_value() && this->setOutputsSent.empty())
 		this->fwUpgdInit();

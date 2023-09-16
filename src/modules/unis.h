@@ -9,6 +9,7 @@ constexpr size_t UNIS_SERVO_CNT = 6;
 constexpr size_t UNIS_SERVO_OUT_CNT = (2*UNIS_SERVO_CNT);
 constexpr size_t UNIS_OUT_CNT = (UNIS_IO_CNT + UNIS_SERVO_OUT_CNT);
 constexpr size_t UNIS_IN_CNT = (UNIS_IO_CNT);
+constexpr size_t UNIS_PAGE_SIZE = 256;
 
 struct MtbUnisConfig {
 	std::array<uint8_t, UNIS_OUT_CNT> outputsSafe = {0, };
@@ -51,7 +52,6 @@ protected:
 
 	void configSet();
 	bool isIrSupport() const;
-	size_t pageSize() const;
 
 	void storeInputsState(const std::vector<uint8_t>&);
 	void inputsRead(const std::vector<uint8_t>&);
