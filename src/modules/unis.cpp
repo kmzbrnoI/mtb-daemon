@@ -379,10 +379,10 @@ std::vector<uint8_t> MtbUnis::mtbBusOutputsData() const {
 	for (size_t i = UNIS_IO_CNT; i < UNIS_OUT_CNT; i++) {
 		// virtual outputs
 		if (outputs[i] > 0) {
-			if (i < (16+8))
-				data[3] |= (1 << (i-16));
+			if (i < (UNIS_IO_CNT+8))
+				data[3] |= (1 << (i-UNIS_IO_CNT));
 			else
-				data[2] |= (1 << (i-24));
+				data[2] |= (1 << (i-UNIS_IO_CNT-8));
 		}
 	}
 	QString msg;
