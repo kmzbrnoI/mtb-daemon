@@ -10,6 +10,7 @@ constexpr size_t UNIS_SERVO_OUT_CNT = (2*UNIS_SERVO_CNT);
 constexpr size_t UNIS_OUT_CNT = (UNIS_IO_CNT + UNIS_SERVO_OUT_CNT);
 constexpr size_t UNIS_IN_CNT = (UNIS_IO_CNT);
 constexpr size_t UNIS_PAGE_SIZE = 256;
+constexpr float UNIS_ADC_BG = 1.22;
 
 struct MtbUnisConfig {
 	std::array<uint8_t, UNIS_OUT_CNT> outputsSafe = {0, };
@@ -80,8 +81,6 @@ protected:
 	static void alignFirmware(std::map<size_t, std::vector<uint8_t>>&, size_t pageSize);
 
 	QJsonObject dvRepr(uint8_t dvi, const std::vector<uint8_t> &data) const override;
-
-	float adcbg() const;
 
 public:
 	MtbUnis(uint8_t addr);
