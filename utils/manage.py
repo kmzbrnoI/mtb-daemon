@@ -24,8 +24,8 @@ Usage:
   manage.py [options] config <module_addr> ports
   manage.py [options] config <module_addr> ports <ports_range> (plaini|plaino|s-com|ir) [<delay>]
   manage.py [options] config <module_addr> name [<module_name>]
-  manage.py [options] setaddress <new_address>
-  manage.py [options] changeaddress <module_addr> <new_address>
+  manage.py [options] set_addr <new_address>
+  manage.py [options] change_addr <module_addr> <new_address>
   manage.py --help
 
 Options:
@@ -540,9 +540,9 @@ if __name__ == '__main__':
             module_config_name(
                 sock, args['-v'], int(args['<module_addr>']), args['<module_name>']
             )
-        elif args['setaddress']:
+        elif args['set_addr']:
             set_address(sock, args['-v'], int(args['<new_address>']))
-        elif args['changeaddress']:
+        elif args['change_addr']:
             change_address(sock, args['-v'], int(args['<module_addr>']), int(args['<new_address>']))
 
     except EDaemonResponse as e:
