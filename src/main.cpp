@@ -500,7 +500,7 @@ void DaemonCoreApplication::serverReceived(QTcpSocket *socket, const QJsonObject
 		server.send(socket, response);
 
 	} else if (command == "module_set_config") {
-		// Set config can change module type
+		// Set config can create new module
 		if (!this->hasWriteAccess(socket))
 			return sendAccessDenied(socket, request);
 
@@ -512,18 +512,15 @@ void DaemonCoreApplication::serverReceived(QTcpSocket *socket, const QJsonObject
 		if (modules[addr] == nullptr) {
 			if ((type&0xF0) == 0x10)
 				modules[addr] = std::make_unique<MtbUni>(addr);
-			else if ((type&0xF0) == 0x50)
+			else if (type == 0x50)
 				modules[addr] = std::make_unique<MtbUnis>(addr);
 			else
 				modules[addr] = std::make_unique<MtbModule>(addr);
-			modules[addr]->jsonSetConfig(socket, request);
-			return;
 		}
 
 		if ((modules[addr]->isActive()) && (type != static_cast<size_t>(modules[addr]->moduleType())))
 			return sendError(socket, request, MTB_ALREADY_STARTED, "Cannot change type of active module!");
 
-		// Change config of active module
 		modules[addr]->jsonSetConfig(socket, request);
 
 	} else if ((command == "module_specific_command") && ((!request.contains("address")) || (request["address"].toInt() == 0))) {
