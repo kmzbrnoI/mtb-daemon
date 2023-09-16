@@ -373,36 +373,37 @@ struct CmdMtbModuleResetOutputs : public CmdMtbUsbForward {
 struct CmdMtbModuleChangeAddr : public CmdMtbUsbForward {
 	static constexpr uint8_t _busCommandCode = 0x20;
 	const uint8_t newAddr;
-        const CommandCallback<StdModuleCallbackFunc> onOkModule = {[](uint8_t, void*) {}};
-        const CommandCallback<StdCallbackFunc> onOkBroadcast = {[](void*){}};
+	const CommandCallback<StdModuleCallbackFunc> onOkModule = {[](uint8_t, void*) {}};
+	const CommandCallback<StdCallbackFunc> onOkBroadcast = {[](void*){}};
+
 	CmdMtbModuleChangeAddr(uint8_t module, uint8_t newAddr,
-                               const CommandCallback<StdModuleCallbackFunc> onOk = {[](uint8_t, void*) {}},
+	                       const CommandCallback<StdModuleCallbackFunc> onOk = {[](uint8_t, void*) {}},
 	                       const CommandCallback<ErrCallbackFunc> onError = {[](CmdError, void*) {}})
-         : CmdMtbUsbForward(module, _busCommandCode, onError), newAddr(newAddr), onOkModule(onOk) {}
-        CmdMtbModuleChangeAddr(uint8_t newAddr,
-                       const CommandCallback<StdCallbackFunc> onOk = {[](void*) {}},
-                       const CommandCallback<ErrCallbackFunc> onError = {[](CmdError, void*) {}})
-         : CmdMtbUsbForward(_busCommandCode, onError), newAddr(newAddr), onOkBroadcast(onOk) {}
+	 : CmdMtbUsbForward(module, _busCommandCode, onError), newAddr(newAddr), onOkModule(onOk) {}
+	CmdMtbModuleChangeAddr(uint8_t newAddr,
+	                       const CommandCallback<StdCallbackFunc> onOk = {[](void*) {}},
+	                       const CommandCallback<ErrCallbackFunc> onError = {[](CmdError, void*) {}})
+	 : CmdMtbUsbForward(_busCommandCode, onError), newAddr(newAddr), onOkBroadcast(onOk) {}
 	std::vector<uint8_t> getBytes() const override { return {usbCommandCode, module, _busCommandCode, newAddr}; }
 	QString msg() const override {
-                if (this->broadcast())
-                        return "Selected module (if any) change address to "+QString::number(newAddr);
+		if (this->broadcast())
+				return "Selected module (if any) change address to "+QString::number(newAddr);
 		return "Module "+QString::number(module)+" change address to "+QString::number(newAddr);
 	}
 
 	bool processBusResponse(MtbBusRecvCommand busCommand, const std::vector<uint8_t>&) const override {
-                if (this->broadcast()) {
-                  if (busCommand == MtbBusRecvCommand::Acknowledgement) {
-                          onOkBroadcast.func(onOkBroadcast.data);
-                          return true;
-                  }
-                } else {
-                  if (busCommand == MtbBusRecvCommand::Acknowledgement) {
-                          onOkModule.func(module, onOkModule.data);
-                          return true;
-                  }
-                }
-                return false;
+		if (this->broadcast()) {
+			if (busCommand == MtbBusRecvCommand::Acknowledgement) {
+				onOkBroadcast.func(onOkBroadcast.data);
+				return true;
+			}
+		} else {
+			if (busCommand == MtbBusRecvCommand::Acknowledgement) {
+				onOkModule.func(module, onOkModule.data);
+				return true;
+			}
+		}
+		return false;
 	}
 };
 

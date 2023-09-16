@@ -263,16 +263,16 @@ void DaemonCoreApplication::moduleGotInfo(uint8_t addr, Mtb::ModuleInfo info) {
 				modules[addr] = std::make_unique<MtbUni>(addr);
 			}
 		}
-		} else if ((info.type&0xF0) == 0x50) {
-				if (modules[addr] == nullptr) {
-						modules[addr] = std::make_unique<MtbUnis>(addr);
-				} else {
-						if (static_cast<size_t>(modules[addr]->moduleType()) != info.type) {
-								log("Detected module "+QString::number(addr)+" type & stored module type mismatch! Forgetting config...",
-									Mtb::LogLevel::Warning);
-								modules[addr] = std::make_unique<MtbUnis>(addr);
-						}
+	} else if ((info.type&0xF0) == 0x50) {
+			if (modules[addr] == nullptr) {
+				modules[addr] = std::make_unique<MtbUnis>(addr);
+			} else {
+				if (static_cast<size_t>(modules[addr]->moduleType()) != info.type) {
+					log("Detected module "+QString::number(addr)+" type & stored module type mismatch! Forgetting config...",
+					    Mtb::LogLevel::Warning);
+					modules[addr] = std::make_unique<MtbUnis>(addr);
 				}
+			}
 	} else {
 		log("Unknown module type: "+QString::number(addr)+": 0x"+
 			QString::number(info.type, 16)+"!", Mtb::LogLevel::Warning);
@@ -435,10 +435,10 @@ void DaemonCoreApplication::serverReceived(QTcpSocket *socket, const QJsonObject
 			ok = false;
 		}
 		QJsonObject response {
-							  {"command", "load_config"},
-							  {"type", "response"},
-							  {"status", ok ? "ok" : "error"},
-							  };
+			{"command", "load_config"},
+			{"type", "response"},
+			{"status", ok ? "ok" : "error"},
+		};
 		if (!ok)
 			response["error"] = jsonError(MTB_FILE_CANNOT_ACCESS, "Cannot load file "+filename);
 		if (id)
@@ -523,9 +523,9 @@ void DaemonCoreApplication::serverReceived(QTcpSocket *socket, const QJsonObject
 		if (modules[addr] == nullptr) {
 			if ((type&0xF0) == 0x10)
 				modules[addr] = std::make_unique<MtbUni>(addr);
-						else if ((type&0xF0) == 0x50)
-								modules[addr] = std::make_unique<MtbUnis>(addr);
-						else
+			else if ((type&0xF0) == 0x50)
+				modules[addr] = std::make_unique<MtbUnis>(addr);
+			else
 				modules[addr] = std::make_unique<MtbModule>(addr);
 			modules[addr]->jsonSetConfig(socket, request);
 			return;
@@ -734,7 +734,7 @@ bool DaemonCoreApplication::hasWriteAccess(const QTcpSocket *socket) {
 	if (this->writeAccess.empty())
 		return true;
 	return (std::find(this->writeAccess.begin(), this->writeAccess.end(),
-		    socket->peerAddress()) != this->writeAccess.end());
+		socket->peerAddress()) != this->writeAccess.end());
 
 }
 
