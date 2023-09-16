@@ -59,9 +59,9 @@ const QJsonObject DEFAULT_CONFIG = {
 DaemonCoreApplication::DaemonCoreApplication(int &argc, char **argv)
      : QCoreApplication(argc, argv) {
 	QObject::connect(&server, SIGNAL(jsonReceived(QTcpSocket*, const QJsonObject&)),
-					 this, SLOT(serverReceived(QTcpSocket*, const QJsonObject&)), Qt::DirectConnection);
+	                 this, SLOT(serverReceived(QTcpSocket*, const QJsonObject&)), Qt::DirectConnection);
 	QObject::connect(&server, SIGNAL(clientDisconnected(QTcpSocket*)),
-					 this, SLOT(serverClientDisconnected(QTcpSocket*)), Qt::DirectConnection);
+	                 this, SLOT(serverClientDisconnected(QTcpSocket*)), Qt::DirectConnection);
 
 	QObject::connect(&t_reconnect, SIGNAL(timeout()), this, SLOT(tReconnectTick()));
 	QObject::connect(&t_reactivate, SIGNAL(timeout()), this, SLOT(tReactivateTick()));
@@ -69,15 +69,15 @@ DaemonCoreApplication::DaemonCoreApplication(int &argc, char **argv)
 	// Use Qt::DirectConnection in all mtbusb signals, because it is significantly faster.
 	// ASSERT: singnal must be emitted in the same thread!
 	QObject::connect(&mtbusb, SIGNAL(onLog(QString, Mtb::LogLevel)),
-					 this, SLOT(mtbUsbOnLog(QString, Mtb::LogLevel)), Qt::DirectConnection);
+	                 this, SLOT(mtbUsbOnLog(QString, Mtb::LogLevel)), Qt::DirectConnection);
 	QObject::connect(&mtbusb, SIGNAL(onConnect()), this, SLOT(mtbUsbOnConnect()), Qt::DirectConnection);
 	QObject::connect(&mtbusb, SIGNAL(onDisconnect()), this, SLOT(mtbUsbOnDisconnect()), Qt::DirectConnection);
 	QObject::connect(&mtbusb, SIGNAL(onNewModule(uint8_t)), this, SLOT(mtbUsbOnNewModule(uint8_t)), Qt::DirectConnection);
 	QObject::connect(&mtbusb, SIGNAL(onModuleFail(uint8_t)), this, SLOT(mtbUsbOnModuleFail(uint8_t)), Qt::DirectConnection);
 	QObject::connect(&mtbusb, SIGNAL(onModuleInputsChange(uint8_t, const std::vector<uint8_t>&)),
-					 this, SLOT(mtbUsbOnInputsChange(uint8_t, const std::vector<uint8_t>&)), Qt::DirectConnection);
+	                 this, SLOT(mtbUsbOnInputsChange(uint8_t, const std::vector<uint8_t>&)), Qt::DirectConnection);
 	QObject::connect(&mtbusb, SIGNAL(onModuleDiagStateChange(uint8_t, const std::vector<uint8_t>&)),
-					 this, SLOT(mtbUsbOnDiagStateChange(uint8_t, const std::vector<uint8_t>&)), Qt::DirectConnection);
+	                 this, SLOT(mtbUsbOnDiagStateChange(uint8_t, const std::vector<uint8_t>&)), Qt::DirectConnection);
 
 #ifdef Q_OS_WIN
 	SetConsoleOutputCP(CP_UTF8);
@@ -93,7 +93,7 @@ DaemonCoreApplication::DaemonCoreApplication(int &argc, char **argv)
 		} catch (const ConfigNotFound&) {
 			log("Unable to load config file "+configFileName+
 			    ", resetting config, writing default config file...",
-				Mtb::LogLevel::Info);
+			    Mtb::LogLevel::Info);
 			this->config = DEFAULT_CONFIG;
 			this->saveConfig(configFileName);
 		}
