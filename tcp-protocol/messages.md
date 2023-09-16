@@ -387,6 +387,49 @@ This option is available only for modules without hardware address setting.
 }
 ```
 
+### Save config file
+
+Saves config file from memory.
+
+```json
+{
+    "command": "save_config",
+    "type": "request",
+    "id": 12
+}
+```
+
+```json
+{
+    "command": "save_config",
+    "type": "response",
+    "id": 12,
+    "status": "ok"
+}
+```
+
+### Load config file
+
+Reloads config file. You should practically never need to execute this command,
+config should be changed by client via `module_set_config` command.
+
+```json
+{
+    "command": "load_config",
+    "type": "request",
+    "id": 12
+}
+```
+
+```json
+{
+    "command": "load_config",
+    "type": "response",
+    "id": 12,
+    "status": "ok"
+}
+```
+
 ### Diagnostics
 
 ```json

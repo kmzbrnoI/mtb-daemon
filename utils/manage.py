@@ -10,6 +10,7 @@ MTB Daemon.
 
 Usage:
   manage.py [options] save_config
+  manage.py [options] load_config
   manage.py [options] mtbusb
   manage.py [options] mtbusb speed <speed>
   manage.py [options] module <module_addr> [--diag]
@@ -331,6 +332,12 @@ def save_config(socket, verbose: bool) -> None:
     })
 
 
+def load_config(socket, verbose: bool) -> None:
+    request_response(socket, verbose, {
+        'command': 'load_config',
+    })
+
+
 def set_address(socket, verbose: bool, newaddr: int) -> None:
     request_response(socket, verbose, {
         'command': 'set_address',
@@ -476,6 +483,9 @@ if __name__ == '__main__':
 
         elif args['save_config']:
             save_config(sock, args['-v'])
+
+        elif args['load_config']:
+            load_config(sock, args['-v'])
 
         elif args['config'] and args['ports'] and not args['<ports_range>']:
             module_print_config(sock, args['-v'], int(args['<module_addr>']))

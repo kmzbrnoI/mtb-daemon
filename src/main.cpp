@@ -418,6 +418,7 @@ void DaemonCoreApplication::serverReceived(QTcpSocket *socket, const QJsonObject
 			filename = request["filename"].toString();
 		bool ok = true;
 		try {
+			log("Config file "+filename+" reload request.", Mtb::LogLevel::Info);
 			this->loadConfig(filename);
 			log("Config file "+filename+" successfully loaded.", Mtb::LogLevel::Info);
 		} catch (...) {
@@ -612,6 +613,9 @@ QJsonObject DaemonCoreApplication::mtbUsbJson() const {
 /* Configuration ------------------------------------------------------------ */
 
 void DaemonCoreApplication::loadConfig(const QString& filename) {
+	// Warning: this function never changes module type as there could be MTBbus
+	// command with 'this' pointer pending. Destroying module in this situation would
+	// cause segfault.
 	QFile file(filename);
 	if (!file.open(QIODevice::ReadOnly | QIODevice::Text))
 		throw ConfigNotFound(QString("Configuration file not found!"));
@@ -632,14 +636,22 @@ void DaemonCoreApplication::loadConfig(const QString& filename) {
 			QJsonObject module = _modules[_addr].toObject();
 			size_t type = module["type"].toInt();
 
-			if ((type&0xF0) == 0x10)
-				modules[addr] = std::make_unique<MtbUni>(addr);
-			else if (type == static_cast<size_t>(MtbModuleType::Unis10))
-				modules[addr] = std::make_unique<MtbUnis>(addr);
-			else
-				modules[addr] = std::make_unique<MtbModule>(addr);
-
-			modules[addr]->loadConfig(module);
+			if (modules[addr] == nullptr) {
+				if ((type&0xF0) == 0x10)
+					modules[addr] = std::make_unique<MtbUni>(addr);
+				else if (type == static_cast<size_t>(MtbModuleType::Unis10))
+					modules[addr] = std::make_unique<MtbUnis>(addr);
+				else
+					modules[addr] = std::make_unique<MtbModule>(addr);
+				modules[addr]->loadConfig(module);
+			} else {
+				if (static_cast<size_t>(modules[addr]->moduleType()) == type) {
+					modules[addr]->loadConfig(module);
+				} else {
+					log("Module "+QString::number(addr)+": file & real module type mismatch, ignoring config!",
+					    Mtb::LogLevel::Warning);
+				}
+			}
 		}
 	}
 
