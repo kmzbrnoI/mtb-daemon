@@ -259,7 +259,7 @@ void DaemonCoreApplication::moduleGotInfo(uint8_t addr, Mtb::ModuleInfo info) {
 
 	if ((info.type&0xF0) == 0x10) {
 		modules[addr] = std::make_unique<MtbUni>(addr);
-	} else if (info.type == 0x50) {
+	} else if (info.type == static_cast<size_t>(MtbModuleType::Unis10)) {
 		modules[addr] = std::make_unique<MtbUnis>(addr);
 	} else {
 		log("Unknown module type: "+QString::number(addr)+": 0x"+
@@ -512,7 +512,7 @@ void DaemonCoreApplication::serverReceived(QTcpSocket *socket, const QJsonObject
 		if (modules[addr] == nullptr) {
 			if ((type&0xF0) == 0x10)
 				modules[addr] = std::make_unique<MtbUni>(addr);
-			else if (type == 0x50)
+			else if (type == static_cast<size_t>(MtbModuleType::Unis10))
 				modules[addr] = std::make_unique<MtbUnis>(addr);
 			else
 				modules[addr] = std::make_unique<MtbModule>(addr);
@@ -634,7 +634,7 @@ void DaemonCoreApplication::loadConfig(const QString& filename) {
 
 			if ((type&0xF0) == 0x10)
 				modules[addr] = std::make_unique<MtbUni>(addr);
-			else if (type == 0x50)
+			else if (type == static_cast<size_t>(MtbModuleType::Unis10))
 				modules[addr] = std::make_unique<MtbUnis>(addr);
 			else
 				modules[addr] = std::make_unique<MtbModule>(addr);
