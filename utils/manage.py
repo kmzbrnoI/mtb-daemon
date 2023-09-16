@@ -232,10 +232,12 @@ def get_outputs(socket, verbose: bool, module: int) -> None:
             'No state received - is module active? Is it in bootloader?'
         )
     outputs = module_spec['state']['outputs']
-    if module_['type'].startswith('MTB-UNIS'):
+    if module_['type'] == 'MTB-UNIS':
         print(unis_outputs_str(outputs))
-    else:
+    elif module_['type'].startswith('MTB-UNI'):
         print(uni_outputs_str(outputs))
+    else:
+        print(f'Unknown module type: {module_["type"]}')
 
 
 def reboot(socket, verbose: bool, module_: int) -> None:
@@ -386,13 +388,14 @@ def module_print_config(socket, verbose: bool, module: int) -> None:
         'address': module,
     })
     type_ = response['module']['type']
-    assert type_.startswith('MTB-UNI'), f'Nepodporovaný typ modulu: {type_}!'
     config = response['module'][type_]['config']
     print(f'Module {module} – {response["module"]["name"]}:')
-    if type_.startswith('MTB-UNIS'):
+    if type == 'MTB-UNIS':
         unis_print_config(config)
-    else:
+    elif type.startswith('MTB-UNI'):
         uni_print_config(config)
+    else:
+        assert False, f'Nepodporovaný typ modulu: {type_}!'
 
 
 def module_config_name(socket, verbose: bool, module: int, name: Optional[str]) -> None:
