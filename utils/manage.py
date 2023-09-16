@@ -156,19 +156,6 @@ def uni_print_config(config: Dict[str, Any]) -> None:
     for inp, out in zip(inputs, outputs):
         print(inp.ljust(20), out)
 
-def unis_print_config(config: Dict[str, Any]) -> None:
-    inputs = ['Inputs:']
-    for i, delay in enumerate(config['inputsDelay']):
-        #ir = config['irs'][i] if 'irs' in config else False
-        inputs.append(f'{i}: {delay}')
-
-    outputs = ['Outputs:']
-    for i, d in enumerate(config['outputsSafe']):
-        outputs.append(f'{i}: {d["type"]} {d["value"]}')
-
-    for inp, out in zip(inputs, outputs):
-        print(inp.ljust(20), out)
-
 
 def unis_print_config(config: Dict[str, Any]) -> None:
     inputs = ['Inputs:']
@@ -197,20 +184,6 @@ def uni_outputs_str(outputs: Dict[str, Any]) -> str:
         else:
             result += value['type'][0]
         if i == 7:
-            result += ' '
-    return result
-
-def unis_outputs_str(outputs: Dict[str, Any]) -> str:
-    result = ''
-    sorted_ = sorted(outputs.items(), key=lambda kv: int(kv[0]))
-    for i, (port, value) in enumerate(sorted_):
-        if value['type'] == 'plain' or value['value'] == 0:
-            result += str(value['value'])
-        else:
-            result += value['type'][0]
-        if i == 7:
-            result += ' '
-        if (i > 14) and (i & 1):
             result += ' '
     return result
 
@@ -353,20 +326,6 @@ def set_output(socket, verbose: bool, module: int, port: int, type_: str, value:
 def save_config(socket, verbose: bool) -> None:
     request_response(socket, verbose, {
         'command': 'save_config',
-    })
-
-def set_address(socket, verbose: bool, newaddr: int) -> None:
-    request_response(socket, verbose, {
-        'command': 'module_set_address',
-        'new_address': newaddr,
-    })
-
-
-def change_address(socket, verbose: bool, module: int, newaddr: int) -> None:
-    request_response(socket, verbose, {
-        'command': 'module_set_address',
-        'new_address': newaddr,
-        'address': module,
     })
 
 
