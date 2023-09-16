@@ -619,8 +619,8 @@ void DaemonCoreApplication::loadConfig(const QString& filename) {
 
 			if ((type&0xF0) == 0x10)
 				modules[addr] = std::make_unique<MtbUni>(addr);
-						else if ((type&0xF0) == 0x50)
-								modules[addr] = std::make_unique<MtbUnis>(addr);
+			else if (type == 0x50)
+				modules[addr] = std::make_unique<MtbUnis>(addr);
 			else
 				modules[addr] = std::make_unique<MtbModule>(addr);
 
