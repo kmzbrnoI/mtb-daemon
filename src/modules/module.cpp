@@ -137,20 +137,12 @@ void MtbModule::jsonSetAddress(QTcpSocket *socket, const QJsonObject &request) {
 		sendError(socket, request, MTB_MODULE_CONFIG_SETTING, "Configuration of module is being changed!");
 		return;
 	}
-	uint8_t newaddr;
-	newaddr = request["new_address"].toInt(1);
+
+	uint8_t newaddr = request["new_address"].toInt(1);
 	if (request.contains("address")) {
-		mtbusb.send(
-			Mtb::CmdMtbModuleChangeAddr(
-				this->address, newaddr
-			)
-		);
+		mtbusb.send(Mtb::CmdMtbModuleChangeAddr(this->address, newaddr));
 	} else {
-		mtbusb.send(
-			Mtb::CmdMtbModuleChangeAddr(
-				newaddr
-			)
-		);
+		mtbusb.send(Mtb::CmdMtbModuleChangeAddr(newaddr));
 	}
 }
 
