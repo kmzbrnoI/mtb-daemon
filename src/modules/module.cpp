@@ -111,6 +111,8 @@ void MtbModule::jsonCommand(QTcpSocket *socket, const QJsonObject &request) {
 		this->jsonBeacon(socket, request);
 	else if (command == "module_diag")
 		this->jsonGetDiag(socket, request);
+	else if (command == "module_set_address")
+		this->jsonSetAddress(socket, request);
 }
 
 void MtbModule::jsonSetOutput(QTcpSocket*, const QJsonObject&) {}
@@ -120,6 +122,35 @@ void MtbModule::jsonSetConfig(QTcpSocket*, const QJsonObject &json) {
 		this->type = static_cast<MtbModuleType>(json["type_code"].toInt());
 	if (json.contains("name"))
 		this->name = json["name"].toString();
+}
+
+void MtbModule::jsonSetAddress(QTcpSocket *socket, const QJsonObject &request) {
+	if (this->isFirmwareUpgrading()) {
+		sendError(socket, request, MTB_MODULE_UPGRADING_FW, "Firmware of module is being upgraded!");
+		return;
+	}
+	if (this->busModuleInfo.inBootloader()) {
+		sendError(socket, request, MTB_MODULE_IN_BOOTLOADER, "Module is in bootloader!");
+		return;
+	}
+	if (this->isConfigSetting()) {
+		sendError(socket, request, MTB_MODULE_CONFIG_SETTING, "Configuration of module is being changed!");
+		return;
+	}
+
+	uint8_t newaddr = request["new_address"].toInt(1);
+	mtbusb.send(
+		Mtb::CmdMtbModuleChangeAddr(
+			this->address, newaddr,
+			{[socket, request](uint8_t, void*) {
+				QJsonObject response = jsonOkResponse(request);
+				server.send(socket, response);
+			}},
+			{[socket, request](Mtb::CmdError error, void*) {
+				sendError(socket, request, error);
+			}}
+		)
+	);
 }
 
 void MtbModule::jsonUpgradeFw(QTcpSocket*, const QJsonObject&) {}
@@ -155,6 +186,7 @@ QString moduleTypeToStr(MtbModuleType type) {
 	case MtbModuleType::Univ2noIr: return "MTB-UNI v2";
 	case MtbModuleType::Univ40: return "MTB-UNI v4";
 	case MtbModuleType::Univ42: return "MTB-UNI v4";
+	case MtbModuleType::Unis10: return "MTB-UNIS";
 	default: return "Unknown type";
 	}
 }
@@ -175,8 +207,7 @@ void MtbModule::sendInputsChanged(QJsonObject inputs) const {
 	}
 }
 
-void MtbModule::sendOutputsChanged(QJsonObject outputs,
-                                   const std::vector<QTcpSocket*>& ignore) const {
+void MtbModule::sendOutputsChanged(QJsonObject outputs, const std::vector<QTcpSocket*>& ignore) const {
 	QJsonObject json{
 		{"command", "module_outputs_changed"},
 		{"type", "event"},

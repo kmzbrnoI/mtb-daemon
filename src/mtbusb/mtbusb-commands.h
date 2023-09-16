@@ -373,21 +373,35 @@ struct CmdMtbModuleResetOutputs : public CmdMtbUsbForward {
 struct CmdMtbModuleChangeAddr : public CmdMtbUsbForward {
 	static constexpr uint8_t _busCommandCode = 0x20;
 	const uint8_t newAddr;
-	const CommandCallback<StdCallbackFunc> onOk;
+	const CommandCallback<StdModuleCallbackFunc> onOkModule = {[](uint8_t, void*) {}};
+	const CommandCallback<StdCallbackFunc> onOkBroadcast = {[](void*){}};
 
 	CmdMtbModuleChangeAddr(uint8_t module, uint8_t newAddr,
+	                       const CommandCallback<StdModuleCallbackFunc> onOk = {[](uint8_t, void*) {}},
+	                       const CommandCallback<ErrCallbackFunc> onError = {[](CmdError, void*) {}})
+	 : CmdMtbUsbForward(module, _busCommandCode, onError), newAddr(newAddr), onOkModule(onOk) {}
+	CmdMtbModuleChangeAddr(uint8_t newAddr,
 	                       const CommandCallback<StdCallbackFunc> onOk = {[](void*) {}},
 	                       const CommandCallback<ErrCallbackFunc> onError = {[](CmdError, void*) {}})
-	 : CmdMtbUsbForward(module, _busCommandCode, onError), newAddr(newAddr), onOk(onOk) {}
+	 : CmdMtbUsbForward(_busCommandCode, onError), newAddr(newAddr), onOkBroadcast(onOk) {}
 	std::vector<uint8_t> getBytes() const override { return {usbCommandCode, module, _busCommandCode, newAddr}; }
 	QString msg() const override {
+		if (this->broadcast())
+				return "Selected module (if any) change address to "+QString::number(newAddr);
 		return "Module "+QString::number(module)+" change address to "+QString::number(newAddr);
 	}
 
 	bool processBusResponse(MtbBusRecvCommand busCommand, const std::vector<uint8_t>&) const override {
-		if (busCommand == MtbBusRecvCommand::Acknowledgement) {
-			onOk.func(onOk.data);
-			return true;
+		if (this->broadcast()) {
+			if (busCommand == MtbBusRecvCommand::Acknowledgement) {
+				onOkBroadcast.func(onOkBroadcast.data);
+				return true;
+			}
+		} else {
+			if (busCommand == MtbBusRecvCommand::Acknowledgement) {
+				onOkModule.func(module, onOkModule.data);
+				return true;
+			}
 		}
 		return false;
 	}
@@ -516,7 +530,7 @@ struct CmdMtbModuleFwWriteFlashStatusRequest : public CmdMtbUsbForward {
 	}
 };
 
-// Should return true iff response if valid.
+// Should return true iff response is valid.
 using SpecificCallbackFunc =
     std::function<bool(uint8_t addr, MtbBusRecvCommand busCommand, const std::vector<uint8_t> &outputs, void *data)>;
 

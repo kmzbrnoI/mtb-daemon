@@ -13,6 +13,7 @@ enum class MtbModuleType {
 	Univ2noIr = 0x11,
 	Univ40 = 0x15,
 	Univ42 = 0x16,
+	Unis10 = 0x50,
 };
 
 constexpr size_t MTB_MODULE_ACTIVATIONS = 5;
@@ -101,6 +102,7 @@ public:
 
 	virtual void jsonCommand(QTcpSocket*, const QJsonObject&);
 	virtual void jsonSetConfig(QTcpSocket*, const QJsonObject&);
+	virtual void jsonSetAddress(QTcpSocket*, const QJsonObject&);
 
 	virtual void loadConfig(const QJsonObject&);
 	virtual void saveConfig(QJsonObject&) const;

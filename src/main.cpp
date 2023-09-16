@@ -7,6 +7,7 @@
 #include "main.h"
 #include "mtbusb/mtbusb-common.h"
 #include "modules/uni.h"
+#include "modules/unis.h"
 #include "errors.h"
 #include "logging.h"
 
@@ -252,19 +253,17 @@ void DaemonCoreApplication::activateModule(uint8_t addr, size_t attemptsRemainin
 }
 
 void DaemonCoreApplication::moduleGotInfo(uint8_t addr, Mtb::ModuleInfo info) {
+	if ((modules[addr] != nullptr) && (static_cast<size_t>(modules[addr]->moduleType()) != info.type))
+		log("Detected module "+QString::number(addr)+" type & stored module type mismatch! Forgetting config...",
+		    Mtb::LogLevel::Warning);
+
 	if ((info.type&0xF0) == 0x10) {
-		if (modules[addr] == nullptr) {
-			modules[addr] = std::make_unique<MtbUni>(addr);
-		} else {
-			if (static_cast<size_t>(modules[addr]->moduleType()) != info.type) {
-				log("Detected module "+QString::number(addr)+" type & stored module type mismatch! Forgetting config...",
-				    Mtb::LogLevel::Warning);
-				modules[addr] = std::make_unique<MtbUni>(addr);
-			}
-		}
+		modules[addr] = std::make_unique<MtbUni>(addr);
+	} else if (info.type == static_cast<size_t>(MtbModuleType::Unis10)) {
+		modules[addr] = std::make_unique<MtbUnis>(addr);
 	} else {
 		log("Unknown module type: "+QString::number(addr)+": 0x"+
-			QString::number(info.type, 16)+"!", Mtb::LogLevel::Warning);
+		    QString::number(info.type, 16)+"!", Mtb::LogLevel::Warning);
 		modules[addr] = std::make_unique<MtbModule>(addr);
 	}
 
@@ -410,6 +409,33 @@ void DaemonCoreApplication::serverReceived(QTcpSocket *socket, const QJsonObject
 
 		server.send(socket, response);
 
+	} else if (command == "load_config") {
+		if (!this->hasWriteAccess(socket))
+			return sendAccessDenied(socket, request);
+
+		QString filename = this->configFileName;
+		if (request.contains("filename"))
+			filename = request["filename"].toString();
+		bool ok = true;
+		try {
+			log("Config file "+filename+" reload request.", Mtb::LogLevel::Info);
+			this->loadConfig(filename);
+			log("Config file "+filename+" successfully loaded.", Mtb::LogLevel::Info);
+		} catch (...) {
+			ok = false;
+		}
+		QJsonObject response {
+			{"command", "load_config"},
+			{"type", "response"},
+			{"status", ok ? "ok" : "error"},
+		};
+		if (!ok)
+			response["error"] = jsonError(MTB_FILE_CANNOT_ACCESS, "Cannot load file "+filename);
+		if (id)
+			response["id"] = static_cast<int>(id.value());
+
+		server.send(socket, response);
+
 	} else if (command == "module") {
 		QJsonObject response = jsonOkResponse(request);
 
@@ -475,7 +501,7 @@ void DaemonCoreApplication::serverReceived(QTcpSocket *socket, const QJsonObject
 		server.send(socket, response);
 
 	} else if (command == "module_set_config") {
-		// Set config can change module type
+		// Set config can create new module
 		if (!this->hasWriteAccess(socket))
 			return sendAccessDenied(socket, request);
 
@@ -487,16 +513,15 @@ void DaemonCoreApplication::serverReceived(QTcpSocket *socket, const QJsonObject
 		if (modules[addr] == nullptr) {
 			if ((type&0xF0) == 0x10)
 				modules[addr] = std::make_unique<MtbUni>(addr);
+			else if (type == static_cast<size_t>(MtbModuleType::Unis10))
+				modules[addr] = std::make_unique<MtbUnis>(addr);
 			else
 				modules[addr] = std::make_unique<MtbModule>(addr);
-			modules[addr]->jsonSetConfig(socket, request);
-			return;
 		}
 
 		if ((modules[addr]->isActive()) && (type != static_cast<size_t>(modules[addr]->moduleType())))
 			return sendError(socket, request, MTB_ALREADY_STARTED, "Cannot change type of active module!");
 
-		// Change config of active module
 		modules[addr]->jsonSetConfig(socket, request);
 
 	} else if ((command == "module_specific_command") && ((!request.contains("address")) || (request["address"].toInt() == 0))) {
@@ -512,6 +537,21 @@ void DaemonCoreApplication::serverReceived(QTcpSocket *socket, const QJsonObject
 		mtbusb.send(
 			Mtb::CmdMtbModuleSpecific(
 				data,
+				{[request, socket](void*) {
+					QJsonObject json = jsonOkResponse(request);
+					server.send(socket, json);
+				}},
+				{[socket, request](Mtb::CmdError error, void*) {
+					sendError(socket, request, static_cast<int>(error)+0x1000, Mtb::cmdErrorToStr(error));
+				}}
+			)
+		);
+
+	} else if (command == "set_address") {
+		uint8_t newaddr = request["new_address"].toInt(1);
+		mtbusb.send(
+			Mtb::CmdMtbModuleChangeAddr(
+				newaddr,
 				{[request, socket](void*) {
 					QJsonObject json = jsonOkResponse(request);
 					server.send(socket, json);
@@ -573,6 +613,9 @@ QJsonObject DaemonCoreApplication::mtbUsbJson() const {
 /* Configuration ------------------------------------------------------------ */
 
 void DaemonCoreApplication::loadConfig(const QString& filename) {
+	// Warning: this function never changes module type as there could be MTBbus
+	// command with 'this' pointer pending. Destroying module in this situation would
+	// cause segfault.
 	QFile file(filename);
 	if (!file.open(QIODevice::ReadOnly | QIODevice::Text))
 		throw ConfigNotFound(QString("Configuration file not found!"));
@@ -582,7 +625,7 @@ void DaemonCoreApplication::loadConfig(const QString& filename) {
 	QJsonParseError parseError;
 	QJsonDocument doc = QJsonDocument::fromJson(content.toUtf8(), &parseError);
 	if (doc.isNull())
-		throw JsonParseError("Unable to parse config file "+filename+": "+parseError.errorString());
+		throw JsonParseError("Unable to parse config file "+filename+": "+parseError.errorString()+" offset: "+QString::number(parseError.offset));
 	this->config = doc.object();
 
 	{
@@ -593,12 +636,22 @@ void DaemonCoreApplication::loadConfig(const QString& filename) {
 			QJsonObject module = _modules[_addr].toObject();
 			size_t type = module["type"].toInt();
 
-			if ((type&0xF0) == 0x10)
-				modules[addr] = std::make_unique<MtbUni>(addr);
-			else
-				modules[addr] = std::make_unique<MtbModule>(addr);
-
-			modules[addr]->loadConfig(module);
+			if (modules[addr] == nullptr) {
+				if ((type&0xF0) == 0x10)
+					modules[addr] = std::make_unique<MtbUni>(addr);
+				else if (type == static_cast<size_t>(MtbModuleType::Unis10))
+					modules[addr] = std::make_unique<MtbUnis>(addr);
+				else
+					modules[addr] = std::make_unique<MtbModule>(addr);
+				modules[addr]->loadConfig(module);
+			} else {
+				if (static_cast<size_t>(modules[addr]->moduleType()) == type) {
+					modules[addr]->loadConfig(module);
+				} else {
+					log("Module "+QString::number(addr)+": file & real module type mismatch, ignoring config!",
+					    Mtb::LogLevel::Warning);
+				}
+			}
 		}
 	}
 
@@ -694,7 +747,7 @@ bool DaemonCoreApplication::hasWriteAccess(const QTcpSocket *socket) {
 	if (this->writeAccess.empty())
 		return true;
 	return (std::find(this->writeAccess.begin(), this->writeAccess.end(),
-	        socket->peerAddress()) != this->writeAccess.end());
+		socket->peerAddress()) != this->writeAccess.end());
 
 }
 

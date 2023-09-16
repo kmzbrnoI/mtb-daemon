@@ -201,6 +201,52 @@ Response in same as *Daemon Status* response.
 }
 ```
 
+### Module set address
+
+This option is available only for modules without hardware address setting.
+
+```json
+{
+    "command": "module_set_address",
+    "type:" "request",
+    "id": 11,
+    "address": 1,
+    "new_address": 8
+}
+```
+
+```json
+{
+    "command": "module_set_address",
+    "type": "response",
+    "id": 11,
+    "status": "ok",
+    "address": 8
+}
+```
+
+### Module set address
+
+This option is available only for modules without hardware address setting.
+
+```json
+{
+    "command": "set_address",
+    "type:" "request",
+    "id": 11,
+    "new_address": 8
+}
+```
+
+```json
+{
+    "command": "set_address",
+    "type": "response",
+    "id": 11,
+    "status": "ok",
+}
+```
+
 ### Module firmware upgrade request
 
 ```json
@@ -335,6 +381,49 @@ Response in same as *Daemon Status* response.
 ```json
 {
     "command": "reset_my_outputs",
+    "type": "response",
+    "id": 12,
+    "status": "ok"
+}
+```
+
+### Save config file
+
+Saves config file from memory.
+
+```json
+{
+    "command": "save_config",
+    "type": "request",
+    "id": 12
+}
+```
+
+```json
+{
+    "command": "save_config",
+    "type": "response",
+    "id": 12,
+    "status": "ok"
+}
+```
+
+### Load config file
+
+Reloads config file. You should practically never need to execute this command,
+config should be changed by client via `module_set_config` command.
+
+```json
+{
+    "command": "load_config",
+    "type": "request",
+    "id": 12
+}
+```
+
+```json
+{
+    "command": "load_config",
     "type": "response",
     "id": 12,
     "status": "ok"

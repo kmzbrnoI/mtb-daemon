@@ -10,6 +10,7 @@ MTB Daemon.
 
 Usage:
   manage.py [options] save_config
+  manage.py [options] load_config
   manage.py [options] mtbusb
   manage.py [options] mtbusb speed <speed>
   manage.py [options] module <module_addr> [--diag]
@@ -24,6 +25,8 @@ Usage:
   manage.py [options] config <module_addr> ports
   manage.py [options] config <module_addr> ports <ports_range> (plaini|plaino|s-com|ir) [<delay>]
   manage.py [options] config <module_addr> name [<module_name>]
+  manage.py [options] set_addr <new_address>
+  manage.py [options] change_addr <module_addr> <new_address>
   manage.py --help
 
 Options:
@@ -114,9 +117,13 @@ def module(socket, verbose: bool, module: int) -> None:
     })
     type_ = response['module']['type']
     for key, val in response['module'].items():
-        if (key == type_ and 'config' in val and type_.startswith('MTB-UNI')):
+        if (key == type_ and 'config' in val and type_.startswith('MTB-UNI ')):
             print('Config:')
             uni_print_config(val['config'])
+            val.pop('config')
+        if (key == type_ and 'config' in val and type_.startswith('MTB-UNIS ')):
+            print('Config:')
+            unis_print_config(val['config'])
             val.pop('config')
         print(key, ':', val)
 
@@ -151,6 +158,19 @@ def uni_print_config(config: Dict[str, Any]) -> None:
         print(inp.ljust(20), out)
 
 
+def unis_print_config(config: Dict[str, Any]) -> None:
+    inputs = ['Inputs:']
+    for i, delay in enumerate(config['inputsDelay']):
+        inputs.append(f'{i}: {delay}')
+
+    outputs = ['Outputs:']
+    for i, d in enumerate(config['outputsSafe']):
+        outputs.append(f'{i}: {d["type"]} {d["value"]}')
+
+    for inp, out in zip(inputs, outputs):
+        print(inp.ljust(20), out)
+
+
 def uni_inputs_str(inputs: Dict[str, Any]) -> str:
     return ((''.join(str(int(val)) for val in inputs['full'][:8])) + ' ' +
             (''.join(str(int(val)) for val in inputs['full'][8:])))
@@ -165,6 +185,21 @@ def uni_outputs_str(outputs: Dict[str, Any]) -> str:
         else:
             result += value['type'][0]
         if i == 7:
+            result += ' '
+    return result
+
+
+def unis_outputs_str(outputs: Dict[str, Any]) -> str:
+    result = ''
+    sorted_ = sorted(outputs.items(), key=lambda kv: int(kv[0]))
+    for i, (port, value) in enumerate(sorted_):
+        if value['type'] == 'plain' or value['value'] == 0:
+            result += str(value['value'])
+        else:
+            result += value['type'][0]
+        if i == 7:
+            result += ' '
+        if (i > 14) and (i & 1):
             result += ' '
     return result
 
@@ -198,7 +233,12 @@ def get_outputs(socket, verbose: bool, module: int) -> None:
             'No state received - is module active? Is it in bootloader?'
         )
     outputs = module_spec['state']['outputs']
-    print(uni_outputs_str(outputs))
+    if module_['type'] == 'MTB-UNIS':
+        print(unis_outputs_str(outputs))
+    elif module_['type'].startswith('MTB-UNI'):
+        print(uni_outputs_str(outputs))
+    else:
+        print(f'Unknown module type: {module_["type"]}')
 
 
 def reboot(socket, verbose: bool, module_: int) -> None:
@@ -292,6 +332,27 @@ def save_config(socket, verbose: bool) -> None:
     })
 
 
+def load_config(socket, verbose: bool) -> None:
+    request_response(socket, verbose, {
+        'command': 'load_config',
+    })
+
+
+def set_address(socket, verbose: bool, newaddr: int) -> None:
+    request_response(socket, verbose, {
+        'command': 'set_address',
+        'new_address': newaddr,
+    })
+
+
+def change_address(socket, verbose: bool, module: int, newaddr: int) -> None:
+    request_response(socket, verbose, {
+        'command': 'module_set_address',
+        'new_address': newaddr,
+        'address': module,
+    })
+
+
 def module_config_ports(socket, verbose: bool, module: int, rg, io_type: str,
                         delay: Optional[float]) -> None:
     response = request_response(socket, verbose, {
@@ -334,10 +395,14 @@ def module_print_config(socket, verbose: bool, module: int) -> None:
         'address': module,
     })
     type_ = response['module']['type']
-    assert type_.startswith('MTB-UNI'), f'Nepodporovaný typ modulu: {type_}!'
     config = response['module'][type_]['config']
     print(f'Module {module} – {response["module"]["name"]}:')
-    uni_print_config(config)
+    if type == 'MTB-UNIS':
+        unis_print_config(config)
+    elif type.startswith('MTB-UNI'):
+        uni_print_config(config)
+    else:
+        assert False, f'Nepodporovaný typ modulu: {type_}!'
 
 
 def module_config_name(socket, verbose: bool, module: int, name: Optional[str]) -> None:
@@ -419,6 +484,9 @@ if __name__ == '__main__':
         elif args['save_config']:
             save_config(sock, args['-v'])
 
+        elif args['load_config']:
+            load_config(sock, args['-v'])
+
         elif args['config'] and args['ports'] and not args['<ports_range>']:
             module_print_config(sock, args['-v'], int(args['<module_addr>']))
 
@@ -444,6 +512,10 @@ if __name__ == '__main__':
             module_config_name(
                 sock, args['-v'], int(args['<module_addr>']), args['<module_name>']
             )
+        elif args['set_addr']:
+            set_address(sock, args['-v'], int(args['<new_address>']))
+        elif args['change_addr']:
+            change_address(sock, args['-v'], int(args['<module_addr>']), int(args['<new_address>']))
 
     except EDaemonResponse as e:
         sys.stderr.write(str(e)+'\n')
