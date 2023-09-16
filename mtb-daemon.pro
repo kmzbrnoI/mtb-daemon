@@ -5,7 +5,6 @@ CONFIG -= app_bundle
 
 SOURCES += \
 	src/main.cpp \
-	src/modules/unis.cpp \
 	src/mtbusb/mtbusb.cpp \
 	src/mtbusb/mtbusb-send.cpp \
 	src/mtbusb/mtbusb-receive.cpp \
@@ -15,11 +14,11 @@ SOURCES += \
 	src/server.cpp \
 	src/logging.cpp \
 	src/modules/module.cpp \
-	src/modules/uni.cpp
+	src/modules/uni.cpp \
+	src/modules/unis.cpp
 
 HEADERS += \
 	src/main.h \
-	src/modules/unis.h \
 	src/mtbusb/mtbusb-win-com-discover.h \
 	src/mtbusb/mtbusb.h \
 	src/mtbusb/mtbusb-commands.h \
@@ -28,6 +27,7 @@ HEADERS += \
 	src/logging.h \
 	src/modules/module.h \
 	src/modules/uni.h \
+	src/modules/unis.h \
 	src/errors.h \
 	lib/termcolor.h
 
