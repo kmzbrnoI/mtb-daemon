@@ -51,7 +51,6 @@ void MtbModule::mtbBusActivate(Mtb::ModuleInfo moduleInfo) {
 	this->busModuleInfo = moduleInfo;
 	this->rebooting.activatedByMtbUsb = true;
 	this->type = static_cast<MtbModuleType>(moduleInfo.type);
-	this->mlog("Module activate generic", Mtb::LogLevel::Debug);
 }
 
 void MtbModule::mtbBusLost() {
