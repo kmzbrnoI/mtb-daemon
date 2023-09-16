@@ -546,6 +546,21 @@ void DaemonCoreApplication::serverReceived(QTcpSocket *socket, const QJsonObject
 			)
 		);
 
+	} else if (command == "set_address") {
+		uint8_t newaddr = request["new_address"].toInt(1);
+		mtbusb.send(
+			Mtb::CmdMtbModuleChangeAddr(
+				newaddr,
+				{[request, socket](void*) {
+					QJsonObject json = jsonOkResponse(request);
+					server.send(socket, json);
+				}},
+				{[socket, request](Mtb::CmdError error, void*) {
+					sendError(socket, request, static_cast<int>(error)+0x1000, Mtb::cmdErrorToStr(error));
+				}}
+			)
+		);
+
 	} else if (command.startsWith("module_")) {
 		if (!this->hasWriteAccess(socket))
 			return sendAccessDenied(socket, request);

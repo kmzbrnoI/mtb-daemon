@@ -201,14 +201,16 @@ Response in same as *Daemon Status* response.
 }
 ```
 
-### Module set address (only for modules without hardware setting)
+### Module set address
+
+This option is available only for modules without hardware address setting.
 
 ```json
 {
     "command": "module_set_address",
     "type:" "request",
     "id": 11,
-    "address": 1,     # only for readdress, can be ommited
+    "address": 1,
     "new_address": 8
 }
 ```
@@ -220,6 +222,28 @@ Response in same as *Daemon Status* response.
     "id": 11,
     "status": "ok",
     "address": 8
+}
+```
+
+### Module set address
+
+This option is available only for modules without hardware address setting.
+
+```json
+{
+    "command": "set_address",
+    "type:" "request",
+    "id": 11,
+    "new_address": 8
+}
+```
+
+```json
+{
+    "command": "set_address",
+    "type": "response",
+    "id": 11,
+    "status": "ok",
 }
 ```
 

@@ -333,7 +333,7 @@ def save_config(socket, verbose: bool) -> None:
 
 def set_address(socket, verbose: bool, newaddr: int) -> None:
     request_response(socket, verbose, {
-        'command': 'module_set_address',
+        'command': 'set_address',
         'new_address': newaddr,
     })
 
