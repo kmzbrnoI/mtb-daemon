@@ -297,10 +297,6 @@ void MtbUni::mtbBusConfigNotWritten(Mtb::CmdError error) {
 /* Json Upgrade Firmware ---------------------------------------------------- */
 
 void MtbUni::jsonUpgradeFw(QTcpSocket *socket, const QJsonObject &request) {
-	if (!this->active) {
-		sendError(socket, request, MTB_MODULE_FAILED, "Cannot upgrade FW of inactive module!");
-		return;
-	}
 	if (this->isFirmwareUpgrading()) {
 		sendError(socket, request, MTB_MODULE_UPGRADING_FW, "Firmware is already being upgraded!");
 		return;
