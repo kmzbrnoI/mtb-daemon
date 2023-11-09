@@ -256,16 +256,7 @@ void DaemonCoreApplication::moduleGotInfo(uint8_t addr, Mtb::ModuleInfo info) {
 	if ((modules[addr] != nullptr) && (static_cast<size_t>(modules[addr]->moduleType()) != info.type)) {
 		log("Detected module "+QString::number(addr)+" type & stored module type mismatch! Forgetting config...",
 		    Mtb::LogLevel::Warning);
-
-		if ((info.type&0xF0) == (static_cast<size_t>(MtbModuleType::Univ2ir)&0xF0)) {
-			modules[addr] = std::make_unique<MtbUni>(addr);
-		} else if (info.type == static_cast<size_t>(MtbModuleType::Unis10)) {
-			modules[addr] = std::make_unique<MtbUnis>(addr);
-		} else {
-			log("Unknown module type: "+QString::number(addr)+": 0x"+
-				QString::number(info.type, 16)+"!", Mtb::LogLevel::Warning);
-			modules[addr] = std::make_unique<MtbModule>(addr);
-		}
+		modules[addr] = this->newModule(info.type, addr);
 	}
 
 	modules[addr]->mtbBusActivate(info);
@@ -512,12 +503,7 @@ void DaemonCoreApplication::serverReceived(QTcpSocket *socket, const QJsonObject
 			return sendError(socket, request, MTB_MODULE_INVALID_ADDR, "Invalid module address");
 
 		if (modules[addr] == nullptr) {
-			if ((type&0xF0) == (static_cast<size_t>(MtbModuleType::Univ2ir)&0xF0))
-				modules[addr] = std::make_unique<MtbUni>(addr);
-			else if (type == static_cast<size_t>(MtbModuleType::Unis10))
-				modules[addr] = std::make_unique<MtbUnis>(addr);
-			else
-				modules[addr] = std::make_unique<MtbModule>(addr);
+			modules[addr] = this->newModule(type, addr);
 		}
 
 		if ((modules[addr]->isActive()) && (type != static_cast<size_t>(modules[addr]->moduleType())))
@@ -638,12 +624,7 @@ void DaemonCoreApplication::loadConfig(const QString& filename) {
 			size_t type = module["type"].toInt();
 
 			if (modules[addr] == nullptr) {
-				if ((type&0xF0) == (static_cast<size_t>(MtbModuleType::Univ2ir)&0xF0))
-					modules[addr] = std::make_unique<MtbUni>(addr);
-				else if (type == static_cast<size_t>(MtbModuleType::Unis10))
-					modules[addr] = std::make_unique<MtbUnis>(addr);
-				else
-					modules[addr] = std::make_unique<MtbModule>(addr);
+				modules[addr] = this->newModule(type, addr);
 				modules[addr]->loadConfig(module);
 			} else {
 				if (static_cast<size_t>(modules[addr]->moduleType()) == type) {
@@ -750,6 +731,18 @@ bool DaemonCoreApplication::hasWriteAccess(const QTcpSocket *socket) {
 	return (std::find(this->writeAccess.begin(), this->writeAccess.end(),
 		socket->peerAddress()) != this->writeAccess.end());
 
+}
+
+std::unique_ptr<MtbModule> DaemonCoreApplication::newModule(size_t type, uint8_t addr) {
+	if ((type&0xF0) == (static_cast<size_t>(MtbModuleType::Univ2ir)&0xF0)) {
+		return std::make_unique<MtbUni>(addr);
+	} else if (type == static_cast<size_t>(MtbModuleType::Unis10)) {
+		return std::make_unique<MtbUnis>(addr);
+	}
+
+	log("Unknown module type: "+QString::number(addr)+": 0x"+
+		QString::number(type, 16)+"!", Mtb::LogLevel::Warning);
+	return std::make_unique<MtbModule>(addr);
 }
 
 #ifdef Q_OS_WIN

@@ -58,6 +58,7 @@ private:
 	void activateModule(uint8_t addr, size_t attemptsRemaining = 5);
 	void moduleGotInfo(uint8_t addr, Mtb::ModuleInfo);
 	void moduleDidNotGetInfo();
+	static std::unique_ptr<MtbModule> newModule(size_t type, uint8_t addr);
 
 	void loadConfig(const QString &filename);
 	void saveConfig(const QString &filename);
