@@ -88,7 +88,7 @@ struct MtbUsbInfo {
 	QString fw_version() const { return QString::number(fw_major) + "." + QString::number(fw_minor); }
 	QString proto_version() const { return QString::number(proto_major) + "." + QString::number(proto_minor); }
 	uint16_t fw_raw() const { return (fw_major << 8) | fw_minor; }
-	bool fw_deprecated() const { return (fw_raw() < 0x0102); }
+	bool fw_deprecated() const { return (fw_raw() < 0x0103); }
 };
 
 
