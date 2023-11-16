@@ -24,8 +24,9 @@ MtbBusSpeed intToMtbBusSpeed(int speed) {
 	return MtbBusSpeed::br38400;
 }
 
-bool mtbBusSpeedValid(int speed) {
-	return (speed == 38400) || (speed == 57600) || (speed == 115200) || (speed == 230400);
+bool mtbBusSpeedValid(int speed, uint16_t mtbusbFWver) {
+	return ((speed == 38400) || (speed == 57600) || (speed == 115200) ||
+	        ((speed == 230400) && (mtbusbFWver >= 0x0103)));
 }
 
 bool isValidModuleAddress(size_t addr) {

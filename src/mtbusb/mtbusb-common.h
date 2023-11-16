@@ -21,12 +21,12 @@ enum class MtbBusSpeed {
 	br38400 = 1,
 	br57600 = 2,
 	br115200 = 3,
-	br230400 = 4,
+	br230400 = 4, // only from MTB-USB FW v1.3
 };
 
 int mtbBusSpeedToInt(MtbBusSpeed speed);
 MtbBusSpeed intToMtbBusSpeed(int speed);
-bool mtbBusSpeedValid(int speed);
+bool mtbBusSpeedValid(int speed, uint16_t mtbusbFWver);
 
 struct EInvalidAddress : public MtbUsbError {
 	EInvalidAddress() : MtbUsbError(std::string("Invalid MTBbus module address!")) {}

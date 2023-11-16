@@ -164,12 +164,13 @@ void DaemonCoreApplication::mtbUsbOnConnect() {
 }
 
 void DaemonCoreApplication::mtbUsbGotInfo() {
+	const Mtb::MtbUsbInfo& mtbusbinfo = mtbusb.mtbUsbInfo().value();
 	const QJsonObject& mtbusbObj = this->config["mtb-usb"].toObject();
 	if (!mtbusbObj.contains("speed"))
 		return this->mtbUsbProperSpeedSet();
 
 	const int fileSpeed = mtbusbObj["speed"].toInt();
-	if (!Mtb::mtbBusSpeedValid(fileSpeed)) {
+	if (!Mtb::mtbBusSpeedValid(fileSpeed, mtbusbinfo.fw_raw())) {
 		log("Invalid MTBbus speed in config file: "+QString::number(mtbusbObj["speed"].toInt()),
 		    Mtb::LogLevel::Warning);
 		return this->mtbUsbProperSpeedSet();
@@ -177,7 +178,7 @@ void DaemonCoreApplication::mtbUsbGotInfo() {
 
 	Mtb::MtbBusSpeed newSpeed = Mtb::intToMtbBusSpeed(fileSpeed);
 
-	if (newSpeed == mtbusb.mtbUsbInfo().value().speed) {
+	if (newSpeed == mtbusbinfo.speed) {
 		log("Saved MTBbus speed matches current MTB-USB speed, ok.", Mtb::LogLevel::Info);
 		return this->mtbUsbProperSpeedSet();
 	}
@@ -353,7 +354,7 @@ void DaemonCoreApplication::serverReceived(QTcpSocket *socket, const QJsonObject
 				if (!mtbusb.connected() || !mtbusb.mtbUsbInfo().has_value())
 					return sendError(socket, request, MTB_DEVICE_DISCONNECTED, "Disconnected from MTB-USB!");
 				size_t speed = jsonMtbUsb["speed"].toInt();
-				if (!Mtb::mtbBusSpeedValid(speed))
+				if (!Mtb::mtbBusSpeedValid(speed, mtbusb.mtbUsbInfo().value().fw_raw()))
 					return sendError(socket, request, MTB_INVALID_SPEED, "Invalid MTBbus speed!");
 				Mtb::MtbBusSpeed mtbUsbSpeed = mtbusb.mtbUsbInfo().value().speed;
 				Mtb::MtbBusSpeed newSpeed = Mtb::intToMtbBusSpeed(speed);
