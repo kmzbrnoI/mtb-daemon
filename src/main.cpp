@@ -259,6 +259,10 @@ void DaemonCoreApplication::moduleGotInfo(uint8_t addr, Mtb::ModuleInfo info) {
 		    Mtb::LogLevel::Warning);
 		modules[addr] = this->newModule(info.type, addr);
 	}
+	if (modules[addr] == nullptr) { // module not created yet
+		modules[addr] = this->newModule(info.type, addr);
+		log("Created new module "+QString::number(addr), Mtb::LogLevel::Info);
+	}
 
 	modules[addr]->mtbBusActivate(info);
 }
