@@ -29,6 +29,8 @@ int main(int argc, char *argv[]) {
 #ifdef Q_OS_WIN
 	SetConsoleCtrlHandler(console_ctrl_handler, TRUE);
 #endif
+	if (a.startupError() != StartupError::Ok)
+		return static_cast<int>(a.startupError());
 	return a.exec();
 }
 
@@ -97,6 +99,10 @@ DaemonCoreApplication::DaemonCoreApplication(int &argc, char **argv)
 			    Mtb::LogLevel::Info);
 			this->config = DEFAULT_CONFIG;
 			this->saveConfig(configFileName);
+		} catch (const JsonParseError& e) {
+			log(e.what(), Mtb::LogLevel::Error);
+			startError = StartupError::ConfigLoad;
+			return;
 		}
 	}
 

@@ -35,6 +35,11 @@ struct JsonParseError : public std::logic_error {
 };
 
 
+enum class StartupError {
+	Ok = 0,
+	ConfigLoad = 1,
+};
+
 class DaemonCoreApplication : public QCoreApplication {
 	Q_OBJECT
 public:
@@ -42,6 +47,7 @@ public:
 	~DaemonCoreApplication() override = default;
 
 	bool hasWriteAccess(const QTcpSocket*);
+	StartupError startupError() const { return startError; }
 
 private:
 	QJsonObject config;
@@ -49,6 +55,7 @@ private:
 	QTimer t_reconnect;
 	QTimer t_reactivate;
 	std::vector<QHostAddress> writeAccess;
+	StartupError startError = StartupError::Ok;
 
 	QJsonObject mtbUsbJson() const;
 	void mtbUsbProperSpeedSet();
