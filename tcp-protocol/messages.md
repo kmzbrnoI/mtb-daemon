@@ -272,7 +272,7 @@ This option is available only for modules without hardware address setting.
 }
 ```
 
-* Request `firmware: {start_addres: data}`
+* Format of request `firmware: {start_address: data}`
   - Any `start_address` and any length of `data` could be sent
   - Server joins `data`.
   - Format is designed for hex files to be easily sendible.
