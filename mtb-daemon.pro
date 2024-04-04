@@ -15,7 +15,8 @@ SOURCES += \
 	src/logging.cpp \
 	src/modules/module.cpp \
 	src/modules/uni.cpp \
-	src/modules/unis.cpp
+	src/modules/unis.cpp \
+	src/modules/rc.cpp
 
 HEADERS += \
 	src/main.h \
@@ -28,7 +29,9 @@ HEADERS += \
 	src/modules/module.h \
 	src/modules/uni.h \
 	src/modules/unis.h \
+	src/modules/rc.h \
 	src/errors.h \
+	src/utils.h \
 	lib/termcolor.h
 
 INCLUDEPATH += \

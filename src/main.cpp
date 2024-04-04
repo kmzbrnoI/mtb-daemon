@@ -6,10 +6,12 @@
 #include <QJsonDocument>
 #include "main.h"
 #include "mtbusb-common.h"
-#include "uni.h"
-#include "unis.h"
 #include "errors.h"
 #include "logging.h"
+
+#include "uni.h"
+#include "unis.h"
+#include "rc.h"
 
 #ifdef Q_OS_WIN
 #include <windows.h>
@@ -749,6 +751,8 @@ std::unique_ptr<MtbModule> DaemonCoreApplication::newModule(size_t type, uint8_t
 		return std::make_unique<MtbUni>(addr);
 	} else if (type == static_cast<size_t>(MtbModuleType::Unis10)) {
 		return std::make_unique<MtbUnis>(addr);
+	} else if (type == static_cast<size_t>(MtbModuleType::Rc)) {
+		return std::make_unique<MtbRc>(addr);
 	}
 
 	log("Unknown module type: "+QString::number(addr)+": 0x"+

@@ -14,6 +14,7 @@ enum class MtbModuleType {
 	Univ40 = 0x15,
 	Univ42 = 0x16,
 	Unis10 = 0x50,
+	Rc = 0x30,
 };
 
 constexpr size_t MTB_MODULE_ACTIVATIONS = 5;
