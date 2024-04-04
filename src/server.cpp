@@ -2,7 +2,7 @@
 #include <QJsonDocument>
 #include <QJsonObject>
 #include "server.h"
-#include "mtbusb/mtbusb.h"
+#include "mtbusb.h"
 #include "main.h"
 #include "logging.h"
 

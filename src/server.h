@@ -5,7 +5,7 @@
 #include <QTcpServer>
 #include <QJsonObject>
 #include <QTimer>
-#include "mtbusb/mtbusb.h"
+#include "mtbusb.h"
 
 constexpr size_t SERVER_DEFAULT_PORT = 3841;
 constexpr size_t SERVER_KEEP_ALIVE_SEND_PERIOD_MS = 5000;

@@ -3,9 +3,9 @@
 
 #include <QTcpSocket>
 #include <QJsonObject>
-#include "../mtbusb/mtbusb.h"
-#include "../server.h"
-#include "../errors.h"
+#include "mtbusb.h"
+#include "server.h"
+#include "errors.h"
 
 enum class MtbModuleType {
 	Uknown = 0x00,

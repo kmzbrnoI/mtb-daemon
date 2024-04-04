@@ -3,9 +3,9 @@
 
 #include <QCoreApplication>
 #include <QTcpSocket>
-#include "mtbusb/mtbusb.h"
+#include "mtbusb.h"
 #include "server.h"
-#include "modules/module.h"
+#include "module.h"
 
 extern Mtb::MtbUsb mtbusb;
 extern DaemonServer server;

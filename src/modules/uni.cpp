@@ -1,9 +1,9 @@
 #include <QJsonArray>
 #include <QJsonObject>
 #include "uni.h"
-#include "../mtbusb/mtbusb.h"
-#include "../main.h"
-#include "../errors.h"
+#include "mtbusb.h"
+#include "main.h"
+#include "errors.h"
 
 MtbUni::MtbUni(uint8_t addr) : MtbModule(addr) {
 	std::fill(this->whoSetOutput.begin(), this->whoSetOutput.end(), nullptr);

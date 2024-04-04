@@ -2,7 +2,7 @@
 #define MODULE_MTB_UNI_H
 
 #include "module.h"
-#include "../server.h"
+#include "server.h"
 
 constexpr size_t UNI_IO_CNT = 16;
 

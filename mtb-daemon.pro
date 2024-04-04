@@ -31,6 +31,12 @@ HEADERS += \
 	src/errors.h \
 	lib/termcolor.h
 
+INCLUDEPATH += \
+	src \
+	lib \
+	src/mtbusb \
+	src/modules
+
 CONFIG += c++17
 QMAKE_CXXFLAGS += -Wall -Wextra -pedantic -std=c++17
 

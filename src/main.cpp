@@ -5,9 +5,9 @@
 #include <QIODevice>
 #include <QJsonDocument>
 #include "main.h"
-#include "mtbusb/mtbusb-common.h"
-#include "modules/uni.h"
-#include "modules/unis.h"
+#include "mtbusb-common.h"
+#include "uni.h"
+#include "unis.h"
 #include "errors.h"
 #include "logging.h"
 

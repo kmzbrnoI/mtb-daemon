@@ -2,7 +2,7 @@
 #include <QJsonObject>
 #include <QDir>
 #include "logging.h"
-#include "lib/termcolor.h"
+#include "termcolor.h"
 
 Logger logger;
 

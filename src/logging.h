@@ -4,7 +4,7 @@
 #include <deque>
 #include <fstream>
 #include <memory>
-#include "mtbusb/mtbusb.h"
+#include "mtbusb.h"
 
 void log(const QString&, Mtb::LogLevel);
 
