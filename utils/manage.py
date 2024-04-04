@@ -176,6 +176,19 @@ def uni_inputs_str(inputs: Dict[str, Any]) -> str:
             (''.join(str(int(val)) for val in inputs['full'][8:])))
 
 
+def rc_inputs_str(inputs: Dict[str, Any]) -> str:
+    return ', '.join(f'{i}: {addrs}' for i, addrs in enumerate(inputs['ports']))
+
+
+def inputs_str(module_type: str, inputs: Dict[str, Any]) -> str:
+    if module_type.startswith('MTB-UNI'):
+        return uni_inputs_str(inputs)
+    elif module_type == 'MTB-RC':
+        return rc_inputs_str(inputs)
+    else:
+        return 'Unknown module type: {module_["type"]}'
+
+
 def uni_outputs_str(outputs: Dict[str, Any]) -> str:
     result = ''
     sorted_ = sorted(outputs.items(), key=lambda kv: int(kv[0]))
@@ -217,7 +230,7 @@ def get_inputs(socket, verbose: bool, module: int) -> None:
             'No state received - is module active? Is it in bootloader?'
         )
     inputs = module_spec['state']['inputs']
-    print(uni_inputs_str(inputs))
+    print(inputs_str(module_['type'], inputs))
 
 
 def get_outputs(socket, verbose: bool, module: int) -> None:
@@ -267,8 +280,9 @@ def monitor(socket, verbose: bool, module: int) -> None:
             command = message.get('command', '')
 
             if command == 'module_inputs_changed':
+                mic = message['module_inputs_changed']
                 print('['+str(datetime.datetime.now().time())+']', end=' ')
-                print(uni_inputs_str(message['module_inputs_changed']['inputs']))
+                print(inputs_str(mic['type'], mic['inputs']))
 
             if command == 'module_outputs_changed':
                 print('['+str(datetime.datetime.now().time())+'] Outputs:', end=' ')
@@ -281,7 +295,7 @@ def monitor(socket, verbose: bool, module: int) -> None:
                 if 'state' in message['module'][type_]:
                     state = message['module'][type_]['state']
                     print('['+str(datetime.datetime.now().time())+']', end=' ')
-                    print(uni_inputs_str(state['inputs']))
+                    print(inputs_str(type_, state['inputs']))
 
             if command == 'mtbusb':
                 print('['+str(datetime.datetime.now().time())+']', end=' ')
