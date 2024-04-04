@@ -202,6 +202,8 @@ void MtbModule::sendInputsChanged(QJsonObject inputs) const {
 		{"type", "event"},
 		{"module_inputs_changed", QJsonObject{
 			{"address", this->address},
+			{"type", moduleTypeToStr(this->type)},
+			{"type_code", static_cast<int>(this->type)},
 			{"inputs", inputs},
 		}}
 	};
@@ -218,6 +220,8 @@ void MtbModule::sendOutputsChanged(QJsonObject outputs, const std::vector<QTcpSo
 		{"type", "event"},
 		{"module_outputs_changed", QJsonObject{
 			{"address", this->address},
+			{"type", moduleTypeToStr(this->type)},
+			{"type_code", static_cast<int>(this->type)},
 			{"outputs", outputs},
 		}}
 	};
