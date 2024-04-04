@@ -23,14 +23,14 @@ QJsonObject MtbRc::moduleInfo(bool state, bool config) const {
 }
 
 QJsonObject MtbRc::inputsToJson() const {
-	return {};
-	/*QJsonArray json;
-	uint16_t _inputs = inputs;
-	for (size_t i = 0; i < UNI_IO_CNT; i++) {
-		json.push_back(static_cast<bool>(_inputs&1));
-		_inputs >>= 1;
+	QJsonArray arrayOfInputs;
+	for (const auto& input : this->inputs) {
+		QJsonArray addrsPerInput;
+		for (const DccAddr addr : input)
+			addrsPerInput.push_back(addr);
+		arrayOfInputs.push_back(addrsPerInput);
 	}
-	return {{"full", json}, {"packed", inputs}};*/
+	return {{"ports", arrayOfInputs}};
 }
 
 /* Json Set Config ---------------------------------------------------------- */
@@ -132,9 +132,14 @@ void MtbRc::inputsRead(const std::vector<uint8_t> &data) {
 }
 
 void MtbRc::storeInputsState(const std::vector<uint8_t> &data) {
-	// TODO
-	//if (data.size() >= 2)
-	//	this->inputs = (data[0] << 8) | data[1];
+	for (auto& input : this->inputs)
+		input.clear();
+
+	for (size_t i = 0; i+1 < data.size(); i += 2) {
+		size_t input = (data[i] >> 5);
+		DccAddr addr = data[i+1] | ((data[i] & 0x1F) << 8);
+		this->inputs[input].insert(addr);
+	}
 }
 
 /* Inputs changed ----------------------------------------------------------- */
