@@ -594,6 +594,38 @@ void MtbModule::mlog(const QString& message, Mtb::LogLevel loglevel) const {
 	log("Module "+QString::number(this->address)+": "+message, loglevel);
 }
 
-QJsonObject MtbModule::dvRepr(uint8_t, const std::vector<uint8_t>&) const {
+QJsonObject MtbModule::dvRepr(uint8_t dvi, const std::vector<uint8_t> &data) const {
+	if (data.size() < 1)
+		return {};
+
+	switch (dvi) {
+		case Mtb::DV::Version:
+			return {{"version", QString::number((data[0] >> 4) & 0x0F) + "." + QString::number(data[0] & 0x0F)}};
+
+		case Mtb::DV::State:
+			return {
+				{"warnings", static_cast<bool>(data[0] & 2)},
+				{"errors", static_cast<bool>(data[0] & 1)},
+			};
+
+		case Mtb::DV::Uptime: {
+			int uptime = 0;
+			for (size_t i = 0; i < data.size(); i++) {
+				uptime <<= 8;
+				uptime |= data[i];
+			}
+			return {{"uptime_seconds", uptime}};
+		}
+
+		case Mtb::DV::Warnings:
+			return {
+				{"extrf", static_cast<bool>(data[0] & 0x1)},
+				{"borf", static_cast<bool>(data[0] & 0x2)},
+				{"wdrf", static_cast<bool>(data[0] & 0x4)},
+				{"timer_miss", static_cast<bool>(data[0] & 0x10)},
+				{"vcc_oscilating", static_cast<bool>(data[0] & 0x20)},
+			};
+	}
+
 	return {};
 }
