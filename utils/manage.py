@@ -27,6 +27,8 @@ Usage:
   manage.py [options] config <module_addr> name [<module_name>]
   manage.py [options] set_addr <new_address>
   manage.py [options] change_addr <module_addr> <new_address>
+  manage.py [options] dvnum <module_addr> <dvnum>
+  manage.py [options] dvstr <module_addr> <dvstr>
   manage.py --help
 
 Options:
@@ -138,9 +140,7 @@ def module_diag(socket, verbose: bool, module: int) -> None:
             'DVkey': dvkey,
         })
         for key, val in response.get('DVvalue', {}).items():
-            if isinstance(val, float):
-                val = round(val, 2)
-            print(key, ':', val)
+            print(dv_str(key, val))
 
 
 def uni_print_config(config: Dict[str, Any]) -> None:
@@ -439,6 +439,32 @@ def module_config_name(socket, verbose: bool, module: int, name: Optional[str]) 
     })
 
 
+def dv_str(key: str, value: Any) -> str:
+    if isinstance(value, float):
+        value = round(val, 2)
+    return f'{key}: {value}'
+
+
+def dvnum(socket, verbose: bool, module: int, dvi: int) -> None:
+    response = request_response(socket, verbose, {
+        'command': 'module_diag',
+        'address': module,
+        'DVnum': dvi,
+    })
+    for key, val in response.get('DVvalue', {}).items():
+        print(dv_str(key, val))
+
+
+def dvstr(socket, verbose: bool, module: int, dvstr: str) -> None:
+    response = request_response(socket, verbose, {
+        'command': 'module_diag',
+        'address': module,
+        'DVkey': dvstr,
+    })
+    for key, val in response.get('DVvalue', {}).items():
+        print(dv_str(key, val))
+
+
 if __name__ == '__main__':
     args = docopt(__doc__)
 
@@ -530,6 +556,10 @@ if __name__ == '__main__':
             set_address(sock, args['-v'], int(args['<new_address>']))
         elif args['change_addr']:
             change_address(sock, args['-v'], int(args['<module_addr>']), int(args['<new_address>']))
+        elif args['dvnum']:
+            dvnum(sock, args['-v'], int(args['<module_addr>']), int(args['<dvnum>']))
+        elif args['dvstr']:
+            dvstr(sock, args['-v'], int(args['<module_addr>']), args['<dvstr>'])
 
     except EDaemonResponse as e:
         sys.stderr.write(str(e)+'\n')
