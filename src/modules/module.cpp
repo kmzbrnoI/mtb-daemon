@@ -277,7 +277,7 @@ void MtbModule::jsonGetDiag(QTcpSocket *socket, const QJsonObject &request) {
 	if (request.contains("DVnum")) {
 		dv_num = request["DVnum"].toInt();
 	} else {
-		std::optional<Mtb::DV> dv = Mtb::StrToDV(request["DVkey"].toString());
+		std::optional<uint8_t> dv = Mtb::StrToDVCommon(request["DVkey"].toString());
 		if (!dv)
 			return sendError(socket, request, MTB_INVALID_DV, "Unknown DV!");
 		dv_num = dv.value();
@@ -289,7 +289,7 @@ void MtbModule::jsonGetDiag(QTcpSocket *socket, const QJsonObject &request) {
 			{[this, socket, request](uint8_t, uint8_t dvi, const std::vector<uint8_t> &data, void*) {
 				QJsonObject response = jsonOkResponse(request);
 				response["DVnum"] = dvi;
-				response["DVkey"] = Mtb::DVToStr(dvi);
+				response["DVkey"] = Mtb::DVCommonToStr(dvi);
 				response["DVvalue"] = this->dvRepr(dvi, data);
 
 				QJsonArray dataAr;

@@ -3,6 +3,7 @@
 
 #include <stdexcept>
 #include <QString>
+#include <QMap>
 #include <optional>
 
 namespace Mtb {
@@ -97,8 +98,21 @@ enum DV { // not class-enum by design
 	MCUTemperature = 13,
 };
 
-QString DVToStr(uint8_t dv); // also accepts DV dv
-std::optional<DV> StrToDV(const QString&);
+const QMap<uint8_t, QString> dvsCommon {
+	{0, "version"},
+	{1, "state"},
+	{2, "uptime"},
+	{10, "errors"},
+	{11, "warnings"},
+	{12, "mcu_voltage"},
+	{13, "mcu_temperature"},
+	{16, "mtbbus_received"},
+	{17, "mtbbus_bad_crc"},
+	{18, "mtbbus_sent"},
+};
+
+QString DVCommonToStr(uint8_t dv); // also accepts DV dv
+std::optional<uint8_t> StrToDVCommon(const QString&);
 
 } // namespace Mtb
 

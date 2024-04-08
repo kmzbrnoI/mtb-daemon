@@ -1,4 +1,5 @@
 #include "mtbusb-common.h"
+#include "utils.h"
 
 namespace Mtb {
 
@@ -72,35 +73,15 @@ QString cmdErrorToStr(CmdError cmdError) {
 	}
 }
 
-QString DVToStr(uint8_t dv) {
-	switch (dv) {
-	case DV::Version: return "version";
-	case DV::State: return "state";
-	case DV::Uptime: return "uptime";
-	case DV::Errors: return "errors";
-	case DV::Warnings: return "warnings";
-	case DV::MCUVoltage: return "mcu_voltage";
-	case DV::MCUTemperature: return "mcu_temperature";
-	default: return "unknown";
-	}
+QString DVCommonToStr(uint8_t dv) {
+	return (dvsCommon.contains(dv)) ? dvsCommon[dv] : "unknown";
 }
 
-std::optional<DV> StrToDV(const QString& str) {
-	if (str == "version")
-		return {DV::Version};
-	if (str == "state")
-		return {DV::State};
-	if (str == "uptime")
-		return {DV::Uptime};
-	if (str == "errors")
-		return {DV::Errors};
-	if (str == "warnings")
-		return {DV::Warnings};
-	if (str == "mcu_voltage")
-		return {DV::MCUVoltage};
-	if (str == "mcu_temperature")
-		return {DV::MCUTemperature};
-	return {};
+// Reverse std::unordered_map of dvsCommon
+const QMap<QString, uint8_t> dvsCommonRev = invertQMap(dvsCommon);
+
+std::optional<uint8_t> StrToDVCommon(const QString& str) {
+	return (dvsCommonRev.contains(str)) ? std::optional<uint8_t>(dvsCommonRev[str]) : std::optional<uint8_t>();
 }
 
 } // namespace Mtb
