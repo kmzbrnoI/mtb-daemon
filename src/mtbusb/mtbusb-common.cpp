@@ -74,14 +74,14 @@ QString cmdErrorToStr(CmdError cmdError) {
 
 QString DVToStr(uint8_t dv) {
 	switch (dv) {
-		case DV::Version: return "version";
-		case DV::State: return "state";
-		case DV::Uptime: return "uptime";
-		case DV::Errors: return "errors";
-		case DV::Warnings: return "warnings";
-		case DV::MCUVoltage: return "mcu_voltage";
-		case DV::MCUTemperature: return "mcu_temperature";
-		default: return "unknown";
+	case DV::Version: return "version";
+	case DV::State: return "state";
+	case DV::Uptime: return "uptime";
+	case DV::Errors: return "errors";
+	case DV::Warnings: return "warnings";
+	case DV::MCUVoltage: return "mcu_voltage";
+	case DV::MCUTemperature: return "mcu_temperature";
+	default: return "unknown";
 	}
 }
 
