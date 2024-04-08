@@ -38,6 +38,7 @@ struct JsonParseError : public std::logic_error {
 enum class StartupError {
 	Ok = 0,
 	ConfigLoad = 1,
+	ServerStart = 2,
 };
 
 class DaemonCoreApplication : public QCoreApplication {

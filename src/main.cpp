@@ -119,7 +119,13 @@ DaemonCoreApplication::DaemonCoreApplication(int &argc, char **argv)
 		bool keepAlive = serverConfig["keepAlive"].toBool(true);
 		QHostAddress host(serverConfig["host"].toString());
 		log("Starting server: "+host.toString()+":"+QString::number(port)+"...", Mtb::LogLevel::Info);
-		server.listen(host, port, keepAlive);
+		try {
+			server.listen(host, port, keepAlive);
+		} catch (const std::exception& e) {
+			log(e.what(), Mtb::LogLevel::Error);
+			startError = StartupError::ServerStart;
+			return;
+		}
 	}
 
 	this->mtbUsbConnect();
