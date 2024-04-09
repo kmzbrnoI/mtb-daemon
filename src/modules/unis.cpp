@@ -700,7 +700,7 @@ void MtbUnis::saveConfig(QJsonObject &json) const {
 
 QJsonObject MtbUnis::dvRepr(uint8_t dvi, const std::vector<uint8_t> &data) const {
 	switch (dvi) {
-		case Mtb::DV::MCUVoltage: {
+		case Mtb::DVCommon::MCUVoltage: {
 			if (data.size() < 2)
 				return {};
 
@@ -716,7 +716,7 @@ QJsonObject MtbUnis::dvRepr(uint8_t dvi, const std::vector<uint8_t> &data) const
 			};
 		}
 
-		case Mtb::DV::MCUTemperature: {
+		case Mtb::DVCommon::MCUTemperature: {
 			if (data.size() < 4)
 				return {};
 

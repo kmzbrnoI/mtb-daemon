@@ -299,17 +299,17 @@ void MtbModule::jsonGetDiag(QTcpSocket *socket, const QJsonObject &request) {
 
 				server.send(socket, response);
 
-				if (dvi == Mtb::DV::State) {
+				if (dvi == Mtb::DVCommon::State) {
 					this->mtbBusDiagStateChanged(data);
-				} else if ((dvi == Mtb::DV::Errors) || (dvi == Mtb::DV::Warnings)) {
+				} else if ((dvi == Mtb::DVCommon::Errors) || (dvi == Mtb::DVCommon::Warnings)) {
 					bool anyNonZero = false;
 					for (uint8_t byte : data)
 						if (byte != 0)
 							anyNonZero = true;
 
-					if (dvi == Mtb::DV::Errors)
+					if (dvi == Mtb::DVCommon::Errors)
 						this->mtbBusDiagStateChanged(anyNonZero, this->busModuleInfo.warning);
-					else if (dvi == Mtb::DV::Warnings)
+					else if (dvi == Mtb::DVCommon::Warnings)
 						this->mtbBusDiagStateChanged(this->busModuleInfo.error, anyNonZero);
 				}
 			}},
@@ -599,16 +599,16 @@ QJsonObject MtbModule::dvRepr(uint8_t dvi, const std::vector<uint8_t> &data) con
 		return {};
 
 	switch (dvi) {
-		case Mtb::DV::Version:
+		case Mtb::DVCommon::Version:
 			return {{"version", QString::number((data[0] >> 4) & 0x0F) + "." + QString::number(data[0] & 0x0F)}};
 
-		case Mtb::DV::State:
+		case Mtb::DVCommon::State:
 			return {
 				{"warnings", static_cast<bool>(data[0] & 2)},
 				{"errors", static_cast<bool>(data[0] & 1)},
 			};
 
-		case Mtb::DV::Uptime: {
+		case Mtb::DVCommon::Uptime: {
 			int uptime = 0;
 			for (size_t i = 0; i < data.size(); i++) {
 				uptime <<= 8;
@@ -617,7 +617,7 @@ QJsonObject MtbModule::dvRepr(uint8_t dvi, const std::vector<uint8_t> &data) con
 			return {{"uptime_seconds", uptime}};
 		}
 
-		case Mtb::DV::Warnings:
+		case Mtb::DVCommon::Warnings:
 			return {
 				{"extrf", static_cast<bool>(data[0] & 0x1)},
 				{"borf", static_cast<bool>(data[0] & 0x2)},

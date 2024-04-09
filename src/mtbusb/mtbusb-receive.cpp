@@ -222,7 +222,7 @@ void MtbUsb::parseMtbBusMessage(uint8_t module, uint8_t attempts, uint8_t comman
 		}
 	}
 
-	if ((command == MtbBusRecvCommand::DiagValue) && (data.size() > 1) && (data[0] == DV::State)) {
+	if ((command == MtbBusRecvCommand::DiagValue) && (data.size() > 1) && (data[0] == DVCommon::State)) {
 		// asynchronous diagnostic information change
 		const std::vector<uint8_t> dvdata = {data.begin()+1, data.end()};
 		emit onModuleDiagStateChange(module, dvdata);

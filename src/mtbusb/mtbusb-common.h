@@ -88,7 +88,7 @@ enum class CmdError {
 
 QString cmdErrorToStr(CmdError);
 
-enum DV { // not class-enum by design
+enum DVCommon { // not class-enum by design
 	Version = 0,
 	State = 1,
 	Uptime = 2,
@@ -96,19 +96,22 @@ enum DV { // not class-enum by design
 	Warnings = 11,
 	MCUVoltage = 12,
 	MCUTemperature = 13,
+	MtbBusReceived = 16,
+	MtbBusBadCrc = 17,
+	MtbBusSent = 18,
 };
 
 const QMap<uint8_t, QString> dvsCommon {
-	{0, "version"},
-	{1, "state"},
-	{2, "uptime"},
-	{10, "errors"},
-	{11, "warnings"},
-	{12, "mcu_voltage"},
-	{13, "mcu_temperature"},
-	{16, "mtbbus_received"},
-	{17, "mtbbus_bad_crc"},
-	{18, "mtbbus_sent"},
+	{DVCommon::Version, "version"},
+	{DVCommon::State, "state"},
+	{DVCommon::Uptime, "uptime"},
+	{DVCommon::Errors, "errors"},
+	{DVCommon::Warnings, "warnings"},
+	{DVCommon::MCUVoltage, "mcu_voltage"},
+	{DVCommon::MCUTemperature, "mcu_temperature"},
+	{DVCommon::MtbBusReceived, "mtbbus_received"},
+	{DVCommon::MtbBusBadCrc, "mtbbus_bad_crc"},
+	{DVCommon::MtbBusSent, "mtbbus_sent"},
 };
 
 QString DVCommonToStr(uint8_t dv); // also accepts DV dv
