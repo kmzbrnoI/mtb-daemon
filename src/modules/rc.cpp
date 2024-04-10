@@ -5,6 +5,7 @@
 #include "mtbusb.h"
 #include "main.h"
 #include "errors.h"
+#include "utils.h"
 
 MtbRc::MtbRc(uint8_t addr) : MtbModule(addr) {
 }
@@ -166,9 +167,27 @@ void MtbRc::reactivateCheck() {
 
 /* Diagnostic Values -------------------------------------------------------- */
 
-QJsonObject MtbRc::dvRepr(uint8_t dvi, const std::vector<uint8_t> &data) const {
-	switch (dvi) {
-	}
+// Reverse std::unordered_map of dvsCommon
+const QMap<QString, uint8_t> dvsCommonRC = invertQMap(dvsRC);
 
-	return MtbModule::dvRepr(dvi, data);
+QJsonObject MtbRc::dvRepr(uint8_t dvi, const std::vector<uint8_t> &data) const {
+	if (dvsRC.contains(dvi)) {
+		if (data.size() != 4)
+			return {};
+		return {{this->DVToStr(dvi), static_cast<int>(pack<uint32_t>(data))}};
+	} else {
+		return MtbModule::dvRepr(dvi, data);
+	}
+}
+
+QString MtbRc::DVToStr(uint8_t dv) const {
+	if (dvsRC.contains(dv))
+		return dvsRC[dv];
+	return MtbModule::DVToStr(dv);
+}
+
+std::optional<uint8_t> MtbRc::StrToDV(const QString &str) const {
+	if (dvsCommonRC.contains(str))
+		return dvsCommonRC[str];
+	return MtbModule::StrToDV(str);
 }

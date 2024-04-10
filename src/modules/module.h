@@ -115,6 +115,9 @@ public:
 
 	virtual void reactivateCheck();
 
+	virtual QString DVToStr(uint8_t dv) const;
+	virtual std::optional<uint8_t> StrToDV(const QString&) const;
+
 private:
 
 };

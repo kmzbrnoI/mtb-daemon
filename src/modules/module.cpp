@@ -278,7 +278,7 @@ void MtbModule::jsonGetDiag(QTcpSocket *socket, const QJsonObject &request) {
 	if (request.contains("DVnum")) {
 		dv_num = request["DVnum"].toInt();
 	} else {
-		std::optional<uint8_t> dv = Mtb::StrToDVCommon(request["DVkey"].toString());
+		std::optional<uint8_t> dv = this->StrToDV(request["DVkey"].toString());
 		if (!dv)
 			return sendError(socket, request, MTB_INVALID_DV, "Unknown DV!");
 		dv_num = dv.value();
@@ -290,7 +290,7 @@ void MtbModule::jsonGetDiag(QTcpSocket *socket, const QJsonObject &request) {
 			{[this, socket, request](uint8_t, uint8_t dvi, const std::vector<uint8_t> &data, void*) {
 				QJsonObject response = jsonOkResponse(request);
 				response["DVnum"] = dvi;
-				response["DVkey"] = Mtb::DVCommonToStr(dvi);
+				response["DVkey"] = this->DVToStr(dvi);
 				response["DVvalue"] = this->dvRepr(dvi, data);
 
 				QJsonArray dataAr;
@@ -630,10 +630,18 @@ QJsonObject MtbModule::dvRepr(uint8_t dvi, const std::vector<uint8_t> &data) con
 		case Mtb::DVCommon::MtbBusReceived:
 		case Mtb::DVCommon::MtbBusBadCrc:
 		case Mtb::DVCommon::MtbBusSent:
-			if (data.size() != 4)
-				return {};
-			return {{Mtb::DVCommonToStr(dvi), static_cast<int>(packToUint32(data))}};
+			if (data.size() == 4)
+				return {{Mtb::DVCommonToStr(dvi), static_cast<int>(pack<uint32_t>(data))}};
+			break;
 	}
 
 	return {};
+}
+
+QString MtbModule::DVToStr(uint8_t dv) const {
+	return Mtb::DVCommonToStr(dv);
+}
+
+std::optional<uint8_t> MtbModule::StrToDV(const QString &str) const {
+	return Mtb::StrToDVCommon(str);
 }
