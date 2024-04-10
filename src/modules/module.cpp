@@ -609,14 +609,10 @@ QJsonObject MtbModule::dvRepr(uint8_t dvi, const std::vector<uint8_t> &data) con
 				{"errors", static_cast<bool>(data[0] & 1)},
 			};
 
-		case Mtb::DVCommon::Uptime: {
-			int uptime = 0;
-			for (size_t i = 0; i < data.size(); i++) {
-				uptime <<= 8;
-				uptime |= data[i];
-			}
-			return {{"uptime_seconds", uptime}};
-		}
+		case Mtb::DVCommon::Uptime:
+			if (data.size() == 4)
+				return {{"uptime_seconds", static_cast<int>(pack<uint32_t>(data))}};
+			break;
 
 		case Mtb::DVCommon::Warnings:
 			return {
