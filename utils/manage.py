@@ -451,8 +451,14 @@ def dvnum(socket, verbose: bool, module: int, dvi: int) -> None:
         'address': module,
         'DVnum': dvi,
     })
-    for key, val in response.get('DVvalue', {}).items():
+    dvvalue = response.get('DVvalue', {})
+    dvvalue_raw = response.get('DVvalueRaw', {})
+    if not dvvalue:
+        print(f'Empty DVvalue, DVvalueRaw={dvvalue_raw}!')
+    for key, val in dvvalue.items():
         print(dv_str(key, val))
+    if verbose:
+        print(f'DVvalueRaw={dvvalue_raw}')
 
 
 def dvstr(socket, verbose: bool, module: int, dvstr: str) -> None:
