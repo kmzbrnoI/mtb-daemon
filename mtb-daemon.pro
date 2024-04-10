@@ -13,6 +13,7 @@ SOURCES += \
 	src/mtbusb/mtbusb-win-com-discover.cpp \
 	src/server.cpp \
 	src/logging.cpp \
+	src/utils.cpp \
 	src/modules/module.cpp \
 	src/modules/uni.cpp \
 	src/modules/unis.cpp \

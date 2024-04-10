@@ -2,11 +2,11 @@
 #define __UTILS_H_
 
 #include <QMap>
+#include <vector>
 
 // transform std::unordered_map of one type to another with a given transform function
 template<typename K, typename V>
-QMap<V, K> invertQMap(const QMap<K, V>& inMap)
-{
+QMap<V, K> invertQMap(const QMap<K, V>& inMap) {
 	QMap<V, K> outMap;
 	std::for_each(inMap.keyValueBegin(), inMap.keyValueEnd(),
 		[&outMap] (const std::pair<K, V> &p) {
@@ -17,5 +17,7 @@ QMap<V, K> invertQMap(const QMap<K, V>& inMap)
 	);
 	return outMap;
 }
+
+uint32_t packToUint32(std::vector<uint8_t> data);
 
 #endif

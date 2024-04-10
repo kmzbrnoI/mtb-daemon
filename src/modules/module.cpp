@@ -2,6 +2,7 @@
 #include "module.h"
 #include "main.h"
 #include "logging.h"
+#include "utils.h"
 
 MtbModule::MtbModule(uint8_t addr) : address(addr), name("Module "+QString::number(addr)) {}
 
@@ -625,6 +626,13 @@ QJsonObject MtbModule::dvRepr(uint8_t dvi, const std::vector<uint8_t> &data) con
 				{"timer_miss", static_cast<bool>(data[0] & 0x10)},
 				{"vcc_oscilating", static_cast<bool>(data[0] & 0x20)},
 			};
+
+		case Mtb::DVCommon::MtbBusReceived:
+		case Mtb::DVCommon::MtbBusBadCrc:
+		case Mtb::DVCommon::MtbBusSent:
+			if (data.size() != 4)
+				return {};
+			return {{Mtb::DVCommonToStr(dvi), static_cast<int>(packToUint32(data))}};
 	}
 
 	return {};
