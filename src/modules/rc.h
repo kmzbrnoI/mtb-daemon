@@ -79,7 +79,7 @@ const QMap<uint8_t, QString> dvsRC {
 	{113, "t6_addr2_received_count_resets"},
 	{114, "t6_appid_adr_low_received"},
 	{115, "t6_appid_adr_high_received"},
-	{106, "t6_ch2_used"},
+	{116, "t6_ch2_used"},
 
 	{120, "t7_ch1_invalid_data"},
 	{121, "t7_ch2_invalid_data"},
