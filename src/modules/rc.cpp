@@ -175,7 +175,7 @@ QJsonObject MtbRc::dvRepr(uint8_t dvi, const std::vector<uint8_t> &data) const {
 		// All MTB-RC DVs are uint32_t
 		if (data.size() != 4)
 			return {};
-		return {{this->DVToStr(dvi), static_cast<int>(pack<uint32_t>(data))}};
+		return {{this->DVToStr(dvi), static_cast<qint64>(pack<uint32_t>(data))}};
 	} else {
 		return MtbModule::dvRepr(dvi, data);
 	}
