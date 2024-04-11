@@ -98,10 +98,10 @@ const QMap<uint8_t, QString> dvsRC {
 	{126, "t7_ch1_addr_added"},
 	{127, "t7_ch2_addr_added"},
 
-	{130, "dcc_received_packets"},
-	{131, "dcc_received_bad_xor"},
+	{130, "dcc_packets_received"},
+	{131, "dcc_bad_xor"},
 	{132, "logical_0_preamble_soon"},
-	{133, "mobile_reads_count"},
+	{133, "mobile_reads"},
 };
 
 
