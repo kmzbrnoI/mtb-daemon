@@ -23,7 +23,8 @@ const QMap<uint8_t, QString> dvsRC {
 	{43, "addr2_received_count_resets"},
 	{44, "appid_adr_low_received"},
 	{45, "appid_adr_high_received"},
-	{46, "ch2_used"},
+	{46, "ch1_addr_added"},
+	{47, "ch2_addr_added"},
 
 	{50, "t0_ch1_invalid_data"},
 	{51, "t0_ch2_invalid_data"},
@@ -31,7 +32,8 @@ const QMap<uint8_t, QString> dvsRC {
 	{53, "t0_addr2_received_count_resets"},
 	{54, "t0_appid_adr_low_received"},
 	{55, "t0_appid_adr_high_received"},
-	{56, "t0_ch2_used"},
+	{56, "t0_ch1_addr_added"},
+	{57, "t0_ch2_addr_added"},
 
 	{60, "t1_ch1_invalid_data"},
 	{61, "t1_ch2_invalid_data"},
@@ -39,7 +41,8 @@ const QMap<uint8_t, QString> dvsRC {
 	{63, "t1_addr2_received_count_resets"},
 	{64, "t1_appid_adr_low_received"},
 	{65, "t1_appid_adr_high_received"},
-	{66, "t1_ch2_used"},
+	{66, "t1_ch1_addr_added"},
+	{67, "t1_ch2_addr_added"},
 
 	{70, "t2_ch1_invalid_data"},
 	{71, "t2_ch2_invalid_data"},
@@ -47,7 +50,8 @@ const QMap<uint8_t, QString> dvsRC {
 	{73, "t2_addr2_received_count_resets"},
 	{74, "t2_appid_adr_low_received"},
 	{75, "t2_appid_adr_high_received"},
-	{76, "t2_ch2_used"},
+	{76, "t2_ch1_addr_added"},
+	{77, "t2_ch2_addr_added"},
 
 	{80, "t3_ch1_invalid_data"},
 	{81, "t3_ch2_invalid_data"},
@@ -55,7 +59,8 @@ const QMap<uint8_t, QString> dvsRC {
 	{83, "t3_addr2_received_count_resets"},
 	{84, "t3_appid_adr_low_received"},
 	{85, "t3_appid_adr_high_received"},
-	{86, "t3_ch2_used"},
+	{86, "t3_ch1_addr_added"},
+	{87, "t3_ch2_addr_added"},
 
 	{90, "t4_ch1_invalid_data"},
 	{91, "t4_ch2_invalid_data"},
@@ -63,7 +68,8 @@ const QMap<uint8_t, QString> dvsRC {
 	{93, "t4_addr2_received_count_resets"},
 	{94, "t4_appid_adr_low_received"},
 	{95, "t4_appid_adr_high_received"},
-	{96, "t4_ch2_used"},
+	{96, "t4_ch1_addr_added"},
+	{97, "t4_ch2_addr_added"},
 
 	{100, "t5_ch1_invalid_data"},
 	{101, "t5_ch2_invalid_data"},
@@ -71,7 +77,8 @@ const QMap<uint8_t, QString> dvsRC {
 	{103, "t5_addr2_received_count_resets"},
 	{104, "t5_appid_adr_low_received"},
 	{105, "t5_appid_adr_high_received"},
-	{106, "t5_ch2_used"},
+	{106, "t5_ch1_addr_added"},
+	{107, "t5_ch2_addr_added"},
 
 	{110, "t6_ch1_invalid_data"},
 	{111, "t6_ch2_invalid_data"},
@@ -79,7 +86,8 @@ const QMap<uint8_t, QString> dvsRC {
 	{113, "t6_addr2_received_count_resets"},
 	{114, "t6_appid_adr_low_received"},
 	{115, "t6_appid_adr_high_received"},
-	{116, "t6_ch2_used"},
+	{116, "t6_ch1_addr_added"},
+	{117, "t6_ch2_addr_added"},
 
 	{120, "t7_ch1_invalid_data"},
 	{121, "t7_ch2_invalid_data"},
@@ -87,7 +95,8 @@ const QMap<uint8_t, QString> dvsRC {
 	{123, "t7_addr2_received_count_resets"},
 	{124, "t7_appid_adr_low_received"},
 	{125, "t7_appid_adr_high_received"},
-	{126, "t7_ch2_used"},
+	{126, "t7_ch1_addr_added"},
+	{127, "t7_ch2_addr_added"},
 
 	{130, "dcc_received_packets"},
 	{131, "dcc_received_bad_xor"},
