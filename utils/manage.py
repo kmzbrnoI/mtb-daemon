@@ -13,6 +13,7 @@ Usage:
   manage.py [options] load_config
   manage.py [options] mtbusb
   manage.py [options] mtbusb speed <speed>
+  manage.py [options] version
   manage.py [options] module <module_addr> [--diag]
   manage.py [options] inputs <module_addr>
   manage.py [options] outputs <module_addr>
@@ -110,6 +111,10 @@ def mtbusb_speed(socket, verbose: bool, speed: int) -> None:
     })
     for key, val in response['mtbusb'].items():
         print(key, ':', val)
+
+def version(socket, verbose: bool) -> None:
+    response = request_response(socket, verbose, {'command': 'version',})
+    print(response['version'])
 
 
 def module(socket, verbose: bool, module: int) -> None:
@@ -498,6 +503,9 @@ if __name__ == '__main__':
         elif args['mtbusb'] and args['speed']:
             mtbusb_speed(sock, args['-v'], int(args['<speed>']))
 
+        elif args['version']:
+            version(sock, args['-v'])
+
         elif args['module']:
             module(sock, args['-v'], int(args['<module_addr>']))
             if bool(args['--diag']):
@@ -571,7 +579,7 @@ if __name__ == '__main__':
         elif args['dvnum']:
             dvnum(sock, args['-v'], int(args['<module_addr>']), int(args['<dvnum>']))
         elif args['dvstr']:
-            dvstr(sock, args['-v'], int(args['<module_addr>']), args['<dvstr>'])
+            dvstr(sock, args['-v'], int(args['<module_addr>']), args['<dvstr>'])\
 
     except EDaemonResponse as e:
         sys.stderr.write(str(e)+'\n')

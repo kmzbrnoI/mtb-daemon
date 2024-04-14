@@ -395,6 +395,16 @@ void DaemonCoreApplication::serverReceived(QTcpSocket *socket, const QJsonObject
 		response["mtbusb"] = this->mtbUsbJson();
 		server.send(socket, response);
 
+	} else if (command == "version") {
+		QJsonObject response = jsonOkResponse(request);
+		QJsonObject version{
+			{"sw_version", VERSION},
+			{"sw_version_major", VERSION_MAJOR},
+			{"sw_version_minor", VERSION_MINOR},
+		};
+		response["version"] = version;
+		server.send(socket, response);
+
 	} else if (command == "save_config") {
 		if (!this->hasWriteAccess(socket))
 			return sendAccessDenied(socket, request);

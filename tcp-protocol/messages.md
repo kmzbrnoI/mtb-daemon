@@ -52,6 +52,30 @@ MTB daemon's TCP sever messages specification
 
 Response in same as *Daemon Status* response.
 
+### Daemon version
+
+```json
+{
+    "command": "version",
+    "type": "request",
+    "id": 42
+}
+```
+
+```json
+{
+    "command": "version",
+    "type": "response",
+    "id": 42,
+    "status": "ok",
+    "version": {
+        "sw_version": "1.0"
+        "sw_version_major": 1,
+        "sw_version_minor": 0
+    }
+}
+```
+
 ### Module
 
 ```json
