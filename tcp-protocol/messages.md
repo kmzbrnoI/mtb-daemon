@@ -138,6 +138,29 @@ Response in same as *Daemon Status* response.
   60, 120, 180, 240, 320, 600, 33, 66.
 * Inputs delay: 0–1.5 (including bounds), step=0.1.
 
+### Module delete request
+
+```json
+{
+    "command": "module_delete",
+    "type": "request",
+    "id": 42,
+    "address": 1
+}
+```
+
+```json
+{
+    "command": "module_delete",
+    "type": "response",
+    "id": 42,
+    "status": "ok",
+    "address": 1
+}
+```
+
+* Module could be deleted only if it is not currently present on the bus.
+
 ### Modules
 
 ```json
