@@ -1,9 +1,15 @@
 MTB daemon's TCP sever messages specification
 =============================================
 
+For the sake of clarity, each message in this description is divided into
+multiple lines. It real protocol each message uses 1 line only.
+
 ## Request & responses
 
 ### Daemon status
+
+This request allows the client to obtain basic information about MTBbus: active
+modules etc.
 
 ```json
 {
@@ -30,14 +36,11 @@ MTB daemon's TCP sever messages specification
 }
 ```
 
-* When daemon connects to / disconnects from MTB-USB, this message is sent as
-  event.
-  - When connect event occurs, modules are not scanned.
-    Client is informed about scanned modules via `module_activated` command.
-  - When disconnect event occurs, error responses to pending commands are sent.
 * Fields after `connected` are sent if and only if `connected=True`.
 
 ### MTB-USB Change Speed
+
+This request allows the client to change speed of MTBbus.
 
 ```json
 {
@@ -53,6 +56,10 @@ MTB daemon's TCP sever messages specification
 Response in same as *Daemon Status* response.
 
 ### Daemon version
+
+Since MTB Daemon v1.5 (sorry).
+
+This request allows the client to obtain version of MTB Daemon.
 
 ```json
 {
@@ -77,6 +84,8 @@ Response in same as *Daemon Status* response.
 ```
 
 ### Module
+
+This request allows the client to obtain all information about the module.
 
 ```json
 {
@@ -107,26 +116,7 @@ Response in same as *Daemon Status* response.
         "warning": false,
         "beacon": false,
         "MTB-UNI v4": {
-            # data specific for module type, e.g.:
-            "ir": false,
-            "config": {
-                "outputsSafe": [
-                    {"type": "plain", "value": 0},
-                    {"type": "s-com", "value": 10},
-                    {"type": "flicker", "value": 60},
-                    ... # 16 values
-                ],
-                "inputsDelay": [0, 0.5, 0.2, ..., 0.3] # 16 values
-            },
-            "state": {
-                "outputs": [
-                    {"type": "plain", "value": 0},
-                    {"type": "s-com", "value": 10},
-                    {"type": "flicker", "value": 60},
-                    ...
-                ],
-                "inputs": {"uniinputs": [false, false, true, true, ..., false]} # 16 values
-            }
+            # data specific for module type
         }
     }
 }
@@ -134,11 +124,14 @@ Response in same as *Daemon Status* response.
 
 * `state`: `inactive`, `active`, `rebooting`, `fw_upgrading`, `bootloader_err`,
   `bootloader_int`.
-* Flicker value: number of ticks in minute. Allowed values:
-  60, 120, 180, 240, 320, 600, 33, 66.
-* Inputs delay: 0–1.5 (including bounds), step=0.1.
 
 ### Module delete request
+
+Since MTB Daemon v1.5.
+
+This request allows the client to delete a module from the server's database.
+Only inactive module on the bus can be deleted. As a reaction to deletion,
+*Module deleted event* is sent to other client (see below).
 
 ```json
 {
@@ -159,9 +152,9 @@ Response in same as *Daemon Status* response.
 }
 ```
 
-* Module could be deleted only if it is not currently present on the bus.
-
 ### Modules
+
+This request allows the client to obtain data about all modules.
 
 ```json
 {
@@ -186,6 +179,8 @@ Response in same as *Daemon Status* response.
 ```
 
 ### Module set output/s
+
+This request allows the client to set outputs of a module.
 
 ```json
 {
@@ -224,6 +219,8 @@ Response in same as *Daemon Status* response.
 
 ### Module set configuration
 
+This request allows the client to set configuration of a module.
+
 ```json
 {
     "command": "module_set_config",
@@ -250,6 +247,8 @@ Response in same as *Daemon Status* response.
 
 ### Module set address
 
+This request allows the client to change address of a specific module.
+
 This option is available only for modules without hardware address setting.
 
 ```json
@@ -274,6 +273,9 @@ This option is available only for modules without hardware address setting.
 
 ### Module set address
 
+This request allows the client to change address of a module with active
+*readdressing mode* (usually via button on the module).
+
 This option is available only for modules without hardware address setting.
 
 ```json
@@ -295,6 +297,8 @@ This option is available only for modules without hardware address setting.
 ```
 
 ### Module firmware upgrade request
+
+This request allows the client to upgrade firmware of a module.
 
 ```json
 {
@@ -326,6 +330,8 @@ This option is available only for modules without hardware address setting.
 
 ### Module-specific command
 
+This request allows the client to send a specific command for the module.
+
 ```json
 {
     "command": "module_specific_command",
@@ -352,6 +358,8 @@ This option is available only for modules without hardware address setting.
 
 ### Module reboot
 
+This request allows the client to reboot a module.
+
 ```json
 {
     "command": "module_reboot",
@@ -372,6 +380,9 @@ This option is available only for modules without hardware address setting.
 ```
 
 ### Module beacon
+
+This request allows the client to de/activate a beacon on a module (turn on/off
+a special LED on the module).
 
 ```json
 {
@@ -423,6 +434,8 @@ output change events from a module, list of modules or all modules.
 
 ### My module subscribes
 
+Since MTB Daemon v1.5.
+
 This request allows the client to obtain list of it's subscribed modules or
 set which modules are subscribed by the client precisely.
 
@@ -452,6 +465,8 @@ Complete list of client's subscribed modules is always sent back.
 
 ### Topology subscribe/unsubscribe
 
+Since MTB Daemon v1.5.
+
 These requests enable/disable subscription of topology change events to the
 client.
 
@@ -474,6 +489,8 @@ client.
 
 ### Reset all outputs set by client
 
+This request allows the client to reset outputs set by the client.
+
 ```json
 {
     "command": "reset_my_outputs",
@@ -493,7 +510,8 @@ client.
 
 ### Save config file
 
-Saves config file from memory.
+This request instructs the server to store server's data into it's internal
+persistent configuration file.
 
 ```json
 {
@@ -536,6 +554,8 @@ config should be changed by client via `module_set_config` command.
 
 ### Diagnostics
 
+This request allows the client to obtain a diagnostic value (DV) of a module.
+
 ```json
 {
     "command": "module_diag",
@@ -568,6 +588,9 @@ When `DVNum` is present, `DVKey` is ignored.
 
 ### Module input/s changed
 
+This event is sent to all clients with subscribed module in case of any input
+change on the module.
+
 ```json
 {
     "command": "module_inputs_changed",
@@ -582,6 +605,9 @@ When `DVNum` is present, `DVKey` is ignored.
 ```
 
 ### Module output/s changed
+
+This event is sent to all clients with subscribed module in case of any output
+change on the module.
 
 ```json
 {
@@ -599,9 +625,11 @@ When `DVNum` is present, `DVKey` is ignored.
 ### MTB-USB changed
 
 This event is sent to all clients with subscribed topology changes in case of:
-* MTB-USB become connected or disconnected
 * Any new module occurs on MTBbus
 * Any module becomes inactive on MTBbus
+
+This event is sent to all clients in case of:
+* MTB-USB becomes connected or disconnected
 
 ```json
 {
@@ -612,6 +640,11 @@ This event is sent to all clients with subscribed topology changes in case of:
     }
 }
 ```
+
+* When connect event is sent, modules are not scanned yet.
+  Client is informed about modules activation via `module` event.
+* When disconnect event occurs, error responses to affected pending commands
+  are sent.
 
 ### Module changed
 
@@ -630,6 +663,8 @@ change, module configuration change etc. This event is not sent in case of input
 ```
 
 ### Module deleted
+
+Since MTB Daemon v1.5.
 
 This event is sent to all clients with subscribed topology or subscribed module
 in case of the module is deleted from the server's database. Only inactive

@@ -31,6 +31,10 @@ Definition of messages for MTB-UNI
 }
 ```
 
+* Flicker value: number of ticks in minute. Allowed values:
+  60, 120, 180, 240, 320, 600, 33, 66.
+* Inputs delay: 0–1.5 (including bounds), step=0.1.
+
 ## Inputs
 
 16 values representing inputs 0–15.
