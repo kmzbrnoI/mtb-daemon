@@ -396,6 +396,9 @@ This option is available only for modules without hardware address setting.
 
 ### Module subscribe/unsubscribe
 
+This request allow the client to subscribe/unsubscribe to the input and
+output change events from a module, list of modules or all modules.
+
 ```json
 {
     "command": "module_subscribe"/"module_unsubscribe",
@@ -405,6 +408,9 @@ This option is available only for modules without hardware address setting.
 }
 ```
 
+* In case `addresses` in the request is not present, all modules are
+  subscribed/unsubscribed.
+
 ```json
 {
     "command": "module_subscribe"/"module_unsubscribe",
@@ -412,6 +418,57 @@ This option is available only for modules without hardware address setting.
     "id": 12,
     "status": "ok",
     "addresses": [10, 11, 20]
+}
+```
+
+### My module subscribes
+
+This request allows the client to obtain list of it's subscribed modules or
+set which modules are subscribed by the client precisely.
+
+Complete list of client's subscribed modules is always sent back.
+
+```json
+{
+    "command": "my_module_subscribes",
+    "type": "request",
+    "id": 5,
+    "addresses": [5, 7, 100]
+}
+```
+
+* `addresses` in the request could be empty.
+
+```json
+{
+    "command": "my_module_subscribes",
+    "type": "response",
+    "id": 5,
+    "status": "ok",
+    "addresses": [5, 7, 100]
+}
+```
+
+
+### Topology subscribe/unsubscribe
+
+These requests enable/disable subscription of topology change events to the
+client.
+
+```json
+{
+    "command": "topology_subscribe"/"topology_unsubscribe",
+    "type": "request",
+    "id": 12,
+}
+```
+
+```json
+{
+    "command": "topology_subscribe"/"topology_unsubscribe",
+    "type": "response",
+    "id": 12,
+    "status": "ok"
 }
 ```
 
@@ -536,5 +593,52 @@ When `DVNum` is present, `DVKey` is ignored.
         "type_code": 21,
         "outputs": {...} # Outputs definition specific for modules
     }
+}
+```
+
+### MTB-USB changed
+
+This event is sent to all clients with subscribed topology changes in case of:
+* MTB-USB become connected or disconnected
+* Any new module occurs on MTBbus
+* Any module becomes inactive on MTBbus
+
+```json
+{
+    "command": "mtbusb",
+    "type": "event",
+    "mtbusb": {
+        # 'mtbusb' section in *Daemon status* response
+    }
+}
+```
+
+### Module changed
+
+This event is sent to all clients with subscribed topology or subscribed module
+in case of any module's data change. E.g. module name change, module status
+change, module configuration change etc. This event is not sent in case of inputs/outputs change!
+
+```json
+{
+    "command": "module",
+    "type": "event",
+    "module": {
+        # 'module' in *Module* response
+    }
+}
+```
+
+### Module deleted
+
+This event is sent to all clients with subscribed topology or subscribed module
+in case of the module is deleted from the server's database. Only inactive
+module on the bus could be deleted.
+
+```json
+{
+    "command": "module_deleted",
+    "type": "event",
+    "module": 10
 }
 ```
