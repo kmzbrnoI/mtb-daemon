@@ -359,244 +359,45 @@ void DaemonCoreApplication::tReactivateTick() {
 
 void DaemonCoreApplication::serverReceived(QTcpSocket *socket, const QJsonObject &request) {
 	QString command = request["command"].toString();
-	std::optional<size_t> id;
-	if (request.contains("id"))
-		id = request["id"].toInt();
 
 	if (command == "mtbusb") {
-		if (request.contains("mtbusb")) { // Changing MTB-USB
-			QJsonObject jsonMtbUsb = request["mtbusb"].toObject();
-			if (jsonMtbUsb.contains("speed")) { // Change MTBbus speed
-				if (!this->hasWriteAccess(socket))
-					return sendAccessDenied(socket, request);
-				if (!mtbusb.connected() || !mtbusb.mtbUsbInfo().has_value())
-					return sendError(socket, request, MTB_DEVICE_DISCONNECTED, "Disconnected from MTB-USB!");
-				size_t speed = jsonMtbUsb["speed"].toInt();
-				if (!Mtb::mtbBusSpeedValid(speed, mtbusb.mtbUsbInfo().value().fw_raw()))
-					return sendError(socket, request, MTB_INVALID_SPEED, "Invalid MTBbus speed!");
-				Mtb::MtbBusSpeed mtbUsbSpeed = mtbusb.mtbUsbInfo().value().speed;
-				Mtb::MtbBusSpeed newSpeed = Mtb::intToMtbBusSpeed(speed);
-				if (mtbUsbSpeed != newSpeed) {
-					mtbusb.changeSpeed(
-						newSpeed,
-						{[this, socket, request]() {
-							QJsonObject response = jsonOkResponse(request);
-							response["mtbusb"] = this->mtbUsbJson();
-							server.send(socket, response);
-						}},
-						{[socket, request](Mtb::CmdError error) { sendError(socket, request, error); }}
-					);
-					return;
-				}
-			}
-		}
-
-		QJsonObject response = jsonOkResponse(request);
-		response["mtbusb"] = this->mtbUsbJson();
-		server.send(socket, response);
+		this->serverCmdMtbusb(socket, request);
 
 	} else if (command == "version") {
-		QJsonObject response = jsonOkResponse(request);
-		QJsonObject version{
-			{"sw_version", VERSION},
-			{"sw_version_major", VERSION_MAJOR},
-			{"sw_version_minor", VERSION_MINOR},
-		};
-		response["version"] = version;
-		server.send(socket, response);
+		this->serverCmdVersion(socket, request);
 
 	} else if (command == "save_config") {
-		if (!this->hasWriteAccess(socket))
-			return sendAccessDenied(socket, request);
-
-		QString filename = this->configFileName;
-		if (request.contains("filename"))
-			filename = request["filename"].toString();
-		bool ok = true;
-		try {
-			this->saveConfig(filename);
-		} catch (...) {
-			ok = false;
-		}
-		QJsonObject response {
-			{"command", "save_config"},
-			{"type", "response"},
-			{"status", ok ? "ok" : "error"},
-		};
-		if (!ok)
-			response["error"] = jsonError(MTB_FILE_CANNOT_ACCESS, "Cannot access file "+filename);
-		if (id)
-			response["id"] = static_cast<int>(id.value());
-
-		server.send(socket, response);
+		this->serverCmdSaveConfig(socket, request);
 
 	} else if (command == "load_config") {
-		if (!this->hasWriteAccess(socket))
-			return sendAccessDenied(socket, request);
-
-		QString filename = this->configFileName;
-		if (request.contains("filename"))
-			filename = request["filename"].toString();
-		bool ok = true;
-		try {
-			log("Config file "+filename+" reload request.", Mtb::LogLevel::Info);
-			this->loadConfig(filename);
-			log("Config file "+filename+" successfully loaded.", Mtb::LogLevel::Info);
-		} catch (...) {
-			ok = false;
-		}
-		QJsonObject response {
-			{"command", "load_config"},
-			{"type", "response"},
-			{"status", ok ? "ok" : "error"},
-		};
-		if (!ok)
-			response["error"] = jsonError(MTB_FILE_CANNOT_ACCESS, "Cannot load file "+filename);
-		if (id)
-			response["id"] = static_cast<int>(id.value());
-
-		server.send(socket, response);
+		this->serverCmdLoadConfig(socket, request);
 
 	} else if (command == "module") {
-		QJsonObject response = jsonOkResponse(request);
-
-		size_t addr = request["address"].toInt();
-		if ((Mtb::isValidModuleAddress(addr)) && (modules[addr] != nullptr)) {
-			response["module"] = modules[addr]->moduleInfo(request["state"].toBool(), true);
-			response["status"] = "ok";
-		} else {
-			response["status"] = "error";
-			response["error"] = DaemonServer::error(MTB_MODULE_INVALID_ADDR, "Invalid module address");
-		}
-
-		server.send(socket, response);
+		this->serverCmdModule(socket, request);
 
 	} else if (command == "module_delete") {
-		QJsonObject response = jsonOkResponse(request);
-
-		size_t addr = request["address"].toInt();
-		response["address"] = static_cast<int>(addr);
-
-		if ((!Mtb::isValidModuleAddress(addr)) || (modules[addr] == nullptr)) {
-			response["status"] = "error";
-			response["error"] = DaemonServer::error(MTB_MODULE_INVALID_ADDR, "Invalid module address");
-		} else if (modules[addr]->isActive() || modules[addr]->isActivating()) {
-			response["status"] = "error";
-			response["error"] = DaemonServer::error(MTB_MODULE_ACTIVE, "Cannot delete active module");
-		} else {
-			modules[addr] = nullptr;
-			log("Module "+QString::number(addr)+": deleted on client request!", Mtb::LogLevel::Info);
-			response["status"] = "ok";
-		}
-
-		server.send(socket, response);
+		this->serverCmdModuleDelete(socket, request);
 
 	} else if (command == "modules") {
-		QJsonObject response = jsonOkResponse(request);
-		QJsonObject jsonModules;
-
-		for (size_t i = 0; i < Mtb::_MAX_MODULES; i++) {
-			if (modules[i] != nullptr)
-				jsonModules[QString::number(i)] = modules[i]->moduleInfo(
-					request["state"].toBool(), true
-				);
-		}
-		response["modules"] = jsonModules;
-
-		server.send(socket, response);
+		this->serverCmdModules(socket, request);
 
 	} else if (command == "module_subscribe") {
-		QJsonObject response = jsonOkResponse(request);
-
-		QJsonArray addresses;
-		for (const auto &value : request["addresses"].toArray()) {
-			size_t addr = value.toInt();
-			if (Mtb::isValidModuleAddress(addr)) {
-				subscribes[addr].insert_or_assign(socket, true);
-				addresses.push_back(static_cast<int>(addr));
-			} else {
-				response["status"] = "error";
-				response["error"] = DaemonServer::error(MTB_MODULE_INVALID_ADDR, "Invalid module address");
-				break;
-			}
-		}
-
-		response["addresses"] = addresses;
-		server.send(socket, response);
+		this->serverCmdModuleSubscribe(socket, request);
 
 	} else if (command == "module_unsubscribe") {
-		QJsonObject response = jsonOkResponse(request);
-
-		for (const auto &value : response["addresses"].toArray()) {
-			size_t addr = value.toInt();
-			if (Mtb::isValidModuleAddress(addr)) {
-				if (subscribes[addr].find(socket) != subscribes[addr].end())
-					subscribes[addr].erase(socket);
-			} else {
-				response["status"] = "error";
-				response["error"] = DaemonServer::error(MTB_MODULE_INVALID_ADDR, "Invalid module address");
-				break;
-			}
-		}
-
-		server.send(socket, response);
+		this->serverCmdModuleUnsubscribe(socket, request);
 
 	} else if (command == "module_set_config") {
-		// Set config can create new module
-		if (!this->hasWriteAccess(socket))
-			return sendAccessDenied(socket, request);
-
-		size_t addr = request["address"].toInt();
-		uint8_t type = request["type_code"].toInt();
-		if (!Mtb::isValidModuleAddress(addr))
-			return sendError(socket, request, MTB_MODULE_INVALID_ADDR, "Invalid module address");
-
-		if (modules[addr] == nullptr) {
-			modules[addr] = this->newModule(type, addr);
-		}
-
-		if ((modules[addr]->isActive()) && (type != static_cast<size_t>(modules[addr]->moduleType())))
-			return sendError(socket, request, MTB_ALREADY_STARTED, "Cannot change type of active module!");
-
-		modules[addr]->jsonSetConfig(socket, request);
+		this->serverCmdModuleSetConfig(socket, request);
 
 	} else if ((command == "module_specific_command") && ((!request.contains("address")) || (request["address"].toInt() == 0))) {
-		// Module-specific broadcast
-		if (!this->hasWriteAccess(socket))
-			return sendAccessDenied(socket, request);
-
-		const QJsonArray &dataAr = request["data"].toArray();
-		std::vector<uint8_t> data;
-		for (const auto var : dataAr)
-			data.push_back(var.toInt());
-
-		mtbusb.send(
-			Mtb::CmdMtbModuleSpecific(
-				data,
-				{[request, socket](void*) {
-					QJsonObject json = jsonOkResponse(request);
-					server.send(socket, json);
-				}},
-				{[socket, request](Mtb::CmdError error, void*) {
-					sendError(socket, request, static_cast<int>(error)+0x1000, Mtb::cmdErrorToStr(error));
-				}}
-			)
-		);
+		this->serverCmdModuleSpecificCommand(socket, request);
 
 	} else if (command == "set_address") {
-		uint8_t newaddr = request["new_address"].toInt(1);
-		mtbusb.send(
-			Mtb::CmdMtbModuleChangeAddr(
-				newaddr,
-				{[request, socket](void*) {
-					QJsonObject json = jsonOkResponse(request);
-					server.send(socket, json);
-				}},
-				{[socket, request](Mtb::CmdError error, void*) {
-					sendError(socket, request, static_cast<int>(error)+0x1000, Mtb::cmdErrorToStr(error));
-				}}
-			)
-		);
+		this->serverCmdSetAddress(socket, request);
+
+	} else if (command == "reset_my_outputs") {
+		this->serverCmdResetMyOutputs(socket, request);
 
 	} else if (command.startsWith("module_")) {
 		if (!this->hasWriteAccess(socket))
@@ -608,18 +409,265 @@ void DaemonCoreApplication::serverReceived(QTcpSocket *socket, const QJsonObject
 		} else {
 			sendError(socket, request, MTB_MODULE_INVALID_ADDR, "Invalid module address");
 		}
-
-	} else if (command == "reset_my_outputs") {
-		if (!this->hasWriteAccess(socket))
-			return sendAccessDenied(socket, request);
-
-		this->clientResetOutputs(
-			socket,
-			[socket, request]() { server.send(socket, jsonOkResponse(request)); },
-			[socket, request]() { sendError(socket, request, Mtb::CmdError::BusNoResponse); }
-		);
-
 	}
+}
+
+void DaemonCoreApplication::serverCmdMtbusb(QTcpSocket *socket, const QJsonObject &request) {
+	if (request.contains("mtbusb")) { // Changing MTB-USB
+		QJsonObject jsonMtbUsb = request["mtbusb"].toObject();
+		if (jsonMtbUsb.contains("speed")) { // Change MTBbus speed
+			if (!this->hasWriteAccess(socket))
+				return sendAccessDenied(socket, request);
+			if (!mtbusb.connected() || !mtbusb.mtbUsbInfo().has_value())
+				return sendError(socket, request, MTB_DEVICE_DISCONNECTED, "Disconnected from MTB-USB!");
+			size_t speed = jsonMtbUsb["speed"].toInt();
+			if (!Mtb::mtbBusSpeedValid(speed, mtbusb.mtbUsbInfo().value().fw_raw()))
+				return sendError(socket, request, MTB_INVALID_SPEED, "Invalid MTBbus speed!");
+			Mtb::MtbBusSpeed mtbUsbSpeed = mtbusb.mtbUsbInfo().value().speed;
+			Mtb::MtbBusSpeed newSpeed = Mtb::intToMtbBusSpeed(speed);
+			if (mtbUsbSpeed != newSpeed) {
+				mtbusb.changeSpeed(
+					newSpeed,
+					{[this, socket, request]() {
+						QJsonObject response = jsonOkResponse(request);
+						response["mtbusb"] = this->mtbUsbJson();
+						server.send(socket, response);
+					}},
+					{[socket, request](Mtb::CmdError error) { sendError(socket, request, error); }}
+				);
+				return;
+			}
+		}
+	}
+
+	QJsonObject response = jsonOkResponse(request);
+	response["mtbusb"] = this->mtbUsbJson();
+	server.send(socket, response);
+}
+
+void DaemonCoreApplication::serverCmdVersion(QTcpSocket *socket, const QJsonObject &request) {
+	QJsonObject response = jsonOkResponse(request);
+	QJsonObject version{
+		{"sw_version", VERSION},
+		{"sw_version_major", VERSION_MAJOR},
+		{"sw_version_minor", VERSION_MINOR},
+	};
+	response["version"] = version;
+	server.send(socket, response);
+}
+
+void DaemonCoreApplication::serverCmdSaveConfig(QTcpSocket *socket, const QJsonObject &request) {
+	if (!this->hasWriteAccess(socket))
+		return sendAccessDenied(socket, request);
+
+	QString filename = this->configFileName;
+	if (request.contains("filename"))
+		filename = request["filename"].toString();
+	bool ok = true;
+	try {
+		this->saveConfig(filename);
+	} catch (...) {
+		ok = false;
+	}
+	QJsonObject response {
+		{"command", "save_config"},
+		{"type", "response"},
+		{"status", ok ? "ok" : "error"},
+	};
+	if (!ok)
+		response["error"] = jsonError(MTB_FILE_CANNOT_ACCESS, "Cannot access file "+filename);
+	if (request.contains("id"))
+		response["id"] = static_cast<int>(request["id"].toInt());
+
+	server.send(socket, response);
+}
+
+void DaemonCoreApplication::serverCmdLoadConfig(QTcpSocket *socket, const QJsonObject &request) {
+	if (!this->hasWriteAccess(socket))
+		return sendAccessDenied(socket, request);
+
+	QString filename = this->configFileName;
+	if (request.contains("filename"))
+		filename = request["filename"].toString();
+	bool ok = true;
+	try {
+		log("Config file "+filename+" reload request.", Mtb::LogLevel::Info);
+		this->loadConfig(filename);
+		log("Config file "+filename+" successfully loaded.", Mtb::LogLevel::Info);
+	} catch (...) {
+		ok = false;
+	}
+	QJsonObject response {
+		{"command", "load_config"},
+		{"type", "response"},
+		{"status", ok ? "ok" : "error"},
+	};
+	if (!ok)
+		response["error"] = jsonError(MTB_FILE_CANNOT_ACCESS, "Cannot load file "+filename);
+	if (request.contains("id"))
+		response["id"] = static_cast<int>(request["id"].toInt());
+
+	server.send(socket, response);
+}
+
+void DaemonCoreApplication::serverCmdModule(QTcpSocket *socket, const QJsonObject &request) {
+	QJsonObject response = jsonOkResponse(request);
+
+	size_t addr = request["address"].toInt();
+	if ((Mtb::isValidModuleAddress(addr)) && (modules[addr] != nullptr)) {
+		response["module"] = modules[addr]->moduleInfo(request["state"].toBool(), true);
+		response["status"] = "ok";
+	} else {
+		response["status"] = "error";
+		response["error"] = DaemonServer::error(MTB_MODULE_INVALID_ADDR, "Invalid module address");
+	}
+
+	server.send(socket, response);
+}
+
+void DaemonCoreApplication::serverCmdModuleDelete(QTcpSocket *socket, const QJsonObject &request) {
+	QJsonObject response = jsonOkResponse(request);
+
+	size_t addr = request["address"].toInt();
+	response["address"] = static_cast<int>(addr);
+
+	if ((!Mtb::isValidModuleAddress(addr)) || (modules[addr] == nullptr)) {
+		response["status"] = "error";
+		response["error"] = DaemonServer::error(MTB_MODULE_INVALID_ADDR, "Invalid module address");
+	} else if (modules[addr]->isActive() || modules[addr]->isActivating()) {
+		response["status"] = "error";
+		response["error"] = DaemonServer::error(MTB_MODULE_ACTIVE, "Cannot delete active module");
+	} else {
+		modules[addr] = nullptr;
+		log("Module "+QString::number(addr)+": deleted on client request!", Mtb::LogLevel::Info);
+		response["status"] = "ok";
+	}
+
+	server.send(socket, response);
+}
+
+void DaemonCoreApplication::serverCmdModules(QTcpSocket *socket, const QJsonObject &request) {
+	QJsonObject response = jsonOkResponse(request);
+	QJsonObject jsonModules;
+
+	for (size_t i = 0; i < Mtb::_MAX_MODULES; i++) {
+		if (modules[i] != nullptr)
+			jsonModules[QString::number(i)] = modules[i]->moduleInfo(
+				request["state"].toBool(), true
+			);
+	}
+	response["modules"] = jsonModules;
+
+	server.send(socket, response);
+}
+
+void DaemonCoreApplication::serverCmdModuleSubscribe(QTcpSocket *socket, const QJsonObject &request) {
+	QJsonObject response = jsonOkResponse(request);
+
+	QJsonArray addresses;
+	for (const auto &value : request["addresses"].toArray()) {
+		size_t addr = value.toInt();
+		if (Mtb::isValidModuleAddress(addr)) {
+			subscribes[addr].insert_or_assign(socket, true);
+			addresses.push_back(static_cast<int>(addr));
+		} else {
+			response["status"] = "error";
+			response["error"] = DaemonServer::error(MTB_MODULE_INVALID_ADDR, "Invalid module address");
+			break;
+		}
+	}
+
+	response["addresses"] = addresses;
+	server.send(socket, response);
+}
+
+void DaemonCoreApplication::serverCmdModuleUnsubscribe(QTcpSocket *socket, const QJsonObject &request) {
+	QJsonObject response = jsonOkResponse(request);
+
+	for (const auto &value : response["addresses"].toArray()) {
+		size_t addr = value.toInt();
+		if (Mtb::isValidModuleAddress(addr)) {
+			if (subscribes[addr].find(socket) != subscribes[addr].end())
+				subscribes[addr].erase(socket);
+		} else {
+			response["status"] = "error";
+			response["error"] = DaemonServer::error(MTB_MODULE_INVALID_ADDR, "Invalid module address");
+			break;
+		}
+	}
+
+	server.send(socket, response);
+}
+
+void DaemonCoreApplication::serverCmdModuleSetConfig(QTcpSocket *socket, const QJsonObject &request) {
+	// Set config can create new module
+	if (!this->hasWriteAccess(socket))
+		return sendAccessDenied(socket, request);
+
+	size_t addr = request["address"].toInt();
+	uint8_t type = request["type_code"].toInt();
+	if (!Mtb::isValidModuleAddress(addr))
+		return sendError(socket, request, MTB_MODULE_INVALID_ADDR, "Invalid module address");
+
+	if (modules[addr] == nullptr) {
+		modules[addr] = this->newModule(type, addr);
+	}
+
+	if ((modules[addr]->isActive()) && (type != static_cast<size_t>(modules[addr]->moduleType())))
+		return sendError(socket, request, MTB_ALREADY_STARTED, "Cannot change type of active module!");
+
+	modules[addr]->jsonSetConfig(socket, request);
+}
+
+void DaemonCoreApplication::serverCmdModuleSpecificCommand(QTcpSocket *socket, const QJsonObject &request) {
+	// Module-specific broadcast
+	if (!this->hasWriteAccess(socket))
+		return sendAccessDenied(socket, request);
+
+	const QJsonArray &dataAr = request["data"].toArray();
+	std::vector<uint8_t> data;
+	for (const auto var : dataAr)
+		data.push_back(var.toInt());
+
+	mtbusb.send(
+		Mtb::CmdMtbModuleSpecific(
+			data,
+			{[request, socket](void*) {
+				QJsonObject json = jsonOkResponse(request);
+				server.send(socket, json);
+			}},
+			{[socket, request](Mtb::CmdError error, void*) {
+				sendError(socket, request, static_cast<int>(error)+0x1000, Mtb::cmdErrorToStr(error));
+			}}
+		)
+	);
+}
+
+void DaemonCoreApplication::serverCmdSetAddress(QTcpSocket *socket, const QJsonObject &request) {
+	uint8_t newaddr = request["new_address"].toInt(1);
+	mtbusb.send(
+		Mtb::CmdMtbModuleChangeAddr(
+			newaddr,
+			{[request, socket](void*) {
+				QJsonObject json = jsonOkResponse(request);
+				server.send(socket, json);
+			}},
+			{[socket, request](Mtb::CmdError error, void*) {
+				sendError(socket, request, static_cast<int>(error)+0x1000, Mtb::cmdErrorToStr(error));
+			}}
+		)
+	);
+}
+
+void DaemonCoreApplication::serverCmdResetMyOutputs(QTcpSocket *socket, const QJsonObject &request) {
+	if (!this->hasWriteAccess(socket))
+		return sendAccessDenied(socket, request);
+
+	this->clientResetOutputs(
+		socket,
+		[socket, request]() { server.send(socket, jsonOkResponse(request)); },
+		[socket, request]() { sendError(socket, request, Mtb::CmdError::BusNoResponse); }
+	);
 }
 
 QJsonObject DaemonCoreApplication::mtbUsbJson() const {

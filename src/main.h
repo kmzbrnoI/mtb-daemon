@@ -3,6 +3,8 @@
 
 #include <QCoreApplication>
 #include <QTcpSocket>
+#include <map>
+#include <array>
 #include "mtbusb.h"
 #include "server.h"
 #include "module.h"
@@ -73,9 +75,22 @@ private:
 
 	void mtbUsbConnect();
 
-	void clientResetOutputs(QTcpSocket*,
-							std::function<void()> onOk,
-							std::function<void()> onError);
+	void clientResetOutputs(QTcpSocket*, std::function<void()> onOk,
+	                        std::function<void()> onError);
+
+	void serverCmdMtbusb(QTcpSocket*, const QJsonObject&);
+	void serverCmdVersion(QTcpSocket*, const QJsonObject&);
+	void serverCmdSaveConfig(QTcpSocket*, const QJsonObject&);
+	void serverCmdLoadConfig(QTcpSocket*, const QJsonObject&);
+	void serverCmdModule(QTcpSocket*, const QJsonObject&);
+	void serverCmdModuleDelete(QTcpSocket*, const QJsonObject&);
+	void serverCmdModules(QTcpSocket*, const QJsonObject&);
+	void serverCmdModuleSubscribe(QTcpSocket*, const QJsonObject&);
+	void serverCmdModuleUnsubscribe(QTcpSocket*, const QJsonObject&);
+	void serverCmdModuleSetConfig(QTcpSocket*, const QJsonObject&);
+	void serverCmdModuleSpecificCommand(QTcpSocket*, const QJsonObject&);
+	void serverCmdSetAddress(QTcpSocket*, const QJsonObject&);
+	void serverCmdResetMyOutputs(QTcpSocket*, const QJsonObject&);
 
 private slots:
 	void mtbUsbOnLog(QString message, Mtb::LogLevel loglevel);
