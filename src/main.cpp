@@ -471,6 +471,26 @@ void DaemonCoreApplication::serverReceived(QTcpSocket *socket, const QJsonObject
 
 		server.send(socket, response);
 
+	} else if (command == "module_delete") {
+		QJsonObject response = jsonOkResponse(request);
+
+		size_t addr = request["address"].toInt();
+		response["address"] = static_cast<int>(addr);
+
+		if ((!Mtb::isValidModuleAddress(addr)) || (modules[addr] == nullptr)) {
+			response["status"] = "error";
+			response["error"] = DaemonServer::error(MTB_MODULE_INVALID_ADDR, "Invalid module address");
+		} else if (modules[addr]->isActive() || modules[addr]->isActivating()) {
+			response["status"] = "error";
+			response["error"] = DaemonServer::error(MTB_MODULE_ACTIVE, "Cannot delete active module");
+		} else {
+			modules[addr] = nullptr;
+			log("Module "+QString::number(addr)+": deleted on client request!", Mtb::LogLevel::Info);
+			response["status"] = "ok";
+		}
+
+		server.send(socket, response);
+
 	} else if (command == "modules") {
 		QJsonObject response = jsonOkResponse(request);
 		QJsonObject jsonModules;

@@ -5,6 +5,7 @@ constexpr size_t MTB_MODULE_INVALID_ADDR = 1100;
 constexpr size_t MTB_MODULE_FAILED = 1102;
 constexpr size_t MTB_INVALID_SPEED = 1105;
 constexpr size_t MTB_INVALID_DV = 1106;
+constexpr size_t MTB_MODULE_ACTIVE = 1107;
 constexpr size_t MTB_FILE_CANNOT_ACCESS = 1010;
 constexpr size_t MTB_MODULE_ALREADY_WRITING = 1110;
 
