@@ -390,7 +390,7 @@ void DaemonCoreApplication::serverReceived(QTcpSocket *socket, const QJsonObject
 	} else if (command == "module_set_config") {
 		this->serverCmdModuleSetConfig(socket, request);
 
-	} else if ((command == "module_specific_command") && ((!request.contains("address")) || (request["address"].toInt() == 0))) {
+	} else if (command == "module_specific_command") {
 		this->serverCmdModuleSpecificCommand(socket, request);
 
 	} else if (command == "set_address") {
@@ -620,7 +620,6 @@ void DaemonCoreApplication::serverCmdModuleSetConfig(QTcpSocket *socket, const Q
 }
 
 void DaemonCoreApplication::serverCmdModuleSpecificCommand(QTcpSocket *socket, const QJsonObject &request) {
-	// Module-specific broadcast
 	if (!this->hasWriteAccess(socket))
 		return sendAccessDenied(socket, request);
 
@@ -629,18 +628,46 @@ void DaemonCoreApplication::serverCmdModuleSpecificCommand(QTcpSocket *socket, c
 	for (const auto var : dataAr)
 		data.push_back(var.toInt());
 
-	mtbusb.send(
-		Mtb::CmdMtbModuleSpecific(
-			data,
-			{[request, socket](void*) {
-				QJsonObject json = jsonOkResponse(request);
-				server.send(socket, json);
-			}},
-			{[socket, request](Mtb::CmdError error, void*) {
-				sendError(socket, request, static_cast<int>(error)+0x1000, Mtb::cmdErrorToStr(error));
-			}}
-		)
-	);
+	if ((request.contains("address")) && (request["address"].toInt() > 0)) {
+		// For module
+		size_t addr = request["address"].toInt();
+		mtbusb.send(
+			Mtb::CmdMtbModuleSpecific(
+				addr,
+				data,
+				{[request, socket](uint8_t addr, Mtb::MtbBusRecvCommand busCommand,
+				                   const std::vector<uint8_t> &responseData, void*) {
+					QJsonObject json = jsonOkResponse(request);
+
+					QJsonArray responseDataAr;
+					std::copy(responseData.begin(), responseData.end(), std::back_inserter(responseDataAr));
+					json["address"] = addr;
+					json["response"] = QJsonObject {
+						{"command", static_cast<int>(busCommand)},
+						{"data", responseDataAr},
+					};
+					server.send(socket, json);
+				}},
+				{[socket, request](Mtb::CmdError error, void*) {
+					sendError(socket, request, static_cast<int>(error)+0x1000, Mtb::cmdErrorToStr(error));
+				}}
+			)
+		);
+	} else {
+		// Broadcast
+		mtbusb.send(
+			Mtb::CmdMtbModuleSpecific(
+				data,
+				{[request, socket](void*) {
+					QJsonObject json = jsonOkResponse(request);
+					server.send(socket, json);
+				}},
+				{[socket, request](Mtb::CmdError error, void*) {
+					sendError(socket, request, static_cast<int>(error)+0x1000, Mtb::cmdErrorToStr(error));
+				}}
+			)
+		);
+	}
 }
 
 void DaemonCoreApplication::serverCmdSetAddress(QTcpSocket *socket, const QJsonObject &request) {

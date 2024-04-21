@@ -532,7 +532,7 @@ struct CmdMtbModuleFwWriteFlashStatusRequest : public CmdMtbUsbForward {
 
 // Should return true iff response is valid.
 using SpecificCallbackFunc =
-    std::function<bool(uint8_t addr, MtbBusRecvCommand busCommand, const std::vector<uint8_t> &outputs, void *data)>;
+    std::function<void(uint8_t addr, MtbBusRecvCommand busCommand, const std::vector<uint8_t> &responseData, void *data)>;
 
 struct CmdMtbModuleSpecific : public CmdMtbUsbForward {
 	static constexpr uint8_t _busCommandCode = 0xFE;
@@ -574,8 +574,16 @@ struct CmdMtbModuleSpecific : public CmdMtbUsbForward {
 				return true;
 			}
 			return false;
+		} else {
+			// react only to some commands to avoid mess
+			if ((busCommand == MtbBusRecvCommand::Acknowledgement) ||
+			    (busCommand == MtbBusRecvCommand::Error) ||
+			    (busCommand == MtbBusRecvCommand::ModuleSpecific)) {
+				onResponse.func(module, busCommand, data, onResponse.data);
+				return true;
+			}
+			return false;
 		}
-		return onResponse.func(module, busCommand, data, onResponse.data);
 	}
 };
 
