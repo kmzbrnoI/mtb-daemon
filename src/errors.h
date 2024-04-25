@@ -8,6 +8,7 @@ constexpr size_t MTB_INVALID_DV = 1106;
 constexpr size_t MTB_MODULE_ACTIVE = 1107;
 constexpr size_t MTB_FILE_CANNOT_ACCESS = 1010;
 constexpr size_t MTB_MODULE_ALREADY_WRITING = 1110;
+constexpr size_t MTB_UNKNOWN_COMMAND = 1020;
 
 constexpr size_t MTB_DEVICE_DISCONNECTED = 2004;
 constexpr size_t MTB_ALREADY_STARTED = 2012;

@@ -375,6 +375,8 @@ void DaemonCoreApplication::tReactivateTick() {
 /* JSON server handling ------------------------------------------------------*/
 
 void DaemonCoreApplication::serverReceived(QTcpSocket *socket, const QJsonObject &request) {
+	if (!request.contains("command"))
+		return; // probably some kind of empty ping or something like this -> no response
 	QString command = request["command"].toString();
 
 	if (command == "mtbusb") {
@@ -435,6 +437,9 @@ void DaemonCoreApplication::serverReceived(QTcpSocket *socket, const QJsonObject
 		} else {
 			sendError(socket, request, MTB_MODULE_INVALID_ADDR, "Invalid module address");
 		}
+	} else {
+		// Explicitly answer "unknown command"
+		sendError(socket, request, MTB_UNKNOWN_COMMAND, "Unknown command!");
 	}
 }
 
