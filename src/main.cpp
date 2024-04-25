@@ -295,8 +295,16 @@ void DaemonCoreApplication::mtbUsbOnNewModule(uint8_t addr) {
 		this->activateModule(addr);
 
 	// Send new-module event to clients with topology change subscription
-	for (auto& socket : topoSubscribes)
-		server.send(socket, this->mtbUsbEvent());
+	// Usually, more modules occur in a short time -> avoid sending multiple events
+	// after each other. Rather wait for T_MTBUSB_EVENT_PERIOD to send the event.
+	if (!this->newTimerPending) {
+		this->newTimerPending = true;
+		QTimer::singleShot(T_MTBUSB_EVENT_PERIOD, [this]() {
+			this->newTimerPending = false;
+			for (auto& socket : topoSubscribes)
+				server.send(socket, this->mtbUsbEvent());
+		});
+	}
 }
 
 void DaemonCoreApplication::mtbUsbOnModuleFail(uint8_t addr) {
@@ -306,8 +314,16 @@ void DaemonCoreApplication::mtbUsbOnModuleFail(uint8_t addr) {
 		modules[addr]->mtbBusLost();
 
 	// Send module-lost event to clients with topology change subscription
-	for (auto& socket : topoSubscribes)
-		server.send(socket, this->mtbUsbEvent());
+	// Usually, more modules fail in a short time -> avoid sending multiple events
+	// after each other. Rather wait for T_MTBUSB_EVENT_PERIOD to send the event.
+	if (!this->failTimerPending) {
+		this->failTimerPending = true;
+		QTimer::singleShot(T_MTBUSB_EVENT_PERIOD, [this]() {
+			this->failTimerPending = false;
+			for (auto& socket : topoSubscribes)
+				server.send(socket, this->mtbUsbEvent());
+		});
+	}
 }
 
 void DaemonCoreApplication::mtbUsbOnInputsChange(uint8_t addr, const std::vector<uint8_t> &data) {

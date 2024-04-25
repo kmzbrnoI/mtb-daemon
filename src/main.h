@@ -17,6 +17,7 @@ extern std::unordered_set<QTcpSocket*> topoSubscribes;
 
 constexpr size_t T_RECONNECT_PERIOD = 1000; // 1 s
 constexpr size_t T_REACTIVATE_PERIOD = 500; // 500 ms
+constexpr size_t T_MTBUSB_EVENT_PERIOD = 500; // 500 ms
 
 const QString DEFAULT_CONFIG_FILENAME = "mtb-daemon.json";
 
@@ -60,6 +61,8 @@ private:
 	QTimer t_reactivate;
 	std::vector<QHostAddress> writeAccess;
 	StartupError startError = StartupError::Ok;
+	bool failTimerPending = false;
+	bool newTimerPending = false;
 
 	QJsonObject mtbUsbJson() const;
 	QJsonObject mtbUsbEvent() const;
