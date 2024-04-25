@@ -3,7 +3,7 @@
 
 #include <QCoreApplication>
 #include <QTcpSocket>
-#include <map>
+#include <unordered_set>
 #include <array>
 #include "mtbusb.h"
 #include "server.h"
@@ -12,8 +12,8 @@
 extern Mtb::MtbUsb mtbusb;
 extern DaemonServer server;
 extern std::array<std::unique_ptr<MtbModule>, Mtb::_MAX_MODULES> modules;
-extern std::array<std::map<QTcpSocket*, bool>, Mtb::_MAX_MODULES> subscribes;
-extern std::map<QTcpSocket*, bool> topoSubscribes;
+extern std::array<std::unordered_set<QTcpSocket*>, Mtb::_MAX_MODULES> subscribes;
+extern std::unordered_set<QTcpSocket*> topoSubscribes;
 
 constexpr size_t T_RECONNECT_PERIOD = 1000; // 1 s
 constexpr size_t T_REACTIVATE_PERIOD = 500; // 500 ms

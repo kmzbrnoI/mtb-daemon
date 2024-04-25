@@ -20,8 +20,8 @@
 Mtb::MtbUsb mtbusb;
 DaemonServer server;
 std::array<std::unique_ptr<MtbModule>, Mtb::_MAX_MODULES> modules;
-std::array<std::map<QTcpSocket*, bool>, Mtb::_MAX_MODULES> subscribes;
-std::map<QTcpSocket*, bool> topoSubscribes;
+std::array<std::unordered_set<QTcpSocket*>, Mtb::_MAX_MODULES> subscribes;
+std::unordered_set<QTcpSocket*> topoSubscribes;
 
 #ifdef Q_OS_WIN
 static BOOL WINAPI console_ctrl_handler(DWORD dwCtrlType);
@@ -594,12 +594,12 @@ void DaemonCoreApplication::serverCmdModuleSubscribe(QTcpSocket *socket, const Q
 
 		// Addresses already validated
 		for (const auto &value : reqAddrs)
-			subscribes[value.toInt()].insert_or_assign(socket, true);
+			subscribes[value.toInt()].emplace(socket);
 		response["addresses"] = reqAddrs;
 	} else {
 		// Subscribe to all addresses
 		for (size_t addr = 0; addr < Mtb::_MAX_MODULES; addr++)
-			subscribes[addr].insert_or_assign(socket, true);
+			subscribes[addr].emplace(socket);
 	}
 
 cmdModuleSubscribeEnd:
@@ -643,7 +643,7 @@ void DaemonCoreApplication::serverCmdMyModuleSubscribes(QTcpSocket *socket, cons
 
 		// Subscribe to specific addresses
 		for (const auto &value : reqAddrs)
-			subscribes[value.toInt()].insert_or_assign(socket, true);
+			subscribes[value.toInt()].emplace(socket);
 	}
 
 cmdMyModuleSubscribesEnd:
@@ -755,7 +755,7 @@ void DaemonCoreApplication::serverCmdResetMyOutputs(QTcpSocket *socket, const QJ
 
 void DaemonCoreApplication::serverCmdTopoSubscribe(QTcpSocket *socket, const QJsonObject &request) {
 	QJsonObject response = jsonOkResponse(request);
-	topoSubscribes.insert_or_assign(socket, true);
+	topoSubscribes.emplace(socket);
 	server.send(socket, response);
 }
 

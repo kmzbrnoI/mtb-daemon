@@ -209,10 +209,8 @@ void MtbModule::sendInputsChanged(QJsonObject inputs) const {
 		}}
 	};
 
-	for (auto pair : subscribes[this->address]) {
-		QTcpSocket* socket = pair.first;
+	for (auto socket : subscribes[this->address])
 		server.send(socket, json);
-	}
 }
 
 void MtbModule::sendOutputsChanged(QJsonObject outputs, const std::vector<QTcpSocket*>& ignore) const {
@@ -227,11 +225,9 @@ void MtbModule::sendOutputsChanged(QJsonObject outputs, const std::vector<QTcpSo
 		}}
 	};
 
-	for (auto pair : subscribes[this->address]) {
-		QTcpSocket* socket = pair.first;
+	for (auto socket : subscribes[this->address])
 		if (std::find(ignore.begin(), ignore.end(), socket) == ignore.end())
 			server.send(socket, json);
-	}
 }
 
 void MtbModule::loadConfig(const QJsonObject &json) {
@@ -251,11 +247,9 @@ void MtbModule::sendModuleInfo(QTcpSocket *ignore, bool sendConfig) const {
 		{"module", this->moduleInfo(true, sendConfig)},
 	};
 
-	for (auto pair : subscribes[this->address]) {
-		QTcpSocket *socket = pair.first;
+	for (auto socket : subscribes[this->address])
 		if (socket != ignore)
 			server.send(socket, json);
-	}
 }
 
 void MtbModule::resetOutputsOfClient(QTcpSocket*) {}
