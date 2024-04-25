@@ -86,11 +86,14 @@ private:
 	void serverCmdModuleDelete(QTcpSocket*, const QJsonObject&);
 	void serverCmdModules(QTcpSocket*, const QJsonObject&);
 	void serverCmdModuleSubscribe(QTcpSocket*, const QJsonObject&);
+	void serverCmdMyModuleSubscribes(QTcpSocket*, const QJsonObject&);
 	void serverCmdModuleUnsubscribe(QTcpSocket*, const QJsonObject&);
 	void serverCmdModuleSetConfig(QTcpSocket*, const QJsonObject&);
 	void serverCmdModuleSpecificCommand(QTcpSocket*, const QJsonObject&);
 	void serverCmdSetAddress(QTcpSocket*, const QJsonObject&);
 	void serverCmdResetMyOutputs(QTcpSocket*, const QJsonObject&);
+
+	static bool validateAddrs(const QJsonArray &addrs, QJsonObject& response);
 
 private slots:
 	void mtbUsbOnLog(QString message, Mtb::LogLevel loglevel);

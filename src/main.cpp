@@ -387,6 +387,9 @@ void DaemonCoreApplication::serverReceived(QTcpSocket *socket, const QJsonObject
 	} else if (command == "module_unsubscribe") {
 		this->serverCmdModuleUnsubscribe(socket, request);
 
+	} else if (command == "my_module_subscribes") {
+		this->serverCmdMyModuleSubscribes(socket, request);
+
 	} else if (command == "module_set_config") {
 		this->serverCmdModuleSetConfig(socket, request);
 
@@ -561,41 +564,87 @@ void DaemonCoreApplication::serverCmdModules(QTcpSocket *socket, const QJsonObje
 	server.send(socket, response);
 }
 
-void DaemonCoreApplication::serverCmdModuleSubscribe(QTcpSocket *socket, const QJsonObject &request) {
-	QJsonObject response = jsonOkResponse(request);
-
-	QJsonArray addresses;
-	for (const auto &value : request["addresses"].toArray()) {
-		size_t addr = value.toInt();
-		if (Mtb::isValidModuleAddress(addr)) {
-			subscribes[addr].insert_or_assign(socket, true);
-			addresses.push_back(static_cast<int>(addr));
-		} else {
+bool DaemonCoreApplication::validateAddrs(const QJsonArray &addrs, QJsonObject& response) {
+	for (const auto &value : addrs) {
+		int addr = value.toInt(-1);
+		if ((addr < 0) || (!Mtb::isValidModuleAddress(addr))) {
 			response["status"] = "error";
-			response["error"] = DaemonServer::error(MTB_MODULE_INVALID_ADDR, "Invalid module address");
-			break;
+			response["error"] = DaemonServer::error(MTB_MODULE_INVALID_ADDR,
+				"Invalid module address: "+value.toVariant().toString());
+			return false;
 		}
 	}
+	return true;
+}
 
-	response["addresses"] = addresses;
+void DaemonCoreApplication::serverCmdModuleSubscribe(QTcpSocket *socket, const QJsonObject &request) {
+	// First validate addresses (do not change anything if validation fails)
+	QJsonObject response = jsonOkResponse(request);
+	if (request.contains("addresses")) {
+		const QJsonArray reqAddrs = request["addresses"].toArray();
+		if (!DaemonCoreApplication::validateAddrs(reqAddrs, response))
+			goto cmdModuleSubscribeEnd;
+
+		// Addresses already validated
+		for (const auto &value : reqAddrs)
+			subscribes[value.toInt()].insert_or_assign(socket, true);
+		response["addresses"] = reqAddrs;
+	} else {
+		// Subscribe to all addresses
+		for (size_t addr = 0; addr < Mtb::_MAX_MODULES; addr++)
+			subscribes[addr].insert_or_assign(socket, true);
+	}
+
+cmdModuleSubscribeEnd:
 	server.send(socket, response);
 }
 
 void DaemonCoreApplication::serverCmdModuleUnsubscribe(QTcpSocket *socket, const QJsonObject &request) {
+	// First validate addresses (do not change anything if validation fails)
 	QJsonObject response = jsonOkResponse(request);
+	if (request.contains("addresses")) {
+		const QJsonArray reqAddrs = request["addresses"].toArray();
+		if (!DaemonCoreApplication::validateAddrs(reqAddrs, response))
+			goto cmdModuleUnsubscribeEnd;
 
-	for (const auto &value : response["addresses"].toArray()) {
-		size_t addr = value.toInt();
-		if (Mtb::isValidModuleAddress(addr)) {
-			if (subscribes[addr].find(socket) != subscribes[addr].end())
-				subscribes[addr].erase(socket);
-		} else {
-			response["status"] = "error";
-			response["error"] = DaemonServer::error(MTB_MODULE_INVALID_ADDR, "Invalid module address");
-			break;
-		}
+		// Addresses already validated
+		for (const auto &value : reqAddrs)
+			subscribes[value.toInt()].erase(socket);
+
+		response["addresses"] = reqAddrs;
+	} else {
+		// Unsubscribe to all addresses
+		for (size_t addr = 0; addr < Mtb::_MAX_MODULES; addr++)
+			subscribes[addr].erase(socket);
+	}
+cmdModuleUnsubscribeEnd:
+	server.send(socket, response);
+}
+
+void DaemonCoreApplication::serverCmdMyModuleSubscribes(QTcpSocket *socket, const QJsonObject &request) {
+	// First validate addresses (do not change anything if validation fails)
+	QJsonObject response = jsonOkResponse(request);
+	const QJsonArray reqAddrs = request["addresses"].toArray();
+	if (!DaemonCoreApplication::validateAddrs(reqAddrs, response))
+		goto cmdMyModuleSubscribesEnd;
+
+	if (!reqAddrs.empty()) {
+		// Addresses already validated
+		// Remove all subscriptions of the client
+		for (size_t addr = 0; addr < Mtb::_MAX_MODULES; addr++)
+			subscribes[addr].erase(socket);
+
+		// Subscribe to specific addresses
+		for (const auto &value : reqAddrs)
+			subscribes[value.toInt()].insert_or_assign(socket, true);
 	}
 
+cmdMyModuleSubscribesEnd:
+	QJsonArray clientsSubscribes;
+	for (size_t addr = 0; addr < Mtb::_MAX_MODULES; addr++)
+		if (subscribes[addr].find(socket) != subscribes[addr].end())
+			clientsSubscribes.push_back(static_cast<int>(addr));
+	response["addresses"] = clientsSubscribes;
 	server.send(socket, response);
 }
 
