@@ -13,6 +13,7 @@ extern Mtb::MtbUsb mtbusb;
 extern DaemonServer server;
 extern std::array<std::unique_ptr<MtbModule>, Mtb::_MAX_MODULES> modules;
 extern std::array<std::map<QTcpSocket*, bool>, Mtb::_MAX_MODULES> subscribes;
+extern std::map<QTcpSocket*, bool> topoSubscribes;
 
 constexpr size_t T_RECONNECT_PERIOD = 1000; // 1 s
 constexpr size_t T_REACTIVATE_PERIOD = 500; // 500 ms
@@ -92,6 +93,8 @@ private:
 	void serverCmdModuleSpecificCommand(QTcpSocket*, const QJsonObject&);
 	void serverCmdSetAddress(QTcpSocket*, const QJsonObject&);
 	void serverCmdResetMyOutputs(QTcpSocket*, const QJsonObject&);
+	void serverCmdTopoSubscribe(QTcpSocket*, const QJsonObject&);
+	void serverCmdTopoUnsubscribe(QTcpSocket*, const QJsonObject&);
 
 	static bool validateAddrs(const QJsonArray &addrs, QJsonObject& response);
 

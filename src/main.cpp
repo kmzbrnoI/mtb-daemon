@@ -21,6 +21,7 @@ Mtb::MtbUsb mtbusb;
 DaemonServer server;
 std::array<std::unique_ptr<MtbModule>, Mtb::_MAX_MODULES> modules;
 std::array<std::map<QTcpSocket*, bool>, Mtb::_MAX_MODULES> subscribes;
+std::map<QTcpSocket*, bool> topoSubscribes;
 
 #ifdef Q_OS_WIN
 static BOOL WINAPI console_ctrl_handler(DWORD dwCtrlType);
@@ -402,6 +403,12 @@ void DaemonCoreApplication::serverReceived(QTcpSocket *socket, const QJsonObject
 	} else if (command == "reset_my_outputs") {
 		this->serverCmdResetMyOutputs(socket, request);
 
+	} else if (command == "topology_subscribe") {
+		this->serverCmdTopoSubscribe(socket, request);
+
+	} else if (command == "topology_unsubscribe") {
+		this->serverCmdTopoUnsubscribe(socket, request);
+
 	} else if (command.startsWith("module_")) {
 		if (!this->hasWriteAccess(socket))
 			return sendAccessDenied(socket, request);
@@ -746,6 +753,18 @@ void DaemonCoreApplication::serverCmdResetMyOutputs(QTcpSocket *socket, const QJ
 	);
 }
 
+void DaemonCoreApplication::serverCmdTopoSubscribe(QTcpSocket *socket, const QJsonObject &request) {
+	QJsonObject response = jsonOkResponse(request);
+	topoSubscribes.insert_or_assign(socket, true);
+	server.send(socket, response);
+}
+
+void DaemonCoreApplication::serverCmdTopoUnsubscribe(QTcpSocket *socket, const QJsonObject &request) {
+	QJsonObject response = jsonOkResponse(request);
+	topoSubscribes.erase(socket);
+	server.send(socket, response);
+}
+
 QJsonObject DaemonCoreApplication::mtbUsbJson() const {
 	QJsonObject status;
 	bool connected = (mtbusb.connected() && mtbusb.mtbUsbInfo().has_value() && mtbusb.activeModules().has_value());
@@ -858,11 +877,11 @@ std::vector<QTcpSocket*> outputSetters() {
 
 void DaemonCoreApplication::serverClientDisconnected(QTcpSocket* socket) {
 	for (size_t i = 0; i < Mtb::_MAX_MODULES; i++) {
-		if (subscribes[i].find(socket) != subscribes[i].end())
-			subscribes[i].erase(socket);
+		subscribes[i].erase(socket);
 		if (modules[i] != nullptr)
 			modules[i]->clientDisconnected(socket);
 	}
+	topoSubscribes.erase(socket);
 
 	this->clientResetOutputs(socket, [](){}, [](){});
 }
