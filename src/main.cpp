@@ -550,7 +550,19 @@ void DaemonCoreApplication::serverCmdModuleDelete(QTcpSocket *socket, const QJso
 	} else {
 		modules[addr] = nullptr;
 		log("Module "+QString::number(addr)+": deleted on client request!", Mtb::LogLevel::Info);
-		response["status"] = "ok";
+
+		// Send module-delete event
+		std::unordered_set<QTcpSocket*> clients(topoSubscribes);
+		clients.insert(subscribes[addr].begin(), subscribes[addr].end());
+		for (auto& sock : clients) {
+			if (socket != sock) {
+				server.send(sock, {
+					{"command", "module_deleted"},
+					{"type", "event"},
+					{"module", static_cast<int>(addr)},
+				});
+			}
+		}
 	}
 
 	server.send(socket, response);
