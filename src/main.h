@@ -62,6 +62,7 @@ private:
 	StartupError startError = StartupError::Ok;
 
 	QJsonObject mtbUsbJson() const;
+	QJsonObject mtbUsbEvent() const;
 	void mtbUsbProperSpeedSet();
 	void mtbUsbGotInfo();
 	void mtbUsbGotModules();

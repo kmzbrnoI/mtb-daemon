@@ -222,11 +222,7 @@ void DaemonCoreApplication::mtbUsbProperSpeedSet() {
 }
 
 void DaemonCoreApplication::mtbUsbGotModules() {
-	server.broadcast({
-		{"command", "mtbusb"},
-		{"type", "event"},
-		{"mtbusb", this->mtbUsbJson()},
-	});
+	server.broadcast(this->mtbUsbEvent());
 
 	const auto activeModules = mtbusb.activeModules().value();
 
@@ -283,11 +279,7 @@ void DaemonCoreApplication::moduleGotInfo(uint8_t addr, Mtb::ModuleInfo info) {
 }
 
 void DaemonCoreApplication::mtbUsbOnDisconnect() {
-	server.broadcast({
-		{"command", "mtbusb"},
-		{"type", "event"},
-		{"mtbusb", this->mtbUsbJson()},
-	});
+	server.broadcast(this->mtbUsbEvent());
 
 	for (size_t i = 0; i < Mtb::_MAX_MODULES; i++)
 		if (modules[i] != nullptr)
@@ -301,6 +293,10 @@ void DaemonCoreApplication::mtbUsbOnNewModule(uint8_t addr) {
 	if ((modules[addr] == nullptr) || ((!modules[addr]->isActive()) && (!modules[addr]->isRebooting()) &&
 	    (!modules[addr]->isFirmwareUpgrading())))
 		this->activateModule(addr);
+
+	// Send new-module event to clients with topology change subscription
+	for (auto& socket : topoSubscribes)
+		server.send(socket, this->mtbUsbEvent());
 }
 
 void DaemonCoreApplication::mtbUsbOnModuleFail(uint8_t addr) {
@@ -308,6 +304,10 @@ void DaemonCoreApplication::mtbUsbOnModuleFail(uint8_t addr) {
 	// Beware module instance deletion!
 	if ((modules[addr] != nullptr) && (!modules[addr]->isFirmwareUpgrading()) && (!modules[addr]->isRebooting()))
 		modules[addr]->mtbBusLost();
+
+	// Send module-lost event to clients with topology change subscription
+	for (auto& socket : topoSubscribes)
+		server.send(socket, this->mtbUsbEvent());
 }
 
 void DaemonCoreApplication::mtbUsbOnInputsChange(uint8_t addr, const std::vector<uint8_t> &data) {
@@ -799,6 +799,14 @@ QJsonObject DaemonCoreApplication::mtbUsbJson() const {
 		status["active_modules"] = jsonActiveModules;
 	}
 	return status;
+}
+
+QJsonObject DaemonCoreApplication::mtbUsbEvent() const {
+	return {
+		{"command", "mtbusb"},
+		{"type", "event"},
+		{"mtbusb", this->mtbUsbJson()},
+	};
 }
 
 /* Configuration ------------------------------------------------------------ */

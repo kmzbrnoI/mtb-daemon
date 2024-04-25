@@ -247,7 +247,11 @@ void MtbModule::sendModuleInfo(QTcpSocket *ignore, bool sendConfig) const {
 		{"module", this->moduleInfo(true, sendConfig)},
 	};
 
-	for (auto socket : subscribes[this->address])
+	// For simplicity, send module's 'state' to all clients, altrough clients with topology-only
+	// subscription probably don't need the state.
+	std::unordered_set<QTcpSocket*> sockets(topoSubscribes);
+	sockets.insert(subscribes[this->address].begin(), subscribes[this->address].end());
+	for (auto socket : sockets)
 		if (socket != ignore)
 			server.send(socket, json);
 }
