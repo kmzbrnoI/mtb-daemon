@@ -44,7 +44,7 @@ Options:
 import socket
 import sys
 import json
-from docopt import docopt  # type: ignore
+from docopt import docopt
 from typing import Dict, Any, Optional, List
 import datetime
 
@@ -53,7 +53,7 @@ class EDaemonResponse(Exception):
     pass
 
 
-def request_response(socket, verbose,
+def request_response(socket: socket.socket, verbose: bool,
                      request: Dict[str, Any]) -> Dict[str, Any]:
     to_send = request
     to_send['type'] = 'request'
@@ -65,6 +65,7 @@ def request_response(socket, verbose,
         data = socket.recv(0xFFFF).decode('utf-8').strip()
         messages = [json.loads(msg) for msg in data.split('\n')]
         for message in messages:
+            assert isinstance(message, dict)
             if verbose:
                 print(message)
             if message.get('command', '') == request['command']:
@@ -75,7 +76,7 @@ def request_response(socket, verbose,
                 return message
 
 
-def fw_upgrade(socket, module_addr: int, hexfilename: str,
+def fw_upgrade(socket: socket.socket, module_addr: int, hexfilename: str,
                verbose: bool) -> None:
     firmware = {}
     offset = 0
@@ -100,14 +101,14 @@ def fw_upgrade(socket, module_addr: int, hexfilename: str,
     })
 
 
-def mtbusb(socket, verbose: bool) -> None:
-    response = request_response(socket, verbose, {'command': 'mtbusb'})
+def mtbusb(sock: socket.socket, verbose: bool) -> None:
+    response = request_response(sock, verbose, {'command': 'mtbusb'})
     for key, val in response['mtbusb'].items():
         print(key, ':', val)
 
 
-def mtbusb_speed(socket, verbose: bool, speed: int) -> None:
-    response = request_response(socket, verbose, {
+def mtbusb_speed(sock: socket.socket, verbose: bool, speed: int) -> None:
+    response = request_response(sock, verbose, {
         'command': 'mtbusb',
         'mtbusb': {'speed': speed},
     })
@@ -115,13 +116,13 @@ def mtbusb_speed(socket, verbose: bool, speed: int) -> None:
         print(key, ':', val)
 
 
-def version(socket, verbose: bool) -> None:
-    response = request_response(socket, verbose, {'command': 'version'})
+def version(sock: socket.socket, verbose: bool) -> None:
+    response = request_response(sock, verbose, {'command': 'version'})
     print(response['version'])
 
 
-def module(socket, verbose: bool, module: int) -> None:
-    response = request_response(socket, verbose, {
+def module(sock: socket.socket, verbose: bool, module: int) -> None:
+    response = request_response(sock, verbose, {
         'command': 'module',
         'address': module,
     })
@@ -138,11 +139,11 @@ def module(socket, verbose: bool, module: int) -> None:
         print(key, ':', val)
 
 
-def module_diag(socket, verbose: bool, module: int) -> None:
+def module_diag(sock: socket.socket, verbose: bool, module: int) -> None:
     DVS = ['warnings', 'errors', 'uptime', 'mcu_voltage', 'mcu_temperature']
 
     for dvkey in DVS:
-        response = request_response(socket, verbose, {
+        response = request_response(sock, verbose, {
             'command': 'module_diag',
             'address': module,
             'DVkey': dvkey,
@@ -225,8 +226,8 @@ def unis_outputs_str(outputs: Dict[str, Any]) -> str:
     return result
 
 
-def get_inputs(socket, verbose: bool, module: int) -> None:
-    response = request_response(socket, verbose, {
+def get_inputs(sock: socket.socket, verbose: bool, module: int) -> None:
+    response = request_response(sock, verbose, {
         'command': 'module',
         'address': module,
         'state': True,
@@ -241,8 +242,8 @@ def get_inputs(socket, verbose: bool, module: int) -> None:
     print(inputs_str(module_['type'], inputs))
 
 
-def get_outputs(socket, verbose: bool, module: int) -> None:
-    response = request_response(socket, verbose, {
+def get_outputs(sock: socket.socket, verbose: bool, module: int) -> None:
+    response = request_response(sock, verbose, {
         'command': 'module',
         'address': module,
         'state': True,
@@ -262,24 +263,24 @@ def get_outputs(socket, verbose: bool, module: int) -> None:
         print(f'Unknown module type: {module_["type"]}')
 
 
-def reboot(socket, verbose: bool, module_: int) -> None:
-    request_response(socket, verbose, {
+def reboot(sock: socket.socket, verbose: bool, module_: int) -> None:
+    request_response(sock, verbose, {
         'command': 'module_reboot',
         'address': module_,
     })
-    module(socket, verbose, module_)
+    module(sock, verbose, module_)
 
 
-def monitor(socket, verbose: bool, module: int) -> None:
-    request_response(socket, verbose, {
+def monitor(sock: socket.socket, verbose: bool, module: int) -> None:
+    request_response(sock, verbose, {
         'command': 'module_subscribe',
         'addresses': [module],
     })
     print('['+str(datetime.datetime.now().time())+']', end=' ')
-    get_inputs(socket, verbose, module)
+    get_inputs(sock, verbose, module)
 
     while True:
-        data = socket.recv(0xFFFF).decode('utf-8').strip()
+        data = sock.recv(0xFFFF).decode('utf-8').strip()
         messages = [json.loads(msg) for msg in data.split('\n')]
         for message in messages:
             if verbose:
@@ -310,15 +311,15 @@ def monitor(socket, verbose: bool, module: int) -> None:
                 print(f'MTB-USB: {message["mtbusb"]}')
 
 
-def beacon(socket, verbose: bool, module_: int, beacon: bool) -> None:
-    request_response(socket, verbose, {
+def beacon(sock: socket.socket, verbose: bool, module_: int, beacon: bool) -> None:
+    request_response(sock, verbose, {
         'command': 'module_beacon',
         'address': module_,
         'beacon': beacon,
     })
 
 
-def ir(socket, verbose: bool, module_: int, type_: str) -> None:
+def ir(sock: socket.socket, verbose: bool, module_: int, type_: str) -> None:
     data = []
     if type_ == 'auto':
         data = [0x01, 0xFF]
@@ -327,15 +328,16 @@ def ir(socket, verbose: bool, module_: int, type_: str) -> None:
     elif type_ == 'no':
         data = [0x01, 0x00]
 
-    request_response(socket, verbose, {
+    request_response(sock, verbose, {
         'command': 'module_specific_command',
         'address': module_,
         'data': data,
     })
 
 
-def set_output(socket, verbose: bool, module: int, port: int, type_: str, value: int) -> None:
-    request_response(socket, verbose, {
+def set_output(sock: socket.socket, verbose: bool, module: int, port: int,
+               type_: str, value: int) -> None:
+    request_response(sock, verbose, {
         'command': 'module_set_outputs',
         'address': module,
         'outputs': {
@@ -345,39 +347,39 @@ def set_output(socket, verbose: bool, module: int, port: int, type_: str, value:
 
     # Wait because disconnect causes output reset
     while True:
-        socket.recv(0xFFFF).decode('utf-8').strip()
+        sock.recv(0xFFFF).decode('utf-8').strip()
 
 
-def save_config(socket, verbose: bool) -> None:
-    request_response(socket, verbose, {
+def save_config(sock: socket.socket, verbose: bool) -> None:
+    request_response(sock, verbose, {
         'command': 'save_config',
     })
 
 
-def load_config(socket, verbose: bool) -> None:
-    request_response(socket, verbose, {
+def load_config(sock: socket.socket, verbose: bool) -> None:
+    request_response(sock, verbose, {
         'command': 'load_config',
     })
 
 
-def set_address(socket, verbose: bool, newaddr: int) -> None:
-    request_response(socket, verbose, {
+def set_address(sock: socket.socket, verbose: bool, newaddr: int) -> None:
+    request_response(sock, verbose, {
         'command': 'set_address',
         'new_address': newaddr,
     })
 
 
-def change_address(socket, verbose: bool, module: int, newaddr: int) -> None:
-    request_response(socket, verbose, {
+def change_address(sock: socket.socket, verbose: bool, module: int, newaddr: int) -> None:
+    request_response(sock, verbose, {
         'command': 'module_set_address',
         'new_address': newaddr,
         'address': module,
     })
 
 
-def module_config_ports(socket, verbose: bool, module: int, rg, io_type: str,
+def module_config_ports(sock: socket.socket, verbose: bool, module: int, rg: range, io_type: str,
                         delay: Optional[float]) -> None:
-    response = request_response(socket, verbose, {
+    response = request_response(sock, verbose, {
         'command': 'module',
         'address': module,
     })
@@ -400,7 +402,7 @@ def module_config_ports(socket, verbose: bool, module: int, rg, io_type: str,
         for i in rg:
             config['outputsSafe'][i]['type'] = io_type[:5]
 
-    request_response(socket, verbose, {
+    request_response(sock, verbose, {
         'command': 'module_set_config',
         'address': module,
         'type_code': response['module']['type_code'],
@@ -408,27 +410,28 @@ def module_config_ports(socket, verbose: bool, module: int, rg, io_type: str,
         'config': config,
     })
 
-    module_print_config(socket, verbose, module)
+    module_print_config(sock, verbose, module)
 
 
-def module_print_config(socket, verbose: bool, module: int) -> None:
-    response = request_response(socket, verbose, {
+def module_print_config(sock: socket.socket, verbose: bool, module: int) -> None:
+    response = request_response(sock, verbose, {
         'command': 'module',
         'address': module,
     })
     type_ = response['module']['type']
     config = response['module'][type_]['config']
     print(f'Module {module} – {response["module"]["name"]}:')
-    if type == 'MTB-UNIS':
+    if type_ == 'MTB-UNIS':
         unis_print_config(config)
-    elif type.startswith('MTB-UNI'):
+    elif type_.startswith('MTB-UNI'):
         uni_print_config(config)
     else:
         assert False, f'Nepodporovaný typ modulu: {type_}!'
 
 
-def module_config_name(socket, verbose: bool, module: int, name: Optional[str]) -> None:
-    response = request_response(socket, verbose, {
+def module_config_name(sock: socket.socket, verbose: bool, module: int,
+                       name: Optional[str]) -> None:
+    response = request_response(sock, verbose, {
         'command': 'module',
         'address': module,
     })
@@ -438,7 +441,7 @@ def module_config_name(socket, verbose: bool, module: int, name: Optional[str]) 
     type_ = response['module']['type']
     config = response['module'][type_]['config']
 
-    request_response(socket, verbose, {
+    request_response(sock, verbose, {
         'command': 'module_set_config',
         'address': module,
         'type_code': response['module']['type_code'],
@@ -453,8 +456,8 @@ def dv_str(key: str, value: Any) -> str:
     return f'{key}: {value}'
 
 
-def dvnum(socket, verbose: bool, module: int, dvi: int) -> None:
-    response = request_response(socket, verbose, {
+def dvnum(sock: socket.socket, verbose: bool, module: int, dvi: int) -> None:
+    response = request_response(sock, verbose, {
         'command': 'module_diag',
         'address': module,
         'DVnum': dvi,
@@ -469,8 +472,8 @@ def dvnum(socket, verbose: bool, module: int, dvi: int) -> None:
         print(f'DVvalueRaw={dvvalue_raw}')
 
 
-def dvstr(socket, verbose: bool, module: int, dvstr: str) -> None:
-    response = request_response(socket, verbose, {
+def dvstr(sock: socket.socket, verbose: bool, module: int, dvstr: str) -> None:
+    response = request_response(sock, verbose, {
         'command': 'module_diag',
         'address': module,
         'DVkey': dvstr,
@@ -485,16 +488,16 @@ def dvstr(socket, verbose: bool, module: int, dvstr: str) -> None:
         print(f'DVvalueRaw={dvvalue_raw}')
 
 
-def specific_broadcast(socket, verbose: bool, data: List[int]) -> None:
-    response = request_response(socket, verbose, {
+def specific_broadcast(sock: socket.socket, verbose: bool, data: List[int]) -> None:
+    response = request_response(sock, verbose, {
         'command': 'module_specific_command',
         'data': data,
     })
     print(response['status'])
 
 
-def specific_module(socket, verbose: bool, module: int, data: List[int]) -> None:
-    response = request_response(socket, verbose, {
+def specific_module(sock: socket.socket, verbose: bool, module: int, data: List[int]) -> None:
+    response = request_response(sock, verbose, {
         'command': 'module_specific_command',
         'address': module,
         'data': data,
