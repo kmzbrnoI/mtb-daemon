@@ -112,8 +112,9 @@ def mtbusb_speed(socket, verbose: bool, speed: int) -> None:
     for key, val in response['mtbusb'].items():
         print(key, ':', val)
 
+
 def version(socket, verbose: bool) -> None:
-    response = request_response(socket, verbose, {'command': 'version',})
+    response = request_response(socket, verbose, {'command': 'version'})
     print(response['version'])
 
 
@@ -446,7 +447,7 @@ def module_config_name(socket, verbose: bool, module: int, name: Optional[str]) 
 
 def dv_str(key: str, value: Any) -> str:
     if isinstance(value, float):
-        value = round(val, 2)
+        value = round(value, 2)
     return f'{key}: {value}'
 
 
@@ -575,7 +576,8 @@ if __name__ == '__main__':
         elif args['set_addr']:
             set_address(sock, args['-v'], int(args['<new_address>']))
         elif args['change_addr']:
-            change_address(sock, args['-v'], int(args['<module_addr>']), int(args['<new_address>']))
+            change_address(sock, args['-v'], int(args['<module_addr>']),
+                           int(args['<new_address>']))
         elif args['dvnum']:
             dvnum(sock, args['-v'], int(args['<module_addr>']), int(args['<dvnum>']))
         elif args['dvstr']:
