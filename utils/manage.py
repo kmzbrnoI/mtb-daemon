@@ -30,6 +30,8 @@ Usage:
   manage.py [options] change_addr <module_addr> <new_address>
   manage.py [options] dvnum <module_addr> <dvnum>
   manage.py [options] dvstr <module_addr> <dvstr>
+  manage.py [options] specific <module_addr> <command>
+  manage.py [options] specific <command>
   manage.py --help
 
 Options:
@@ -43,7 +45,7 @@ import socket
 import sys
 import json
 from docopt import docopt  # type: ignore
-from typing import Dict, Any, Optional
+from typing import Dict, Any, Optional, List
 import datetime
 
 
@@ -483,6 +485,23 @@ def dvstr(socket, verbose: bool, module: int, dvstr: str) -> None:
         print(f'DVvalueRaw={dvvalue_raw}')
 
 
+def specific_broadcast(socket, verbose: bool, data: List[int]) -> None:
+    response = request_response(socket, verbose, {
+        'command': 'module_specific_command',
+        'data': data,
+    })
+    print(response['status'])
+
+
+def specific_module(socket, verbose: bool, module: int, data: List[int]) -> None:
+    response = request_response(socket, verbose, {
+        'command': 'module_specific_command',
+        'address': module,
+        'data': data,
+    })
+    print(response)
+
+
 if __name__ == '__main__':
     args = docopt(__doc__)
 
@@ -581,7 +600,11 @@ if __name__ == '__main__':
         elif args['dvnum']:
             dvnum(sock, args['-v'], int(args['<module_addr>']), int(args['<dvnum>']))
         elif args['dvstr']:
-            dvstr(sock, args['-v'], int(args['<module_addr>']), args['<dvstr>'])\
+            dvstr(sock, args['-v'], int(args['<module_addr>']), args['<dvstr>'])
+        elif args['specific'] and args['<module_addr>']:
+            specific_module(sock, args['-v'], int(args['<module_addr>']), list(args['<command>']))
+        elif args['specific']:
+            specific_broadcast(sock, args['-v'], list(args['<command>']))
 
     except EDaemonResponse as e:
         sys.stderr.write(str(e)+'\n')
