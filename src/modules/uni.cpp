@@ -4,6 +4,7 @@
 #include "mtbusb.h"
 #include "main.h"
 #include "errors.h"
+#include "utils.h"
 
 MtbUni::MtbUni(uint8_t addr) : MtbModule(addr) {
 	std::fill(this->whoSetOutput.begin(), this->whoSetOutput.end(), nullptr);
@@ -15,6 +16,14 @@ size_t MtbUni::pageSize() const {
 	if ((this->type == MtbModuleType::Univ2ir) || (this->type == MtbModuleType::Univ2noIr))
 		return 128;
 	return 256;
+}
+
+bool MtbUni::isUniv2() const {
+	return ((this->type == MtbModuleType::Univ2ir) || (this->type == MtbModuleType::Univ2noIr));
+}
+
+bool MtbUni::isUniv4() const {
+	return ((this->type == MtbModuleType::Univ40) || (this->type == MtbModuleType::Univ42));
 }
 
 /* JSON Module Info --------------------------------------------------------- */
@@ -712,6 +721,14 @@ QJsonObject MtbUni::dvRepr(uint8_t dvi, const std::vector<uint8_t> &data) const 
 				{"mcu_ts_gain", ts_gain},
 			};
 		}
+
+		case Mtb::DVCommon::Uptime:
+			// Backward-compatible reversed endianness parsing for version <1.5 (<1.4)
+			if (((this->isUniv4()) && (this->busModuleInfo.uint_fw_version() < 0x0105)) ||
+			        ((this->isUniv2()) && (this->busModuleInfo.uint_fw_version() < 0x0104)))
+				if (data.size() == 4)
+					return {{"uptime_seconds", static_cast<int>(pack_reverse<uint32_t>(data))}};
+			break;
 	}
 
 	return MtbModule::dvRepr(dvi, data);

@@ -172,6 +172,7 @@ struct ModuleInfo {
 	uint8_t bootloader_minor = 0;
 
 	QString fw_version() const { return QString::number(fw_major)+"."+QString::number(fw_minor); }
+	uint16_t uint_fw_version() const { return (static_cast<uint16_t>(this->fw_major) << 8) | this->fw_minor; }
 	QString proto_version() const { return QString::number(proto_major)+"."+QString::number(proto_minor); }
 	QString bootloader_version() const { return QString::number(bootloader_major)+"."+QString::number(bootloader_minor); }
 	bool inBootloader() const { return this->bootloader_int || this->bootloader_unint; }

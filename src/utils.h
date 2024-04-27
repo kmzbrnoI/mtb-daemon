@@ -32,4 +32,17 @@ T pack(std::vector<uint8_t> data) {
 	return result;
 }
 
+template<typename T>
+T pack_reverse(std::vector<uint8_t> data) {
+	// Uses big-endian (data[0] == most significant byte)
+	if (data.size() != sizeof(T))
+		throw std::invalid_argument("data.size() != 4");
+	T result = 0;
+	for (unsigned i = 0; i < sizeof(T); i++) {
+		result <<= 8;
+		result |= data[i];
+	}
+	return result;
+}
+
 #endif
