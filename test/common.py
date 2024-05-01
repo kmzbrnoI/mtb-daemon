@@ -15,8 +15,11 @@ def check_version_format(version: str) -> None:
 
 def check_error(response: Dict[str, Any], error_id: int) -> None:
     assert 'status' in response
+    assert isinstance(response['status'], str)
     assert response['status'] == 'error'
+
     assert 'error' in response
+    assert isinstance(response['error'], dict)
     error = response['error']
 
     assert 'code' in error
