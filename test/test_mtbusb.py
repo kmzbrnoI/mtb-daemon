@@ -3,6 +3,7 @@ Test 'mtbusb' endpoint of MTB Daemon TCP server using PyTest.
 """
 
 import mtbdaemonif
+import common
 
 mtb_daemon = mtbdaemonif.MtbDaemonIFace()
 
@@ -10,14 +11,6 @@ mtb_daemon = mtbdaemonif.MtbDaemonIFace()
 def test_endpoint_present() -> None:
     mtb_daemon.request_response({'command': 'mtbusb'})
     mtb_daemon.request_response({'command': 'mtbusb'})  # with different id
-
-
-def check_version_format(version: str) -> None:
-    versions = version.split('.')
-    assert len(versions) == 2
-    major, minor = versions
-    assert major.isdigit()
-    assert minor.isdigit()
 
 
 def test_common_response() -> None:
@@ -39,11 +32,11 @@ def test_common_response() -> None:
 
     assert 'firmware_version' in mtbusb
     assert isinstance(mtbusb['firmware_version'], str)
-    check_version_format(mtbusb['firmware_version'])
+    common.check_version_format(mtbusb['firmware_version'])
 
     assert 'protocol_version' in mtbusb
     assert isinstance(mtbusb['protocol_version'], str)
-    check_version_format(mtbusb['protocol_version'])
+    common.check_version_format(mtbusb['protocol_version'])
 
 
 def test_active_modules() -> None:
