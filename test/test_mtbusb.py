@@ -52,7 +52,8 @@ def test_active_modules() -> None:
 
     assert 'active_modules' in mtbusb
     assert isinstance(mtbusb['active_modules'], list)
-    assert mtbusb['active_modules'] == [1], 'Only module "1" should be active on the bus!'
+    assert mtbusb['active_modules'] == [common.TEST_MODULE_ADDR], \
+        f'Only module "{common.TEST_MODULE_ADDR}" should be active on the bus!'
 
 
 def test_change_speed() -> None:
@@ -72,5 +73,5 @@ def test_invalid_speed() -> None:
         timeout=1,
         ok=False
     )
-    common.check_error(response, 1105)
+    common.check_error(response, common.MtbDaemonError.INVALID_SPEED)
     assert 'mtbusb' not in response
