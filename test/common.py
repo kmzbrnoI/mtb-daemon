@@ -6,6 +6,10 @@ import select
 import time
 
 
+HOST = '127.0.0.1'
+PORT = 3841
+
+
 class EMtbDaemon(Exception):
     pass
 
@@ -15,7 +19,7 @@ class EMtbDaemonTimeout(EMtbDaemon):
 
 
 class MtbDaemonIFace:
-    def __init__(self, host: str, port: int):
+    def __init__(self, host: str = HOST, port: int = PORT):
         self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self.buf_received = ''
         self.sock.connect((host, port))
@@ -35,10 +39,11 @@ class MtbDaemonIFace:
             readable, _, _ = select.select([self.sock], [], [], timeout)
             if self.sock in readable:
                 self.buf_received += self.sock.recv(0xFFFF).decode('utf-8')
+                # logging.debug(f'{self.buf_received=}')
                 if '\n' in self.buf_received:
                     offset = self.buf_received.find('\n')
                     message = json.loads(self.buf_received[:offset])
-                    self.buf_received = self.buf_received[offset:]
+                    self.buf_received = self.buf_received[offset+1:]
 
                     logging.debug(f'Received: {message}')
                     assert isinstance(message, dict)
