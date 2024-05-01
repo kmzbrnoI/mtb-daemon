@@ -1,0 +1,115 @@
+{
+    "loglevel": 5,
+    "modules": {
+        "001": {
+            "config": {
+                "inputsDelay": [
+                    0,
+                    0,
+                    0,
+                    0,
+                    0,
+                    0,
+                    0,
+                    0,
+                    0,
+                    0,
+                    0,
+                    0,
+                    0,
+                    0,
+                    0,
+                    0
+                ],
+                "outputsSafe": [
+                    {
+                        "type": "plain",
+                        "value": 0
+                    },
+                    {
+                        "type": "plain",
+                        "value": 0
+                    },
+                    {
+                        "type": "plain",
+                        "value": 0
+                    },
+                    {
+                        "type": "plain",
+                        "value": 0
+                    },
+                    {
+                        "type": "plain",
+                        "value": 0
+                    },
+                    {
+                        "type": "plain",
+                        "value": 0
+                    },
+                    {
+                        "type": "plain",
+                        "value": 0
+                    },
+                    {
+                        "type": "plain",
+                        "value": 0
+                    },
+                    {
+                        "type": "plain",
+                        "value": 0
+                    },
+                    {
+                        "type": "plain",
+                        "value": 0
+                    },
+                    {
+                        "type": "plain",
+                        "value": 0
+                    },
+                    {
+                        "type": "plain",
+                        "value": 0
+                    },
+                    {
+                        "type": "plain",
+                        "value": 0
+                    },
+                    {
+                        "type": "plain",
+                        "value": 0
+                    },
+                    {
+                        "type": "plain",
+                        "value": 0
+                    },
+                    {
+                        "type": "plain",
+                        "value": 0
+                    }
+                ]
+            },
+            "name": "Testing module",
+            "type": 22
+        }
+    },
+    "mtb-usb": {
+        "keepAlive": true,
+        "port": "auto"
+    },
+    "production_logging": {
+        "detectLevel": 2,
+        "directory": "prodLog",
+        "enabled": false,
+        "future": 20,
+        "history": 100,
+        "loglevel": 5
+    },
+    "server": {
+        "allowedClients": [
+            "127.0.0.1"
+        ],
+        "host": "127.0.0.1",
+        "keepAlive": true,
+        "port": 3841
+    }
+}
