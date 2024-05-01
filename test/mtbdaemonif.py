@@ -52,6 +52,8 @@ class MtbDaemonIFace:
                     logging.debug(f'Received: {message}')
                     assert isinstance(message, dict)
 
+                    # Strictly forbid receiving of other commands and events,
+                    # allow only empty message.
                     if message == {}:
                         continue
 
@@ -80,7 +82,7 @@ class MtbDaemonIFace:
             request['id'] = self.id
             self.id += 1
         self.send_request(request)
-        response = self.expect_response(request['command'], timeout)
+        response = self.expect_response(request['command'], timeout, ok)
         assert 'id' in response
         assert response['id'] == request['id']
         return response

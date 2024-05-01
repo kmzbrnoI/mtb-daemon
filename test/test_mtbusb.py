@@ -63,3 +63,14 @@ def test_change_speed() -> None:
         assert response['mtbusb']['speed'] == speed
         time.sleep(0.5)
     # End with the highest speed
+
+
+def test_invalid_speed() -> None:
+    # Negative-test
+    response = mtb_daemon.request_response(
+        {'command': 'mtbusb', 'mtbusb': {'speed': 1234}},
+        timeout=1,
+        ok=False
+    )
+    common.check_error(response, 1105)
+    assert 'mtbusb' not in response

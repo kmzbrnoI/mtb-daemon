@@ -1,5 +1,9 @@
+test:
+	# Specify reasonable tests order
+	pytest test_mtbusb.py
+
 lint:
 	-flake8 *.py
 	-mypy --strict *.py
 
-.PHONY: lint
+.PHONY: test lint
