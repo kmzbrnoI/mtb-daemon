@@ -2,9 +2,9 @@
 Test 'mtbusb' endpoint of MTB Daemon TCP server using PyTest.
 """
 
-import common
+import mtbdaemonif
 
-mtb_daemon = common.MtbDaemonIFace()
+mtb_daemon = mtbdaemonif.MtbDaemonIFace()
 
 
 def test_endpoint_present() -> None:

@@ -1,3 +1,7 @@
+"""
+Interface to MTB Daemon JSON TCP server
+"""
+
 from typing import Dict, Any
 import socket
 import logging
