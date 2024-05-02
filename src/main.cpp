@@ -694,15 +694,16 @@ void DaemonCoreApplication::serverCmdModuleSetConfig(QTcpSocket *socket, const Q
 		return sendAccessDenied(socket, request);
 
 	size_t addr = request["address"].toInt();
-	uint8_t type = request["type_code"].toInt();
 	if (!Mtb::isValidModuleAddress(addr))
 		return sendError(socket, request, MTB_MODULE_INVALID_ADDR, "Invalid module address");
 
 	if (modules[addr] == nullptr) {
+		uint8_t type = request["type_code"].toInt();
 		modules[addr] = this->newModule(type, addr);
 	}
 
-	if ((modules[addr]->isActive()) && (type != static_cast<size_t>(modules[addr]->moduleType())))
+	if ((modules[addr]->isActive()) && (request.contains("type_code")) &&
+	    (static_cast<size_t>(request["type_code"].toInt()) != static_cast<size_t>(modules[addr]->moduleType())))
 		return sendError(socket, request, MTB_ALREADY_STARTED, "Cannot change type of active module!");
 
 	modules[addr]->jsonSetConfig(socket, request);
