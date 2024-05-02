@@ -3,8 +3,18 @@ Common test functions
 """
 
 from typing import Dict, Any
+import json
 
 TEST_MODULE_ADDR = 1
+INACTIVE_MODULE_ADDR = 2
+CONFIG_FN = 'mtb-daemon-test.json'
+
+with open(CONFIG_FN, 'r') as file:
+    CONFIG_JSON = json.loads(file.read())
+
+MODULES_JSON = {int(addrstr): module for addrstr, module in CONFIG_JSON['modules'].items()}
+assert TEST_MODULE_ADDR in MODULES_JSON.keys()
+assert INACTIVE_MODULE_ADDR in MODULES_JSON.keys()
 
 
 class MtbDaemonError:
