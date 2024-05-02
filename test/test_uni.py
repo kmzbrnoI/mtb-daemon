@@ -60,6 +60,13 @@ def validate_uni_state(state: Dict[str, Any], outputs_state: int) -> None:
     assert state['inputs']['full'] == [(outputs_state & 1) > 0] + [False for _ in range(15)]
 
 
+def check_uni_state(addr: int, outputs: int) -> None:
+    response = mtb_daemon.request_response(
+        {'command': 'module', 'address': addr, 'state': True}
+    )
+    validate_uni_state(response['module']['MTB-UNI v4']['state'], outputs)
+
+
 def test_state_uni() -> None:
     response = mtb_daemon.request_response(
         {'command': 'module', 'address': common.TEST_MODULE_ADDR, 'state': True}
@@ -87,6 +94,11 @@ def set_uni_outputs_and_validate(addr: int, outputs: Dict[str, Any]) -> None:
         }
     )
 
+    assert 'outputs' in response
+    for outputstri, output in outputs.items():
+        assert outputstri in response['outputs']
+        assert response['outputs'][outputstri] == output
+
     time.sleep(0.1)  # to propagate UNI's output to its input
 
     binoutputs: int = 0
@@ -96,10 +108,7 @@ def set_uni_outputs_and_validate(addr: int, outputs: Dict[str, Any]) -> None:
         if output['value'] == 1:
             binoutputs |= (1 << int(strouti))
 
-    response = mtb_daemon.request_response(
-        {'command': 'module', 'address': addr, 'state': True}
-    )
-    validate_uni_state(response['module']['MTB-UNI v4']['state'], binoutputs)
+    check_uni_state(addr, binoutputs)
 
 
 def reset_uni_outputs_and_validate(addr: int) -> None:
@@ -142,10 +151,7 @@ def test_set_outputs_sequentially() -> None:
 
     time.sleep(0.1)
 
-    response = mtb_daemon.request_response(
-        {'command': 'module', 'address': common.TEST_MODULE_ADDR, 'state': True}
-    )
-    validate_uni_state(response['module']['MTB-UNI v4']['state'], 0xFFFF)
+    check_uni_state(common.TEST_MODULE_ADDR, 0xFFFF)
     reset_uni_outputs_and_validate(common.TEST_MODULE_ADDR)
 
 
@@ -164,16 +170,17 @@ def test_set_output_missing_address() -> None:
 
 
 def test_set_output_invalid_port() -> None:
-    response = mtb_daemon.request_response(
-        {
-            'command': 'module_set_outputs',
-            'address': common.TEST_MODULE_ADDR,
-            'outputs': {'16': {'type': 'plain', 'value': 1}},
-        },
-        timeout=1,
-        ok=False
-    )
-    common.check_error(response, common.MtbDaemonError.MODULE_INVALID_PORT)
+    for port in ['16', 'wtf', '-1', '0x02']:
+        response = mtb_daemon.request_response(
+            {
+                'command': 'module_set_outputs',
+                'address': common.TEST_MODULE_ADDR,
+                'outputs': {port: {'type': 'plain', 'value': 1}},
+            },
+            timeout=1,
+            ok=False
+        )
+        common.check_error(response, common.MtbDaemonError.MODULE_INVALID_PORT)
 
 
 def test_set_output_empty() -> None:
@@ -181,11 +188,7 @@ def test_set_output_empty() -> None:
     mtb_daemon.request_response(
         {'command': 'module_set_outputs', 'address': common.TEST_MODULE_ADDR},
     )
-
-    response = mtb_daemon.request_response(
-        {'command': 'module', 'address': common.TEST_MODULE_ADDR, 'state': True}
-    )
-    validate_uni_state(response['module']['MTB-UNI v4']['state'], 0)
+    check_uni_state(common.TEST_MODULE_ADDR, 0)
 
 
 def test_set_output_of_inactive_module() -> None:
@@ -201,4 +204,19 @@ def test_set_output_of_inactive_module() -> None:
     common.check_error(response, common.MtbDaemonError.MODULE_FAILED)
 
 
-# TODO: reset-output-on-disconnect test
+###############################################################################
+
+
+def test_reset_my_outputs() -> None:
+    set_uni_outputs_and_validate(common.TEST_MODULE_ADDR, {'1': {'type': 'plain', 'value': 1}})
+    mtb_daemon.request_response({'command': 'reset_my_outputs'})
+    time.sleep(0.1)
+    check_uni_state(common.TEST_MODULE_ADDR, 0)
+
+
+def test_reset_outputs_on_disconnect() -> None:
+    set_uni_outputs_and_validate(common.TEST_MODULE_ADDR, {'1': {'type': 'plain', 'value': 1}})
+    mtb_daemon.disconnect()
+    time.sleep(0.1)
+    mtb_daemon.connect()
+    check_uni_state(common.TEST_MODULE_ADDR, 0)

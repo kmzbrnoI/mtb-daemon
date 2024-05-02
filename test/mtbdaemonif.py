@@ -24,10 +24,18 @@ class EMtbDaemonTimeout(EMtbDaemon):
 
 class MtbDaemonIFace:
     def __init__(self, host: str = HOST, port: int = PORT):
-        self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        self.host = host
+        self.port = port
         self.buf_received = ''
-        self.sock.connect((host, port))
         self.id: int = 0
+        self.connect()
+
+    def disconnect(self) -> None:
+        self.sock.close()
+
+    def connect(self) -> None:
+        self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        self.sock.connect((self.host, self.port))
 
     def send_message(self, data: Dict[str, Any]) -> None:
         logging.debug(f'Send: {data}')
