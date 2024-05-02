@@ -3,6 +3,7 @@ Test general module endpoints of MTB Daemon TCP server using PyTest.
 """
 
 from typing import Dict, Any
+import time
 
 import common
 from mtbdaemonif import mtb_daemon
@@ -79,6 +80,10 @@ def test_inactive_module() -> None:
     validate_module_common(module, common.INACTIVE_MODULE_ADDR, 'inactive')
 
 
+def test_module_invalid_addr() -> None:
+    common.check_invalid_addresses({'command': 'module'}, 'address')
+
+
 def test_unknown_module() -> None:
     response = mtb_daemon.request_response({'command': 'module', 'address': 42},
                                            timeout=1, ok=False)
@@ -130,6 +135,10 @@ def test_delete() -> None:
     common.check_error(response, common.MtbDaemonError.MODULE_INVALID_ADDR)
 
 
+def test_delete_invalid_addr() -> None:
+    common.check_invalid_addresses({'command': 'module_delete'}, 'address')
+
+
 def test_create() -> None:
     """Create deleted module by `test_create` (INACTIVE_MODULE_ADDR)."""
     response = mtb_daemon.request_response({'command': 'modules'})
@@ -149,9 +158,28 @@ def test_create() -> None:
         [str(common.TEST_MODULE_ADDR), str(common.INACTIVE_MODULE_ADDR)]
 
 
+def test_create_invalid_addr() -> None:
+    common.check_invalid_addresses({'command': 'module_set_config'}, 'address')
+
+
+def test_reboot() -> None:
+    mtb_daemon.send_request({'command': 'module_reboot', 'address': common.TEST_MODULE_ADDR})
+    response = mtb_daemon.request_response({'command': 'module', 'address': common.TEST_MODULE_ADDR})
+    assert response['module']['state'] == 'rebooting'
+
+    time.sleep(3)  # TODO: if test fails here, server terminates
+    mtb_daemon.expect_response('module_reboot')
+
+    response = mtb_daemon.request_response({'command': 'module', 'address': common.TEST_MODULE_ADDR})
+    assert response['module']['state'] == 'active'
+
+
+def test_reboot_invalid_addr() -> None:
+    common.check_invalid_addresses({'command': 'module_reboot'}, 'address')
+
+
 # TODO: module_set_address
 # TODO: set_address
 # TODO: module_specific_command
 # TODO: module_specific_command broadcast
-# TODO: module_reboot
 # TODO: module_beacon

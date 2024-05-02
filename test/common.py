@@ -5,6 +5,8 @@ Common test functions
 from typing import Dict, Any
 import json
 
+from mtbdaemonif import mtb_daemon
+
 TEST_MODULE_ADDR = 1
 INACTIVE_MODULE_ADDR = 2
 CONFIG_FN = 'mtb-daemon-test.json'
@@ -69,3 +71,15 @@ def check_error(response: Dict[str, Any], error_id: int) -> None:
     assert 'message' in error
     assert isinstance(error['message'], str)
     assert error['message'] != ''
+
+
+def check_invalid_addresses(request: Dict[str, Any], addr_key: str) -> None:
+    """
+    Sends request `request` with several invalid addresses and checks that the
+    server replies with proper error.
+    """
+    INVALID_ADDRS = [0, -1, 0x1FF, 49840938, 'hello', '0x24']
+    for addr in INVALID_ADDRS:
+        request[addr_key] = addr
+        response = mtb_daemon.request_response(request, ok=False)
+        check_error(response, MtbDaemonError.MODULE_INVALID_ADDR)
