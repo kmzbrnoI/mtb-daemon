@@ -17,16 +17,8 @@ Definition of messages for MTB-UNI
         "irs": [False, False, True, True, ...] # 16 values, just for IR modules
     },
     "state": {
-        "outputs": {
-            "0": {"type": "plain", "value": 0},
-            "1": {"type": "s-com", "value": 10},
-            "2": {"type": "flicker", "value": 60},
-            ...
-        },
-        "inputs": [false, false, true, true, ..., false], # 16 values
-        "inputsPacked": 1234, # Int representing bit state of inputs
-        "irs": [false, false, true, ..., true], # 15 values, just for IR modules
-        "irsPacked": 6541, # int representing ir inputs in bits, just for IR modules
+        "outputs": ..., # See 'Outputs' below
+        "inputs": ..., # Seet 'Inputs' below
     }
 }
 ```
@@ -47,7 +39,7 @@ Definition of messages for MTB-UNI
 
 ```json
 "outputs": {
-    "1": {"type": "plain", "value": 0},
+    "0": {"type": "plain", "value": 0},
     "2": {"type": "s-com", "value": 10},
     "3": {"type": "flicker", "value": 60},
     ...
