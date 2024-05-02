@@ -218,7 +218,50 @@ def test_beacon_invalid_addr() -> None:
     common.check_invalid_addresses({'command': 'module_beacon'}, 'address')
 
 
-# TODO: module_set_address
-# TODO: set_address
-# TODO: module_specific_command
-# TODO: module_specific_command broadcast
+###############################################################################
+# Module-specific command
+
+def test_module_specific_broadcast() -> None:
+    mtb_daemon.request_response({
+        'command': 'module_specific_command',
+        'data': [0xBE, 0xEF],
+    })
+
+
+def test_module_specific_command() -> None:
+    # Just check for error response (no module-specific command implemneted yet)
+    response = mtb_daemon.request_response(
+        {
+            'command': 'module_specific_command',
+            'address': common.TEST_MODULE_ADDR,
+            'data': [1, 2, 3, 4],
+        },
+        ok=False
+    )
+
+    common.check_error(response, common.MtbDaemonError.MODULE_UNKNOWN_COMMAND)
+
+
+###############################################################################
+# Set address
+
+def test_module_set_address() -> None:
+    response = mtb_daemon.request_response(
+        {
+            'command': 'module_set_address',
+            'address': common.TEST_MODULE_ADDR,
+            'new_address': 42,
+        },
+        ok=False
+    )
+
+    common.check_error(response, common.MtbDaemonError.MODULE_UNSUPPORTED_COMMAND)
+
+
+def test_set_address() -> None:
+    mtb_daemon.request_response(
+        {
+            'command': 'set_address',
+            'new_address': 42,
+        }
+    )

@@ -10,7 +10,7 @@ import select
 import time
 
 
-HOST = '10.30.137.10'
+HOST = '127.0.0.1'
 PORT = 3841
 
 
