@@ -3,9 +3,7 @@ Test 'version' endpoint of MTB Daemon TCP server using PyTest.
 """
 
 import common
-import mtbdaemonif
-
-mtb_daemon = mtbdaemonif.MtbDaemonIFace()
+from mtbdaemonif import mtb_daemon
 
 
 def test_endpoint_present() -> None:

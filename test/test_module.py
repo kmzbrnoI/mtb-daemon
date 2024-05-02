@@ -5,9 +5,7 @@ Test general module endpoints of MTB Daemon TCP server using PyTest.
 from typing import Dict, Any
 
 import common
-import mtbdaemonif
-
-mtb_daemon = mtbdaemonif.MtbDaemonIFace()
+from mtbdaemonif import mtb_daemon
 
 
 def test_endpoints_present() -> None:

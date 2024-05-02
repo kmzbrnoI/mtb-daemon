@@ -3,9 +3,7 @@ Test events of MTB Daemon TCP server using PyTest.
 """
 
 import common
-import mtbdaemonif
-
-mtb_daemon = mtbdaemonif.MtbDaemonIFace()
+from mtbdaemonif import mtb_daemon
 
 
 # TODO: module_subscribe

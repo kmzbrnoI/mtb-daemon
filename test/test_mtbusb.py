@@ -6,11 +6,9 @@ from typing import Dict, Any
 import time
 
 import common
-import mtbdaemonif
+from mtbdaemonif import mtb_daemon
 
 MTBBUS_SPEEDS = [38400, 57600, 115200, 230400]
-
-mtb_daemon = mtbdaemonif.MtbDaemonIFace()
 
 
 def test_endpoint_present() -> None:

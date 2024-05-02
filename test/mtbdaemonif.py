@@ -94,3 +94,6 @@ class MtbDaemonIFace:
         assert 'id' in response
         assert response['id'] == request['id']
         return response
+
+
+mtb_daemon = MtbDaemonIFace()

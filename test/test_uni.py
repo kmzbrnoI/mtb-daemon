@@ -5,10 +5,8 @@ Test MTB-UNI module in MTB Daemon TCP server using PyTest.
 from typing import Dict, Any
 
 import common
-import mtbdaemonif
+from mtbdaemonif import mtb_daemon
 import time
-
-mtb_daemon = mtbdaemonif.MtbDaemonIFace()
 
 
 def validate_uni_data(server: Dict[str, Any], jsonAddr: int,
