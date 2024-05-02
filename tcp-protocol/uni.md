@@ -17,12 +17,12 @@ Definition of messages for MTB-UNI
         "irs": [False, False, True, True, ...] # 16 values, just for IR modules
     },
     "state": {
-        "outputs": [
-            {"type": "plain", "value": 0},
-            {"type": "s-com", "value": 10},
-            {"type": "flicker", "value": 60},
+        "outputs": {
+            "0": {"type": "plain", "value": 0},
+            "1": {"type": "s-com", "value": 10},
+            "2": {"type": "flicker", "value": 60},
             ...
-        ],
+        },
         "inputs": [false, false, true, true, ..., false], # 16 values
         "inputsPacked": 1234, # Int representing bit state of inputs
         "irs": [false, false, true, ..., true], # 15 values, just for IR modules
