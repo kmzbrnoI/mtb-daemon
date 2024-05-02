@@ -220,3 +220,6 @@ def test_reset_outputs_on_disconnect() -> None:
     time.sleep(0.1)
     mtb_daemon.connect()
     check_uni_state(common.TEST_MODULE_ADDR, 0)
+
+
+# TODO: module_set_config

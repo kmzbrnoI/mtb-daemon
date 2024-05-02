@@ -149,3 +149,11 @@ def test_create() -> None:
     response = mtb_daemon.request_response({'command': 'modules'})
     assert list(response['modules'].keys()) == \
         [str(common.TEST_MODULE_ADDR), str(common.INACTIVE_MODULE_ADDR)]
+
+
+# TODO: module_set_address
+# TODO: set_address
+# TODO: module_specific_command
+# TODO: module_specific_command broadcast
+# TODO: module_reboot
+# TODO: module_beacon

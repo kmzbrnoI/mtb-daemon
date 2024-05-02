@@ -75,3 +75,7 @@ def test_invalid_speed() -> None:
     )
     common.check_error(response, common.MtbDaemonError.INVALID_SPEED)
     assert 'mtbusb' not in response
+
+
+# TODO: save_config ?
+# TODO: load_config ?
