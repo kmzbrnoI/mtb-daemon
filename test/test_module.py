@@ -110,6 +110,9 @@ def test_unable_to_delete_active_module() -> None:
     common.check_error(response, common.MtbDaemonError.MODULE_ACTIVE)
 
 
+###############################################################################
+# Delete
+
 def test_delete() -> None:
     """
     Warning: this test changes state: it deletes INACTIVE_MODULE_ADDR module.
@@ -139,6 +142,9 @@ def test_delete_invalid_addr() -> None:
     common.check_invalid_addresses({'command': 'module_delete'}, 'address')
 
 
+###############################################################################
+# Create
+
 def test_create() -> None:
     """Create deleted module by `test_create` (INACTIVE_MODULE_ADDR)."""
     response = mtb_daemon.request_response({'command': 'modules'})
@@ -162,15 +168,22 @@ def test_create_invalid_addr() -> None:
     common.check_invalid_addresses({'command': 'module_set_config'}, 'address')
 
 
+###############################################################################
+# Reboot
+
 def test_reboot() -> None:
     mtb_daemon.send_request({'command': 'module_reboot', 'address': common.TEST_MODULE_ADDR})
-    response = mtb_daemon.request_response({'command': 'module', 'address': common.TEST_MODULE_ADDR})
+    response = mtb_daemon.request_response({
+        'command': 'module', 'address': common.TEST_MODULE_ADDR
+    })
     assert response['module']['state'] == 'rebooting'
 
     time.sleep(3)  # TODO: if test fails here, server terminates
     mtb_daemon.expect_response('module_reboot')
 
-    response = mtb_daemon.request_response({'command': 'module', 'address': common.TEST_MODULE_ADDR})
+    response = mtb_daemon.request_response({
+        'command': 'module', 'address': common.TEST_MODULE_ADDR
+    })
     assert response['module']['state'] == 'active'
 
 
@@ -178,8 +191,34 @@ def test_reboot_invalid_addr() -> None:
     common.check_invalid_addresses({'command': 'module_reboot'}, 'address')
 
 
+###############################################################################
+# Beacon
+
+def test_beacon() -> None:
+    mtb_daemon.request_response({
+        'command': 'module_beacon', 'address': common.TEST_MODULE_ADDR, 'beacon': True
+    })
+
+    response = mtb_daemon.request_response({
+        'command': 'module', 'address': common.TEST_MODULE_ADDR
+    })
+    assert response['module']['beacon']
+
+    mtb_daemon.request_response({
+        'command': 'module_beacon', 'address': common.TEST_MODULE_ADDR, 'beacon': False
+    })
+
+    response = mtb_daemon.request_response({
+        'command': 'module', 'address': common.TEST_MODULE_ADDR
+    })
+    assert not response['module']['beacon']
+
+
+def test_beacon_invalid_addr() -> None:
+    common.check_invalid_addresses({'command': 'module_beacon'}, 'address')
+
+
 # TODO: module_set_address
 # TODO: set_address
 # TODO: module_specific_command
 # TODO: module_specific_command broadcast
-# TODO: module_beacon
