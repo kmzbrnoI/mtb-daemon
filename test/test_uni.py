@@ -6,6 +6,7 @@ from typing import Dict, Any
 
 import common
 import mtbdaemonif
+import time
 
 mtb_daemon = mtbdaemonif.MtbDaemonIFace()
 
@@ -40,19 +41,23 @@ def test_data_uni() -> None:
     assert 'state' not in uni
 
 
-def validate_uni_state(state: Dict[str, Any]) -> None:
+def validate_uni_state(state: Dict[str, Any], outputs_state: int) -> None:
     assert 'outputs' in state
     assert isinstance(state['outputs'], dict)
     assert len(state['outputs']) == 16
     assert sorted([int(addr) for addr in state['outputs'].keys()]) == [i for i in range(16)]
-    for i, output in state['outputs'].items():
-        assert output == {'type': 'plain', 'value': 0}
+    for outistr, output in state['outputs'].items():
+        outi = int(outistr)
+        active = bool((outputs_state >> outi) & 1)
+        assert output == {'type': 'plain', 'value': (1 if active else 0)}, \
+            f'Output {outistr} mismatch!'
 
     assert 'inputs' in state
     assert isinstance(state['inputs'], dict)
     assert set(state['inputs'].keys()) == set(['packed', 'full'])
-    assert state['inputs']['packed'] == 0
-    assert state['inputs']['full'] == [False for _ in range(16)]
+    # Only outputs 0 is connected to input 0, rest unconnected
+    assert state['inputs']['packed'] == (1 if (outputs_state & 1) > 0 else 0)
+    assert state['inputs']['full'] == [(outputs_state & 1) > 0] + [False for _ in range(15)]
 
 
 def test_state_uni() -> None:
@@ -62,7 +67,7 @@ def test_state_uni() -> None:
     uni = response['module']['MTB-UNI v4']
     assert 'state' in uni
     assert isinstance(uni['state'], dict)
-    validate_uni_state(uni['state'])
+    validate_uni_state(uni['state'], 0)
 
 
 def test_state_not_in_inactive_uni() -> None:
@@ -71,3 +76,129 @@ def test_state_not_in_inactive_uni() -> None:
     )
     uni = response['module']['MTB-UNI v4']
     assert 'state' not in uni
+
+
+def set_uni_outputs_and_validate(addr: int, outputs: Dict[str, Any]) -> None:
+    response = mtb_daemon.request_response(
+        {
+            'command': 'module_set_outputs',
+            'address': addr,
+            'outputs': outputs,
+        }
+    )
+
+    time.sleep(0.1)  # to propagate UNI's output to its input
+
+    binoutputs: int = 0
+    for strouti, output in outputs.items():
+        assert output['type'] == 'plain'
+        assert output['value'] in [0, 1]
+        if output['value'] == 1:
+            binoutputs |= (1 << int(strouti))
+
+    response = mtb_daemon.request_response(
+        {'command': 'module', 'address': addr, 'state': True}
+    )
+    validate_uni_state(response['module']['MTB-UNI v4']['state'], binoutputs)
+
+
+def reset_uni_outputs_and_validate(addr: int) -> None:
+    set_uni_outputs_and_validate(
+        addr,
+        {str(i): {'type': 'plain', 'value': 0} for i in range(16)}
+    )
+
+
+def test_plain_set_output_and_feedback() -> None:
+    """
+    In case of test failure, the output is reset, because this test disconnects from MTB Dameon.
+    """
+    set_uni_outputs_and_validate(common.TEST_MODULE_ADDR, {'0': {'type': 'plain', 'value': 1}})
+    reset_uni_outputs_and_validate(common.TEST_MODULE_ADDR)
+
+
+def test_set_output_no_feedback() -> None:
+    set_uni_outputs_and_validate(common.TEST_MODULE_ADDR, {'1': {'type': 'plain', 'value': 1}})
+    set_uni_outputs_and_validate(
+        common.TEST_MODULE_ADDR,
+        {'1': {'type': 'plain', 'value': 1}, '15': {'type': 'plain', 'value': 1}}
+    )
+    set_uni_outputs_and_validate(
+        common.TEST_MODULE_ADDR,
+        {'1': {'type': 'plain', 'value': 0}, '15': {'type': 'plain', 'value': 1}}
+    )
+    reset_uni_outputs_and_validate(common.TEST_MODULE_ADDR)
+
+
+def test_set_outputs_sequentially() -> None:
+    for i in range(16):
+        mtb_daemon.request_response(
+            {
+                'command': 'module_set_outputs',
+                'address': common.TEST_MODULE_ADDR,
+                'outputs': {str(i): {'type': 'plain', 'value': 1}},
+            }
+        )
+
+    time.sleep(0.1)
+
+    response = mtb_daemon.request_response(
+        {'command': 'module', 'address': common.TEST_MODULE_ADDR, 'state': True}
+    )
+    validate_uni_state(response['module']['MTB-UNI v4']['state'], 0xFFFF)
+    reset_uni_outputs_and_validate(common.TEST_MODULE_ADDR)
+
+
+def test_set_outputs_sequentially_with_check() -> None:
+    for i in range(16):
+        set_uni_outputs_and_validate(
+            common.TEST_MODULE_ADDR,
+            {str(j): {'type': 'plain', 'value': 1} for j in range(i)}
+        )
+    reset_uni_outputs_and_validate(common.TEST_MODULE_ADDR)
+
+
+def test_set_output_missing_address() -> None:
+    response = mtb_daemon.request_response({'command': 'module_set_outputs'}, timeout=1, ok=False)
+    common.check_error(response, common.MtbDaemonError.MODULE_INVALID_ADDR)
+
+
+def test_set_output_invalid_port() -> None:
+    response = mtb_daemon.request_response(
+        {
+            'command': 'module_set_outputs',
+            'address': common.TEST_MODULE_ADDR,
+            'outputs': {'16': {'type': 'plain', 'value': 1}},
+        },
+        timeout=1,
+        ok=False
+    )
+    common.check_error(response, common.MtbDaemonError.MODULE_INVALID_PORT)
+
+
+def test_set_output_empty() -> None:
+    # Missing 'outputs' -> should do nothing
+    mtb_daemon.request_response(
+        {'command': 'module_set_outputs', 'address': common.TEST_MODULE_ADDR},
+    )
+
+    response = mtb_daemon.request_response(
+        {'command': 'module', 'address': common.TEST_MODULE_ADDR, 'state': True}
+    )
+    validate_uni_state(response['module']['MTB-UNI v4']['state'], 0)
+
+
+def test_set_output_of_inactive_module() -> None:
+    response = mtb_daemon.request_response(
+        {
+            'command': 'module_set_outputs',
+            'address': common.INACTIVE_MODULE_ADDR,
+            'outputs': {'0': {'type': 'plain', 'value': 1}},
+        },
+        timeout=1,
+        ok=False
+    )
+    common.check_error(response, common.MtbDaemonError.MODULE_FAILED)
+
+
+# TODO: reset-output-on-disconnect test
