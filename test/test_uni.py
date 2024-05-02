@@ -84,13 +84,11 @@ def test_state_not_in_inactive_uni() -> None:
 
 
 def set_uni_outputs_and_validate(addr: int, outputs: Dict[str, Any]) -> None:
-    response = mtb_daemon.request_response(
-        {
-            'command': 'module_set_outputs',
-            'address': addr,
-            'outputs': outputs,
-        }
-    )
+    response = mtb_daemon.request_response({
+        'command': 'module_set_outputs',
+        'address': addr,
+        'outputs': outputs,
+    })
 
     assert 'outputs' in response
     for outputstri, output in outputs.items():
@@ -220,4 +218,145 @@ def test_reset_outputs_on_disconnect() -> None:
     check_uni_state(common.TEST_MODULE_ADDR, 0)
 
 
-# TODO: module_set_config
+###############################################################################
+
+def check_set_name(addr: int) -> None:
+    TMPNAME = 'placeholder'
+
+    response = mtb_daemon.request_response({
+        'command': 'module_set_config',
+        'address': addr,
+        'name': TMPNAME,
+    })
+
+    assert 'address' in response
+    assert response['address'] == addr
+
+    response = mtb_daemon.request_response({'command': 'module', 'address': addr})
+    assert response['module']['name'] == TMPNAME
+
+    # Revert changes
+    original = common.MODULES_JSON[addr]['name']
+    response = mtb_daemon.request_response({
+        'command': 'module_set_config',
+        'address': addr,
+        'name': original,
+    })
+
+    assert 'address' in response
+    assert response['address'] == addr
+
+    response = mtb_daemon.request_response({'command': 'module', 'address': addr})
+    assert response['module']['name'] == original
+
+
+def test_set_name_inactive() -> None:
+    check_set_name(common.INACTIVE_MODULE_ADDR)
+
+
+def test_set_name_active() -> None:
+    check_set_name(common.TEST_MODULE_ADDR)
+
+
+def set_and_check_input_delay(addr: int, delay: float) -> None:
+    # First set config
+    mtb_daemon.request_response({
+        'command': 'module_set_config',
+        'address': addr,
+        'config': {'inputsDelay': [delay] + [0]*15},
+    })
+
+    # Activate output
+    mtb_daemon.request_response({
+        'command': 'module_set_outputs',
+        'address': addr,
+        'outputs': {'0': {'type': 'plain', 'value': 1}},
+    })
+
+    # Wait for propagation to input
+    time.sleep(0.1)
+
+    # Deactivate output
+    mtb_daemon.request_response({
+        'command': 'module_set_outputs',
+        'address': addr,
+        'outputs': {'0': {'type': 'plain', 'value': 0}},
+    })
+
+    # After delay/2, input should still be high
+    time.sleep(delay/2)
+
+    if delay > 0:
+        response = mtb_daemon.request_response({
+            'command': 'module',
+            'address': addr,
+            'state': True,
+        })
+        assert response['module']['MTB-UNI v4']['state']['inputs']['packed'] == 1
+
+    # After delay/2 + some tolerance, input should fall
+    time.sleep((delay/2) + 0.1)
+
+    response = mtb_daemon.request_response({
+        'command': 'module',
+        'address': addr,
+        'state': True,
+    })
+    assert response['module']['MTB-UNI v4']['state']['inputs']['packed'] == 0
+
+
+def test_set_inputs_delay_active() -> None:
+    set_and_check_input_delay(common.TEST_MODULE_ADDR, 1)
+    set_and_check_input_delay(common.TEST_MODULE_ADDR, 0)  # Revert
+
+
+def test_set_inputs_delay_inactive() -> None:
+    delays = [1] + [0]*15
+    mtb_daemon.request_response({
+        'command': 'module_set_config',
+        'address': common.INACTIVE_MODULE_ADDR,
+        'config': {'inputsDelay': delays},
+    })
+
+    response = mtb_daemon.request_response({
+        'command': 'module',
+        'address': common.INACTIVE_MODULE_ADDR,
+    })
+    assert response['module']['MTB-UNI v4']['config']['inputsDelay'] == delays
+
+    # Revert
+    mtb_daemon.request_response({
+        'command': 'module_set_config',
+        'address': common.INACTIVE_MODULE_ADDR,
+        'config': {'inputsDelay': [0]*16},
+    })
+
+    response = mtb_daemon.request_response({
+        'command': 'module',
+        'address': common.INACTIVE_MODULE_ADDR,
+    })
+    assert response['module']['MTB-UNI v4']['config']['inputsDelay'] == [0]*16
+
+
+def set_output_0_safe_and_check(addr: int, value: int) -> None:
+    mtb_daemon.request_response({
+        'command': 'module_set_config',
+        'address': addr,
+        'config': {'outputsSafe': [{'type': 'plain', 'value': value}]},
+    })
+
+    time.sleep(0.5)  # TODO: this is required; is it an issue?
+    mtb_daemon.request_response({'command': 'module_reboot', 'address': addr}, timeout=3)
+    time.sleep(1)
+
+    response = mtb_daemon.request_response({
+        'command': 'module',
+        'address': addr,
+        'state': True,
+    })
+    assert response['module']['MTB-UNI v4']['state']['inputs']['packed'] == value
+
+
+def test_set_outputs_safe() -> None:
+    set_output_0_safe_and_check(common.TEST_MODULE_ADDR, 1)
+    set_output_0_safe_and_check(common.TEST_MODULE_ADDR, 0)  # Revert
