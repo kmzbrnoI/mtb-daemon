@@ -52,13 +52,22 @@ void MtbUnis::jsonSetOutput(QTcpSocket *socket, const QJsonObject &request) {
 	}
 
 	QJsonObject outputs = request["outputs"].toObject();
+
+	// Validate ports
+	bool ok;
+	for (const auto &key : outputs.keys()) {
+		int port = key.toInt(&ok);
+		if ((!ok) || (port < 0) || (port >= static_cast<int>(UNIS_OUT_CNT))) {
+			sendError(socket, request, MTB_MODULE_INVALID_PORT, "Invalid port: "+key);
+			return;
+		}
+	}
+
 	bool send = (this->outputsWant == this->outputsConfirmed);
 	bool changed = false;
 
 	for (const auto &key : outputs.keys()) {
 		size_t port = key.toInt();
-		if (port > UNIS_OUT_CNT)
-			continue;
 		uint8_t code = jsonOutputToByte(outputs[key].toObject());
 		if (code != this->outputsWant[port]) {
 			changed = true;

@@ -2,6 +2,7 @@
 #define ERRORS_H
 
 constexpr size_t MTB_MODULE_INVALID_ADDR = 1100;
+constexpr size_t MTB_MODULE_INVALID_PORT = 1101;
 constexpr size_t MTB_MODULE_FAILED = 1102;
 constexpr size_t MTB_INVALID_SPEED = 1105;
 constexpr size_t MTB_INVALID_DV = 1106;
