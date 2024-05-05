@@ -111,7 +111,7 @@ class MtbDaemonIFace:
         assert response['type'] == 'event'
         return response
 
-    def expect_no_message(self, timeout: float = 1) -> None:
+    def expect_no_message(self, timeout: float = 0.5) -> None:
         start = time.time()
         while True:
             readable, _, _ = select.select([self.sock], [], [], timeout)

@@ -2,7 +2,7 @@
 Common test functions
 """
 
-from typing import Dict, Any, Self
+from typing import Dict, Any, Self, List
 import json
 
 from mtbdaemonif import mtb_daemon, MtbDaemonIFace
@@ -117,19 +117,19 @@ def validate_ic_event(event: Dict[str, Any], addr: int, port: int, value: bool) 
 
 
 class ModuleSubscription:
-    def __init__(self, daemon: MtbDaemonIFace, addr: int):
+    def __init__(self, daemon: MtbDaemonIFace, addrs: List[int]):
         self.daemon: MtbDaemonIFace = daemon
-        self.addr: int = addr
+        self.addrs: List[int] = addrs
 
     def __enter__(self) -> Self:
         self.daemon.request_response({
             'command': 'module_subscribe',
-            'addresses': [self.addr],
+            'addresses': self.addrs,
         })
         return self
 
     def __exit__(self, exception_type, exception_value, exception_traceback) -> None:
         self.daemon.request_response({
             'command': 'module_unsubscribe',
-            'addresses': [self.addr],
+            'addresses': self.addrs,
         })

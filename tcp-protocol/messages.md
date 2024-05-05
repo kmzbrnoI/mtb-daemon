@@ -606,8 +606,8 @@ change on the module.
 
 ### Module output/s changed
 
-This event is sent to all clients with subscribed module in case of any output
-change on the module.
+This event is sent to all clients with subscribed module excluding the client
+that requested the output setting in case of any output change on the module.
 
 ```json
 {
