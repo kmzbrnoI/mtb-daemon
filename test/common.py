@@ -122,10 +122,11 @@ class ModuleSubscription:
         self.addrs: List[int] = addrs
 
     def __enter__(self) -> Self:
-        self.daemon.request_response({
+        response = self.daemon.request_response({
             'command': 'module_subscribe',
             'addresses': self.addrs,
         })
+        assert response['addresses'] == self.addrs
         return self
 
     def __exit__(self, exception_type, exception_value, exception_traceback) -> None:
@@ -133,3 +134,15 @@ class ModuleSubscription:
             'command': 'module_unsubscribe',
             'addresses': self.addrs,
         })
+
+
+class TopoSubscription:
+    def __init__(self, daemon: MtbDaemonIFace):
+        self.daemon: MtbDaemonIFace = daemon
+
+    def __enter__(self) -> Self:
+        self.daemon.request_response({'command': 'topology_subscribe'})
+        return self
+
+    def __exit__(self, exception_type, exception_value, exception_traceback) -> None:
+        self.daemon.request_response({'command': 'topology_unsubscribe'})

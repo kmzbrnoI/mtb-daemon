@@ -127,18 +127,99 @@ def test_subscribe_bad_addr() -> None:
 ###############################################################################
 # Topology
 
-def test_topology() -> None:
-    pass
+def test_topology_endpoints_exist() -> None:
+    with common.TopoSubscription(mtb_daemon):
+        pass
 
 
-# TODO: module_subscribe
-# TODO: module_unsubscribe
-# TODO: my_module_subscribes
-# TODO: topology_subscribe
-# TODO: topology_unsubscribe
+def test_module_deleted_event_topo_subscribe() -> None:
+    with MtbDaemonIFace() as second_daemon, common.TopoSubscription(second_daemon):
+        mtb_daemon.request_response(
+            {'command': 'module_delete', 'address': common.INACTIVE_MODULE_ADDR}
+        )
 
-# TODO: module_inputs_changed
-# TODO: module_outputs_changed
-# TODO: mtbusb changed ???
-# TODO: module changed
-# TODO: module_deleted
+        event = second_daemon.expect_event('module_deleted')
+        assert 'module' in event
+        assert event['module'] == common.INACTIVE_MODULE_ADDR
+
+        module_json = common.MODULES_JSON[common.INACTIVE_MODULE_ADDR]
+        mtb_daemon.request_response({
+            'command': 'module_set_config',
+            'address': common.INACTIVE_MODULE_ADDR,
+            'type_code': module_json['type'],
+            'name': module_json['name'],
+            # omitting 'config' - default config used
+        })
+
+
+def test_module_deleted_event_module_subscribe() -> None:
+    with MtbDaemonIFace() as second_daemon, \
+            common.ModuleSubscription(second_daemon, [common.INACTIVE_MODULE_ADDR]):
+        mtb_daemon.request_response(
+            {'command': 'module_delete', 'address': common.INACTIVE_MODULE_ADDR}
+        )
+
+        event = second_daemon.expect_event('module_deleted')
+        assert 'module' in event
+        assert event['module'] == common.INACTIVE_MODULE_ADDR
+
+        module_json = common.MODULES_JSON[common.INACTIVE_MODULE_ADDR]
+        mtb_daemon.request_response({
+            'command': 'module_set_config',
+            'address': common.INACTIVE_MODULE_ADDR,
+            'type_code': module_json['type'],
+            'name': module_json['name'],
+            # omitting 'config' - default config used
+        })
+
+
+def test_module_deleted_no_event_when_not_subscribed() -> None:
+    with MtbDaemonIFace() as second_daemon:
+        mtb_daemon.request_response(
+            {'command': 'module_delete', 'address': common.INACTIVE_MODULE_ADDR}
+        )
+
+        second_daemon.expect_no_message()
+
+        module_json = common.MODULES_JSON[common.INACTIVE_MODULE_ADDR]
+        mtb_daemon.request_response({
+            'command': 'module_set_config',
+            'address': common.INACTIVE_MODULE_ADDR,
+            'type_code': module_json['type'],
+            'name': module_json['name'],
+            # omitting 'config' - default config used
+        })
+
+
+###############################################################################
+# Module changed
+
+def test_module_changed_event_on_name_edit() -> None:
+    with MtbDaemonIFace() as second_daemon, \
+            common.ModuleSubscription(second_daemon, [common.TEST_MODULE_ADDR]):
+
+        mtb_daemon.request_response({
+            'command': 'module_set_config',
+            'address': common.TEST_MODULE_ADDR,
+            'name': 'dummyname',
+        })
+
+        event = second_daemon.expect_event('module')
+        assert 'module' in event
+        assert event['module']['address'] == common.TEST_MODULE_ADDR
+
+        second_daemon.expect_no_message()
+
+        mtb_daemon.request_response({
+            'command': 'module_set_config',
+            'address': common.TEST_MODULE_ADDR,
+            'name': common.MODULES_JSON[common.INACTIVE_MODULE_ADDR]['name'],
+        })
+
+        event = second_daemon.expect_event('module')
+        assert 'module' in event
+        assert event['module']['address'] == common.TEST_MODULE_ADDR
+
+
+# TODO: add some test for 'mtbusb' changed?
+# How? It requires e.g. disconnecting of power from a test MTB-UNI module
