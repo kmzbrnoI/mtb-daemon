@@ -213,7 +213,7 @@ def test_module_changed_event_on_name_edit() -> None:
         mtb_daemon.request_response({
             'command': 'module_set_config',
             'address': common.TEST_MODULE_ADDR,
-            'name': common.MODULES_JSON[common.INACTIVE_MODULE_ADDR]['name'],
+            'name': common.MODULES_JSON[common.TEST_MODULE_ADDR]['name'],
         })
 
         event = second_daemon.expect_event('module')
