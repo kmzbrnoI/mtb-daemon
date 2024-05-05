@@ -2,7 +2,7 @@
 Interface to MTB Daemon JSON TCP server
 """
 
-from typing import Dict, Any
+from typing import Dict, Any, Self
 import socket
 import logging
 import json
@@ -30,16 +30,22 @@ class MtbDaemonIFace:
         self.id: int = 0
         self.connect()
 
-    def disconnect(self) -> None:
-        logging.info('Disconnecting from mtb-daemon ...')
-        self.sock.close()
-        logging.info('Disconnected')
-
     def connect(self) -> None:
         logging.info(f'Connecting to {self.host}:{self.port} ...')
         self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self.sock.connect((self.host, self.port))
         logging.info('Connected')
+
+    def disconnect(self) -> None:
+        logging.info('Disconnecting from mtb-daemon ...')
+        self.sock.close()
+        logging.info('Disconnected')
+
+    def __enter__(self) -> Self:
+        return self
+
+    def __exit__(self, exception_type, exception_value, exception_traceback) -> None:
+        self.disconnect()
 
     def send_message(self, data: Dict[str, Any]) -> None:
         logging.debug(f'Send: {data}')
@@ -55,7 +61,7 @@ class MtbDaemonIFace:
             readable, _, _ = select.select([self.sock], [], [], timeout)
             if self.sock in readable:
                 self.buf_received += self.sock.recv(0xFFFF).decode('utf-8')
-                logging.debug(f'{self.buf_received=}')
+                # logging.debug(f'{self.buf_received=}')
                 while '\n' in self.buf_received:
                     offset = self.buf_received.find('\n')
                     message = json.loads(self.buf_received[:offset])
@@ -98,6 +104,29 @@ class MtbDaemonIFace:
         assert 'id' in response
         assert response['id'] == request['id']
         return response
+
+    def expect_event(self, command: str, timeout: float = 1) -> Dict[str, Any]:
+        response = self.expect_message(command, timeout)
+        assert 'type' in response
+        assert response['type'] == 'event'
+        return response
+
+    def expect_no_message(self, timeout: float = 1) -> None:
+        start = time.time()
+        while True:
+            readable, _, _ = select.select([self.sock], [], [], timeout)
+            if self.sock in readable:
+                self.buf_received += self.sock.recv(0xFFFF).decode('utf-8')
+                while '\n' in self.buf_received:
+                    offset = self.buf_received.find('\n')
+                    message = json.loads(self.buf_received[:offset])
+                    self.buf_received = self.buf_received[offset+1:]
+                    logging.debug(f'Received: {message}')
+                    assert isinstance(message, dict)
+                    assert message == {}, f'Nonempty message received: {message}!'
+
+            if (time.time() - start) >= timeout:
+                return
 
 
 mtb_daemon = MtbDaemonIFace()

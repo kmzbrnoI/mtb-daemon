@@ -137,13 +137,7 @@ def test_set_output_no_feedback() -> None:
 
 def test_set_outputs_sequentially() -> None:
     for i in range(16):
-        mtb_daemon.request_response(
-            {
-                'command': 'module_set_outputs',
-                'address': common.TEST_MODULE_ADDR,
-                'outputs': {str(i): {'type': 'plain', 'value': 1}},
-            }
-        )
+        common.set_single_output(common.TEST_MODULE_ADDR, i, 1)
 
     time.sleep(0.1)
 
@@ -161,7 +155,7 @@ def test_set_outputs_sequentially_with_check() -> None:
 
 
 def test_set_output_missing_address() -> None:
-    response = mtb_daemon.request_response({'command': 'module_set_outputs'}, timeout=1, ok=False)
+    response = mtb_daemon.request_response({'command': 'module_set_outputs'}, ok=False)
     common.check_error(response, common.MtbDaemonError.MODULE_INVALID_ADDR)
 
 
@@ -173,7 +167,6 @@ def test_set_output_invalid_port() -> None:
                 'address': common.TEST_MODULE_ADDR,
                 'outputs': {port: {'type': 'plain', 'value': 1}},
             },
-            timeout=1,
             ok=False
         )
         common.check_error(response, common.MtbDaemonError.MODULE_INVALID_PORT)
@@ -194,7 +187,6 @@ def test_set_output_of_inactive_module() -> None:
             'address': common.INACTIVE_MODULE_ADDR,
             'outputs': {'0': {'type': 'plain', 'value': 1}},
         },
-        timeout=1,
         ok=False
     )
     common.check_error(response, common.MtbDaemonError.MODULE_FAILED)
@@ -267,21 +259,13 @@ def set_and_check_input_delay(addr: int, delay: float) -> None:
     })
 
     # Activate output
-    mtb_daemon.request_response({
-        'command': 'module_set_outputs',
-        'address': addr,
-        'outputs': {'0': {'type': 'plain', 'value': 1}},
-    })
+    common.set_single_output(addr, 0, 1)
 
     # Wait for propagation to input
     time.sleep(0.1)
 
     # Deactivate output
-    mtb_daemon.request_response({
-        'command': 'module_set_outputs',
-        'address': addr,
-        'outputs': {'0': {'type': 'plain', 'value': 0}},
-    })
+    common.set_single_output(addr, 0, 0)
 
     # After delay/2, input should still be high
     time.sleep(delay/2)

@@ -2,10 +2,10 @@
 Common test functions
 """
 
-from typing import Dict, Any
+from typing import Dict, Any, Self
 import json
 
-from mtbdaemonif import mtb_daemon
+from mtbdaemonif import mtb_daemon, MtbDaemonIFace
 
 TEST_MODULE_ADDR = 1
 INACTIVE_MODULE_ADDR = 2
@@ -83,3 +83,53 @@ def check_invalid_addresses(request: Dict[str, Any], addr_key: str) -> None:
         request[addr_key] = addr
         response = mtb_daemon.request_response(request, ok=False)
         check_error(response, MtbDaemonError.MODULE_INVALID_ADDR)
+
+
+def set_single_output(addr: int, output: int, value: int) -> None:
+    mtb_daemon.request_response({
+        'command': 'module_set_outputs',
+        'address': addr,
+        'outputs': {str(output): {'type': 'plain', 'value': value}}
+    })
+
+
+def validate_oc_event(event: Dict[str, Any], addr: int, port: int, value: int) -> None:
+    assert 'module_outputs_changed' in event
+    moc_event = event['module_outputs_changed']
+    assert 'address' in moc_event
+    assert moc_event['address'] == addr
+    assert 'outputs' in moc_event
+    assert str(port) in moc_event['outputs']
+    json_port = moc_event['outputs'][str(port)]
+    assert json_port['type'] == 'plain'
+    assert json_port['value'] == value
+
+
+def validate_ic_event(event: Dict[str, Any], addr: int, port: int, value: bool) -> None:
+    assert 'module_inputs_changed' in event
+    moc_event = event['module_inputs_changed']
+    assert 'address' in moc_event
+    assert moc_event['address'] == addr
+    assert 'inputs' in moc_event
+    assert 'full' in moc_event['inputs']
+    assert 'packed' in moc_event['inputs']
+    assert moc_event['inputs']['full'][port] == value
+
+
+class ModuleSubscription:
+    def __init__(self, daemon: MtbDaemonIFace, addr: int):
+        self.daemon: MtbDaemonIFace = daemon
+        self.addr: int = addr
+
+    def __enter__(self) -> Self:
+        self.daemon.request_response({
+            'command': 'module_subscribe',
+            'addresses': [self.addr],
+        })
+        return self
+
+    def __exit__(self, exception_type, exception_value, exception_traceback) -> None:
+        self.daemon.request_response({
+            'command': 'module_unsubscribe',
+            'addresses': [self.addr],
+        })
