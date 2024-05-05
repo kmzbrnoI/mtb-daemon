@@ -664,12 +664,12 @@ cmdModuleUnsubscribeEnd:
 void DaemonCoreApplication::serverCmdMyModuleSubscribes(QTcpSocket *socket, const QJsonObject &request) {
 	// First validate addresses (do not change anything if validation fails)
 	QJsonObject response = jsonOkResponse(request);
-	const QJsonArray reqAddrs = request["addresses"].toArray();
-	if (!DaemonCoreApplication::validateAddrs(reqAddrs, response))
-		goto cmdMyModuleSubscribesEnd;
 
-	if (!reqAddrs.empty()) {
-		// Addresses already validated
+	if (request.contains("addresses")) {
+		const QJsonArray reqAddrs = request["addresses"].toArray();
+		if (!DaemonCoreApplication::validateAddrs(reqAddrs, response))
+			goto cmdMyModuleSubscribesEnd;
+
 		// Remove all subscriptions of the client
 		for (size_t addr = 0; addr < Mtb::_MAX_MODULES; addr++)
 			subscribes[addr].erase(socket);
