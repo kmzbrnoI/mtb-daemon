@@ -3,6 +3,7 @@ Common test functions
 """
 
 from typing import Dict, Any, Self, List
+from types import TracebackType
 import json
 
 from mtbdaemonif import mtb_daemon, MtbDaemonIFace
@@ -129,7 +130,8 @@ class ModuleSubscription:
         assert response['addresses'] == self.addrs
         return self
 
-    def __exit__(self, exception_type, exception_value, exception_traceback) -> None:
+    def __exit__(self, exception_type: Any, exception_value: Any,
+                 exception_traceback: TracebackType) -> None:
         self.daemon.request_response({
             'command': 'module_unsubscribe',
             'addresses': self.addrs,
@@ -144,5 +146,6 @@ class TopoSubscription:
         self.daemon.request_response({'command': 'topology_subscribe'})
         return self
 
-    def __exit__(self, exception_type, exception_value, exception_traceback) -> None:
+    def __exit__(self, exception_type: Any, exception_value: Any,
+                 exception_traceback: TracebackType) -> None:
         self.daemon.request_response({'command': 'topology_unsubscribe'})

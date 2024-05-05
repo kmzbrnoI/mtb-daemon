@@ -3,6 +3,7 @@ Interface to MTB Daemon JSON TCP server
 """
 
 from typing import Dict, Any, Self
+from types import TracebackType
 import socket
 import logging
 import json
@@ -44,7 +45,8 @@ class MtbDaemonIFace:
     def __enter__(self) -> Self:
         return self
 
-    def __exit__(self, exception_type, exception_value, exception_traceback) -> None:
+    def __exit__(self, exception_type: Any, exception_value: Any,
+                 exception_traceback: TracebackType) -> None:
         self.disconnect()
 
     def send_message(self, data: Dict[str, Any]) -> None:
