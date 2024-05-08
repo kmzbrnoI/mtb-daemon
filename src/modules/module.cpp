@@ -52,6 +52,11 @@ void MtbModule::mtbBusActivate(Mtb::ModuleInfo moduleInfo) {
 	this->busModuleInfo = moduleInfo;
 	this->rebooting.activatedByMtbUsb = true;
 	this->type = static_cast<MtbModuleType>(moduleInfo.type);
+
+	if (this->fwDeprecated()) {
+		this->mlog("FW of the module is deprecated: "+this->busModuleInfo.fw_version()+", upgrade the firmware!",
+		           Mtb::LogLevel::Warning);
+	}
 }
 
 void MtbModule::mtbBusLost() {
@@ -638,4 +643,8 @@ QString MtbModule::DVToStr(uint8_t dv) const {
 
 std::optional<uint8_t> MtbModule::StrToDV(const QString &str) const {
 	return Mtb::StrToDVCommon(str);
+}
+
+bool MtbModule::fwDeprecated() const {
+	return false;
 }

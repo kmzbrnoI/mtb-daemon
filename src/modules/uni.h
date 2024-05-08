@@ -5,6 +5,8 @@
 #include "server.h"
 
 constexpr size_t UNI_IO_CNT = 16;
+constexpr uint16_t UNIv2_FW_DEPRECATED = 0x0103; // FW <= UNI_DEPRECATED is marked as deprecated
+constexpr uint16_t UNIv4_FW_DEPRECATED = 0x0104; // FW <= UNI_DEPRECATED is marked as deprecated
 
 struct MtbUniConfig {
 	std::array<uint8_t, UNI_IO_CNT> outputsSafe = {0, };
@@ -97,6 +99,8 @@ public:
 	void reactivateCheck() override;
 
 	static uint8_t jsonOutputToByte(const QJsonObject&);
+
+	bool fwDeprecated() const override;
 };
 
 #endif

@@ -26,6 +26,11 @@ bool MtbUni::isUniv4() const {
 	return ((this->type == MtbModuleType::Univ40) || (this->type == MtbModuleType::Univ42));
 }
 
+bool MtbUni::fwDeprecated() const {
+	return ((this->isUniv4()) && (this->busModuleInfo.uint_fw_version() <= UNIv4_FW_DEPRECATED)) ||
+		((this->isUniv2()) && (this->busModuleInfo.uint_fw_version() <= UNIv2_FW_DEPRECATED));
+}
+
 /* JSON Module Info --------------------------------------------------------- */
 
 QJsonObject MtbUni::moduleInfo(bool state, bool config) const {

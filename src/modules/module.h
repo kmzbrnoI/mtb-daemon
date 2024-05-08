@@ -112,6 +112,7 @@ public:
 	virtual void resetOutputsOfClient(QTcpSocket*);
 	virtual void allOutputsReset();
 	virtual void clientDisconnected(QTcpSocket*);
+	virtual bool fwDeprecated() const;
 
 	virtual void reactivateCheck();
 
