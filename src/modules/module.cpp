@@ -19,8 +19,6 @@ QJsonObject MtbModule::moduleInfo(bool, bool) const {
 	obj["name"] = this->name;
 	obj["type_code"] = static_cast<int>(this->type);
 	obj["type"] = moduleTypeToStr(this->type);
-	obj["fw_upgrading"] = this->isFirmwareUpgrading();
-	obj["beacon"] = this->beacon;
 
 	if (this->active) {
 		if (this->busModuleInfo.bootloader_unint)
@@ -35,13 +33,12 @@ QJsonObject MtbModule::moduleInfo(bool, bool) const {
 		obj["firmware_version"] = this->busModuleInfo.fw_version();
 		obj["protocol_version"] = this->busModuleInfo.proto_version();
 		obj["bootloader_version"] = this->busModuleInfo.bootloader_version();
-		obj["warning"] = (this->busModuleInfo.warning);
 		obj["error"] = (this->busModuleInfo.error);
+		obj["warning"] = (this->busModuleInfo.warning);
+		obj["beacon"] = this->beacon;
+		obj["fw_deprecated"] = this->fwDeprecated();
 	} else {
-		if (this->isRebooting())
-			obj["state"] = "rebooting";
-		else
-			obj["state"] = "inactive";
+		obj["state"] = (this->isRebooting()) ? "rebooting" : "inactive";
 	}
 
 	return obj;

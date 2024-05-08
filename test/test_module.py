@@ -42,18 +42,13 @@ def validate_module(server: Dict[str, Any], jsonAddr: int,
         else:
             assert key not in server
 
-    for key in ['error', 'warning']:
+    for key in ['error', 'warning', 'beacon', 'fw_deprecated']:
         if state == 'active':
             assert key in server
             assert isinstance(server[key], bool)
             assert not server[key]
         else:
             assert key not in server
-
-    # 'beacon' present even in inactive module (TODO is it ok?)
-    assert 'beacon' in server
-    assert isinstance(server['beacon'], bool)
-    assert not server['beacon']
 
 
 def validate_module_common(server: Dict[str, Any], jsonAddr: int, state: str) -> None:

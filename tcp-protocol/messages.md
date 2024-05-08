@@ -108,13 +108,14 @@ This request allows the client to obtain all information about the module.
         "name": "Testing module 1",
         "type_code": 21,
         "type": "MTB-UNI v4",
-        "state": "active",
+        "state": "active", # Following items are present only for active modules
         "firmware_version": "1.0",
         "protocol_version": "4.0",
         "bootloader_version": "1.0",
         "error": false,
         "warning": false,
         "beacon": false,
+        "fw_deprecated": false,
         "MTB-UNI v4": {
             # data specific for module type
         }
