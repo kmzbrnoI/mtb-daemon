@@ -36,16 +36,16 @@ to use `clang` as a compiler, because then you may use `clang-tools` (see below)
 
 ### Prerequisities
 
- * Qt 5
+ * Qt 5/6
  * Qt's `serialport`
  * [Bear](https://github.com/rizsotto/Bear)
 
-### Toolchain setup on debian
+### Example: toolchain setup on Debian 12 Bookworm
 
 ```bash
-$ apt install qt5-default libqt5serialport5-dev
+$ apt install qt6-base-dev qt6-serialport-dev
 $ apt install bear
-$ apt install clang-7 clang-tools-7 clang-tidy-7 clang-format-7
+$ apt install clang clang-tools clang-tidy clang-format
 ```
 
 ### Build
@@ -68,23 +68,28 @@ $ bear make
 
 ## Compiling for Windows
 
-Just open the project in Qt Creator and compile it. This approach is currently
+Just open the project in *Qt Creator* and compile it. This approach is currently
 used to build windows binaries in releases.
+
+## Testing
+
+This repository contains tests for MTB Daemon. See
+[README in `test` directory](test).
 
 ## Style checking
 
 ```bash
-$ cd src
-$ clang-tidy-7 -p ../build -extra-arg-before=-x -extra-arg-before=c++ -extra-arg=-std=c++17 -header-filter=src/ *.cpp
-$ clang-format-7 *.cpp *.h
-$ clang-include-fixer-7 -p ../build *.cpp
+$ clang-tidy -p build src/*.cpp
+$ clang-format <all .cpp and .h files in the 'src' directory>
+$ clang-include-fixer -p build src/*.cpp
 ```
 
 For `clang-include-fixer` to work, it is necessary to [build `yaml` symbols
 database](https://clang.llvm.org/extra/clang-include-fixer.html#creating-a-symbol-index-from-a-compilation-database).
 You can do it this way:
 
- 1. Download `run-find-all-symbols.py` from [github repo](https://github.com/microsoft/clang-tools-extra/blob/master/include-fixer/find-all-symbols/tool/run-find-all-symbols.py).
+ 1. Download `run-find-all-symbols.py` from
+    [github repo](https://github.com/microsoft/clang-tools-extra/blob/master/include-fixer/find-all-symbols/tool/run-find-all-symbols.py).
  2. Execute it in `build` directory.
 
 ## Authors
