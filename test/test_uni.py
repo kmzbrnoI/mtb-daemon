@@ -344,3 +344,27 @@ def set_output_0_safe_and_check(addr: int, value: int) -> None:
 def test_set_outputs_safe() -> None:
     set_output_0_safe_and_check(common.TEST_MODULE_ADDR, 1)
     set_output_0_safe_and_check(common.TEST_MODULE_ADDR, 0)  # Revert
+
+
+def test_set_all_config() -> None:
+    # Main purpose of the test: save as many bytes to EEPROM as possible
+    # (test potential glitches due to long write)
+    mtb_daemon.request_response({
+        'command': 'module_set_config',
+        'address': common.TEST_MODULE_ADDR,
+        'config': {
+            'inputsDelay': [0.5]*16,
+            'outputsSafe': [{'type': 'plain', 'value': 1}]*16,
+        },
+    })
+
+    # Revert
+    test_json = common.MODULES_JSON[common.TEST_MODULE_ADDR]
+    mtb_daemon.request_response({
+        'command': 'module_set_config',
+        'address': common.TEST_MODULE_ADDR,
+        'config': {
+            'inputsDelay': test_json['config']['inputsDelay'],
+            'outputsSafe': test_json['config']['outputsSafe'],
+        },
+    })
