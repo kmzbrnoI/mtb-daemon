@@ -124,6 +124,16 @@ def test_subscribe_bad_addr() -> None:
     common.check_error(response, common.MtbDaemonError.MODULE_INVALID_ADDR)
 
 
+def test_subscribe_all_addrs() -> None:
+    mtb_daemon.request_response({'command': 'module_subscribe'})
+    response = mtb_daemon.request_response({'command': 'my_module_subscribes'})
+    assert response['addresses'] == [i for i in range(1, 256)]
+
+    mtb_daemon.request_response({'command': 'module_unsubscribe'})
+    response = mtb_daemon.request_response({'command': 'my_module_subscribes'})
+    assert response['addresses'] == []
+
+
 ###############################################################################
 # Topology
 

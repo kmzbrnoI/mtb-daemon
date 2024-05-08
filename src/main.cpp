@@ -631,7 +631,7 @@ void DaemonCoreApplication::serverCmdModuleSubscribe(QTcpSocket *socket, const Q
 		response["addresses"] = reqAddrs;
 	} else {
 		// Subscribe to all addresses
-		for (size_t addr = 0; addr < Mtb::_MAX_MODULES; addr++)
+		for (size_t addr = 1; addr < Mtb::_MAX_MODULES; addr++)
 			subscribes[addr].emplace(socket);
 	}
 

@@ -65,6 +65,10 @@ on bus currently.
 When MTB-USB general change state (connected, disconnected, bus speed changed,
 ...) occurs, `mtbusb` event is sent to all connected clients.
 
+## Addresses
+
+Valid address of a MTB module: 1..255.
+
 ## [Messages specification](messages.md)
 
 ## Specialization of messages for module types
