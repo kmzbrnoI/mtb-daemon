@@ -71,7 +71,8 @@ void DaemonServer::send(QTcpSocket &socket, const QJsonObject &jsonObj) {
 }
 
 void DaemonServer::send(QTcpSocket *socket, const QJsonObject &jsonObj) {
-	if (socket != nullptr)
+	// Prevent disconnected clients who started an ongoing operation (e.g. module reboot) to crash the server
+	if ((socket != nullptr) && (this->clients.find(socket) != this->clients.end()))
 		this->send(*socket, jsonObj);
 }
 

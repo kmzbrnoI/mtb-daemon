@@ -6,7 +6,7 @@ from typing import Dict, Any
 import time
 
 import common
-from mtbdaemonif import mtb_daemon
+from mtbdaemonif import mtb_daemon, MtbDaemonIFace
 
 
 def test_endpoints_present() -> None:
@@ -173,7 +173,7 @@ def test_reboot() -> None:
     })
     assert response['module']['state'] == 'rebooting'
 
-    time.sleep(3)  # TODO: if test fails here, server terminates
+    time.sleep(3)
     mtb_daemon.expect_response('module_reboot')
 
     response = mtb_daemon.request_response({
@@ -260,3 +260,22 @@ def test_set_address() -> None:
             'new_address': 42,
         }
     )
+
+
+###############################################################################
+# Common
+
+def test_disconnect_while_operation_pending() -> None:
+    # Test that mtb-daemon does not crash when it wants to send response to the
+    # non-existing socket.
+    with MtbDaemonIFace() as second_daemon:
+        second_daemon.send_request(
+            {'command': 'module_reboot', 'address': common.TEST_MODULE_ADDR}
+        )
+
+    time.sleep(2.5)  # just to finish module rebooting
+
+    response = mtb_daemon.request_response(
+        {'command': 'module', 'address': common.TEST_MODULE_ADDR}
+    )
+    assert response['module']['state'] == 'active'
