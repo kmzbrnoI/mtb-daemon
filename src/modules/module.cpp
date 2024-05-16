@@ -100,22 +100,26 @@ void MtbModule::mtbBusDiagStateChanged(bool isError, bool isWarning) {
 void MtbModule::jsonCommand(QTcpSocket *socket, const QJsonObject &request) {
 	QString command = request["command"].toString();
 
-	if (command == "module_set_outputs")
+	if (command == "module_set_outputs") {
 		this->jsonSetOutput(socket, request);
-	else if (command == "module_set_config")
+	} else if (command == "module_set_config") {
 		this->jsonSetConfig(socket, request);
-	else if (command == "module_upgrade_fw")
+	} else if (command == "module_upgrade_fw") {
 		this->jsonUpgradeFw(socket, request);
-	else if (command == "module_reboot")
+	} else if (command == "module_reboot") {
 		this->jsonReboot(socket, request);
-	else if (command == "module_specific_command")
+	} else if (command == "module_specific_command") {
 		this->jsonSpecificCommand(socket, request);
-	else if (command == "module_beacon")
+	} else if (command == "module_beacon") {
 		this->jsonBeacon(socket, request);
-	else if (command == "module_diag")
+	} else if (command == "module_diag") {
 		this->jsonGetDiag(socket, request);
-	else if (command == "module_set_address")
+	} else if (command == "module_set_address") {
 		this->jsonSetAddress(socket, request);
+	} else {
+		// Explicitly answer "unknown command"
+		sendError(socket, request, MTB_UNKNOWN_COMMAND, "Unknown command!");
+	}
 }
 
 void MtbModule::jsonSetOutput(QTcpSocket *socket, const QJsonObject &request) {

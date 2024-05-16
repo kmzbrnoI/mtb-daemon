@@ -1,5 +1,5 @@
 """
-Test 'version' endpoint of MTB Daemon TCP server using PyTest.
+Test common behavior of MTB Daemon TCP server using PyTest.
 """
 
 import common
@@ -25,3 +25,19 @@ def test_version_response() -> None:
 
     assert 'sw_version_minor' in version
     assert isinstance(version['sw_version_minor'], int)
+
+
+def test_unknown_command() -> None:
+    response = mtb_daemon.request_response(
+        {'command': 'nonexisting_command'},
+        ok=False
+    )
+    common.check_error(response, common.MtbDaemonError.UNKNOWN_COMMAND)
+
+
+def test_unknown_command_module_prefix() -> None:
+    response = mtb_daemon.request_response(
+        {'command': 'module_nonexisting_command', 'address': common.TEST_MODULE_ADDR},
+        ok=False
+    )
+    common.check_error(response, common.MtbDaemonError.UNKNOWN_COMMAND)
