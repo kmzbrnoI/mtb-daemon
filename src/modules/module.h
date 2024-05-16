@@ -101,7 +101,7 @@ public:
 	virtual void mtbBusDiagStateChanged(const std::vector<uint8_t>&);
 	virtual void mtbUsbDisconnected();
 
-	virtual void jsonCommand(QTcpSocket*, const QJsonObject&);
+	virtual void jsonCommand(QTcpSocket*, const QJsonObject&, bool hasWriteAccess);
 	virtual void jsonSetConfig(QTcpSocket*, const QJsonObject&);
 	virtual void jsonSetAddress(QTcpSocket*, const QJsonObject&);
 

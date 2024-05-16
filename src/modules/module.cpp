@@ -97,29 +97,34 @@ void MtbModule::mtbBusDiagStateChanged(bool isError, bool isWarning) {
 	}
 }
 
-void MtbModule::jsonCommand(QTcpSocket *socket, const QJsonObject &request) {
+void MtbModule::jsonCommand(QTcpSocket *socket, const QJsonObject &request, bool hasWriteAccess) {
 	QString command = request["command"].toString();
 
-	if (command == "module_set_outputs") {
-		this->jsonSetOutput(socket, request);
-	} else if (command == "module_set_config") {
-		this->jsonSetConfig(socket, request);
-	} else if (command == "module_upgrade_fw") {
-		this->jsonUpgradeFw(socket, request);
-	} else if (command == "module_reboot") {
-		this->jsonReboot(socket, request);
-	} else if (command == "module_specific_command") {
-		this->jsonSpecificCommand(socket, request);
-	} else if (command == "module_beacon") {
-		this->jsonBeacon(socket, request);
-	} else if (command == "module_diag") {
-		this->jsonGetDiag(socket, request);
-	} else if (command == "module_set_address") {
-		this->jsonSetAddress(socket, request);
-	} else {
-		// Explicitly answer "unknown command"
-		sendError(socket, request, MTB_UNKNOWN_COMMAND, "Unknown command!");
-	}
+	// Commands for clients with read-only access
+	if (command == "module_diag")
+		return this->jsonGetDiag(socket, request);
+
+	if (!hasWriteAccess)
+		return sendAccessDenied(socket, request);
+
+	// Commands for clients with write access
+	if (command == "module_set_outputs")
+		return this->jsonSetOutput(socket, request);
+	if (command == "module_set_config")
+		return this->jsonSetConfig(socket, request);
+	if (command == "module_upgrade_fw")
+		return this->jsonUpgradeFw(socket, request);
+	if (command == "module_reboot")
+		return this->jsonReboot(socket, request);
+	if (command == "module_specific_command")
+		return this->jsonSpecificCommand(socket, request);
+	if (command == "module_beacon")
+		return this->jsonBeacon(socket, request);
+	if (command == "module_set_address")
+		return this->jsonSetAddress(socket, request);
+
+	// Explicitly answer "unknown command"
+	sendError(socket, request, MTB_UNKNOWN_COMMAND, "Unknown command!");
 }
 
 void MtbModule::jsonSetOutput(QTcpSocket *socket, const QJsonObject &request) {

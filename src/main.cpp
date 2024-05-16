@@ -428,12 +428,9 @@ void DaemonCoreApplication::serverReceived(QTcpSocket *socket, const QJsonObject
 		this->serverCmdTopoUnsubscribe(socket, request);
 
 	} else if (command.startsWith("module_")) {
-		if (!this->hasWriteAccess(socket))
-			return sendAccessDenied(socket, request);
-
 		size_t addr = request["address"].toInt();
 		if ((Mtb::isValidModuleAddress(addr)) && (modules[addr] != nullptr)) {
-			modules[addr]->jsonCommand(socket, request);
+			modules[addr]->jsonCommand(socket, request, this->hasWriteAccess(socket));
 		} else {
 			sendError(socket, request, MTB_MODULE_INVALID_ADDR, "Invalid module address");
 		}
