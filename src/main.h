@@ -4,6 +4,7 @@
 #include <QCoreApplication>
 #include <QTcpSocket>
 #include <unordered_set>
+#include <QSet>
 #include <array>
 #include "mtbusb.h"
 #include "server.h"
@@ -59,7 +60,7 @@ private:
 	QString configFileName;
 	QTimer t_reconnect;
 	QTimer t_reactivate;
-	std::vector<QHostAddress> writeAccess;
+	QSet<QHostAddress> writeAccess;
 	StartupError startError = StartupError::Ok;
 	bool failTimerPending = false;
 	bool newTimerPending = false;

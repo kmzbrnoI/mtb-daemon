@@ -878,7 +878,7 @@ void DaemonCoreApplication::loadConfig(const QString& filename) {
 		const QJsonObject serverConfig = this->config["server"].toObject();
 		this->writeAccess.clear();
 		for (const auto& value : serverConfig["allowedClients"].toArray())
-			this->writeAccess.push_back(QHostAddress(value.toString()));
+			this->writeAccess.insert(QHostAddress(value.toString()));
 	}
 }
 
@@ -960,11 +960,7 @@ void DaemonCoreApplication::clientResetOutputs(
 }
 
 bool DaemonCoreApplication::hasWriteAccess(const QTcpSocket *socket) {
-	if (this->writeAccess.empty())
-		return true;
-	return (std::find(this->writeAccess.begin(), this->writeAccess.end(),
-		socket->peerAddress()) != this->writeAccess.end());
-
+	return this->writeAccess.contains(socket->peerAddress());
 }
 
 std::unique_ptr<MtbModule> DaemonCoreApplication::newModule(size_t type, uint8_t addr) {
