@@ -13,7 +13,7 @@ void MtbUsb::pendingTimerTick() {
 		return;
 
 	if (m_pending.front().timeout < QDateTime::currentDateTime()) {
-		if (m_pending.front().no_sent >= _PENDING_SEND_MAX)
+		if (m_pending.front().no_sent >= _PENDING_RESEND_MAX)
 			pendingTimeoutError(CmdError::UsbNoResponse);
 		else
 			pendingResend();

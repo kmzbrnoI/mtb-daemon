@@ -17,12 +17,11 @@
 namespace Mtb {
 
 constexpr size_t _MAX_MODULES = 256;
-constexpr size_t _MAX_PENDING_LEN = 32;
 constexpr size_t _PENDING_CHECK_INTERVAL = 100; // ms
 constexpr size_t _PENDING_TIMEOUT = 300; // ms
-constexpr size_t _PENDING_SEND_MAX = 3;
+constexpr size_t _PENDING_RESEND_MAX = 3;
 constexpr size_t _BUF_IN_TIMEOUT = 50; // ms
-constexpr size_t _MAX_PENDING_BUF_COUNT = 3;
+constexpr size_t _MAX_PENDING = 3; // maximum number of commands waiting for response
 constexpr size_t _PING_SEND_PERIOD_MS = 5000;
 
 struct EOpenError : public MtbUsbError {

@@ -37,7 +37,7 @@ void MtbUsb::write(std::unique_ptr<const Cmd> cmd, size_t no_sent) {
 
 void MtbUsb::send(std::unique_ptr<const Cmd> &cmd, bool bypass_m_out_emptiness) {
 	// Sends or queues
-	if ((m_pending.size() >= _MAX_PENDING_BUF_COUNT) || (!m_out.empty() && !bypass_m_out_emptiness) ||
+	if ((m_pending.size() >= _MAX_PENDING) || (!m_out.empty() && !bypass_m_out_emptiness) ||
 	    conflictWithPending(*cmd)) {
 		// Pending full -> push & do not start timer (response from CS will send automatically)
 		// We ensure pending buffer never contains commands with conflict
