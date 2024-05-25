@@ -17,12 +17,12 @@
 namespace Mtb {
 
 constexpr size_t _MAX_MODULES = 256;
-constexpr size_t _MAX_HISTORY_LEN = 32;
-constexpr size_t _HIST_CHECK_INTERVAL = 100; // ms
-constexpr size_t _HIST_TIMEOUT = 300; // ms
-constexpr size_t _HIST_SEND_MAX = 3;
+constexpr size_t _MAX_PENDING_LEN = 32;
+constexpr size_t _PENDING_CHECK_INTERVAL = 100; // ms
+constexpr size_t _PENDING_TIMEOUT = 300; // ms
+constexpr size_t _PENDING_SEND_MAX = 3;
 constexpr size_t _BUF_IN_TIMEOUT = 50; // ms
-constexpr size_t _MAX_HIST_BUF_COUNT = 3;
+constexpr size_t _MAX_PENDING_BUF_COUNT = 3;
 constexpr size_t _PING_SEND_PERIOD_MS = 5000;
 
 struct EOpenError : public MtbUsbError {
@@ -56,25 +56,27 @@ QString dataToStr(DataT data, size_t len = 0) {
 	return out.trimmed();
 }
 
-struct HistoryItem {
-	HistoryItem(std::unique_ptr<const Cmd> &cmd, QDateTime timeout, size_t no_sent)
+// PendingCmd represents a command sent to the MTB-USB, for which the response
+// has not arrived yet.
+struct PendingCmd {
+	PendingCmd(std::unique_ptr<const Cmd> &cmd, QDateTime timeout, size_t no_sent)
 	    : cmd(std::move(cmd))
 	    , timeout(timeout)
 		, no_sent(no_sent) {}
-	HistoryItem(HistoryItem &&hist) noexcept
-	    : cmd(std::move(hist.cmd))
-	    , timeout(hist.timeout)
-		, no_sent(hist.no_sent) {}
-	HistoryItem& operator=(HistoryItem &&hist) {
-		cmd = std::move(hist.cmd);
-		timeout = hist.timeout;
-		no_sent = hist.no_sent;
+	PendingCmd(PendingCmd &&pending) noexcept
+	    : cmd(std::move(pending.cmd))
+	    , timeout(pending.timeout)
+		, no_sent(pending.no_sent) {}
+	PendingCmd& operator=(PendingCmd &&pending) {
+		cmd = std::move(pending.cmd);
+		timeout = pending.timeout;
+		no_sent = pending.no_sent;
 		return *this;
 	}
 
 	std::unique_ptr<const Cmd> cmd;
-	QDateTime timeout;
-	size_t no_sent = 0;
+	QDateTime timeout; // timeout for response
+	size_t no_sent = 0; // how many times this command was resent (for calculating of giving-up)
 };
 
 struct MtbUsbInfo {
@@ -119,7 +121,7 @@ private slots:
 	void spHandleReadyRead();
 	void spHandleError(QSerialPort::SerialPortError);
 	void spAboutToClose();
-	void histTimerTick();
+	void pendingTimerTick();
 	void pingTimerTick();
 
 signals:
@@ -135,9 +137,9 @@ signals:
 private:
 	QSerialPort m_serialPort;
 	QByteArray m_readData;
-	QTimer m_histTimer;
+	QTimer m_pendingTimer;
 	QTimer m_pingTimer;
-	std::deque<HistoryItem> m_hist;
+	std::deque<PendingCmd> m_pending;
 	std::deque<std::unique_ptr<const Cmd>> m_out;
 	QDateTime m_receiveTimeout;
 	std::optional<MtbUsbInfo> m_mtbUsbInfo;
@@ -153,13 +155,13 @@ private:
 	void write(std::unique_ptr<const Cmd> cmd, size_t no_sent = 1);
 	void send(std::unique_ptr<const Cmd> &cmd, bool bypass_m_out_emptiness = false);
 
-	bool conflictWithHistory(const Cmd &) const;
+	bool conflictWithPending(const Cmd &) const;
 	bool conflictWithOut(const Cmd &) const;
 
 	void handleMtbUsbError(uint8_t code, uint8_t out_command_code, uint8_t addr);
 	void handleMtbBusError(uint8_t errorCode, uint8_t addr);
-	void histTimeoutError(CmdError, size_t i = 0);
-	void histResend();
+	void pendingTimeoutError(CmdError, size_t i = 0);
+	void pendingResend();
 };
 
 // Templated functions must be in header file to compile

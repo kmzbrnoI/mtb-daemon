@@ -24,9 +24,9 @@ void MtbUsb::write(std::unique_ptr<const Cmd> cmd, size_t no_sent) {
 
 	try {
 		send(cmd->getBytes());
-		m_hist.emplace_back(
+		m_pending.emplace_back(
 			cmd,
-			QDateTime::currentDateTime().addMSecs(_HIST_TIMEOUT),
+			QDateTime::currentDateTime().addMSecs(_PENDING_TIMEOUT),
 			no_sent
 		);
 	} catch (std::exception &) {
@@ -37,10 +37,10 @@ void MtbUsb::write(std::unique_ptr<const Cmd> cmd, size_t no_sent) {
 
 void MtbUsb::send(std::unique_ptr<const Cmd> &cmd, bool bypass_m_out_emptiness) {
 	// Sends or queues
-	if ((m_hist.size() >= _MAX_HIST_BUF_COUNT) || (!m_out.empty() && !bypass_m_out_emptiness) ||
-	    conflictWithHistory(*cmd)) {
-		// History full -> push & do not start timer (response from CS will send automatically)
-		// We ensure history buffer never contains commands with conflict
+	if ((m_pending.size() >= _MAX_PENDING_BUF_COUNT) || (!m_out.empty() && !bypass_m_out_emptiness) ||
+	    conflictWithPending(*cmd)) {
+		// Pending full -> push & do not start timer (response from CS will send automatically)
+		// We ensure pending buffer never contains commands with conflict
 		log("ENQUEUE: " + cmd->msg(), LogLevel::Debug);
 		m_out.emplace_back(std::move(cmd));
 	} else {

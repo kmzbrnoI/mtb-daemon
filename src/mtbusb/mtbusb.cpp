@@ -12,7 +12,7 @@ MtbUsb::MtbUsb(QObject *parent) : QObject(parent) {
 	                 SLOT(spHandleError(QSerialPort::SerialPortError)));
 	QObject::connect(&m_serialPort, SIGNAL(aboutToClose()), this, SLOT(spAboutToClose()));
 
-	QObject::connect(&m_histTimer, SIGNAL(timeout()), this, SLOT(histTimerTick()));
+	QObject::connect(&m_pendingTimer, SIGNAL(timeout()), this, SLOT(pendingTimerTick()));
 	QObject::connect(&m_pingTimer, SIGNAL(timeout()), this, SLOT(pingTimerTick()));
 
 	m_pingTimer.setInterval(_PING_SEND_PERIOD_MS);
@@ -24,11 +24,11 @@ void MtbUsb::log(const QString &message, const LogLevel loglevel) {
 }
 
 void MtbUsb::spAboutToClose() {
-	m_histTimer.stop();
+	m_pendingTimer.stop();
 	m_pingTimer.stop();
-	while (!m_hist.empty()) {
-		m_hist.front().cmd->callError(CmdError::SerialPortClosed);
-		m_hist.pop_front();
+	while (!m_pending.empty()) {
+		m_pending.front().cmd->callError(CmdError::SerialPortClosed);
+		m_pending.pop_front();
 	}
 	while (!m_out.empty()) {
 		m_out.front()->callError(CmdError::SerialPortClosed);
@@ -85,7 +85,7 @@ void MtbUsb::connect(const QString &portname, int32_t br, QSerialPort::FlowContr
 
 	m_serialPort.setDataTerminalReady(true);
 
-	m_histTimer.start(_HIST_CHECK_INTERVAL);
+	m_pendingTimer.start(_PENDING_CHECK_INTERVAL);
 	m_pingTimer.start();
 	log("Connected", LogLevel::Info);
 	emit onConnect();

@@ -124,14 +124,14 @@ void MtbUsb::parseMtbUsbMessage(uint8_t command_code, const std::vector<uint8_t>
 		break;
 	}
 
-	// Find appropriate history item & call its ok callback
-	for (size_t i = 0; i < m_hist.size(); i++) {
-		const Cmd* cmd = m_hist[i].cmd.get();
+	// Find appropriate pending item & call its ok callback
+	for (size_t i = 0; i < m_pending.size(); i++) {
+		const Cmd* cmd = m_pending[i].cmd.get();
 		if (cmd->processUsbResponse(static_cast<MtbUsbRecvCommand>(command_code), data)) {
-			// Find this item in history again, because error callback may sent new command and thus invalidated m_hist iterators
-			for (auto it = m_hist.begin(); it != m_hist.end(); ++it) {
+			// Find this item in pendingory again, because error callback may sent new command and thus invalidated m_pending iterators
+			for (auto it = m_pending.begin(); it != m_pending.end(); ++it) {
 				if (it->cmd.get() == cmd) {
-					m_hist.erase(it);
+					m_pending.erase(it);
 					if (!m_out.empty())
 						this->sendNextOut();
 					return;
@@ -203,15 +203,15 @@ void MtbUsb::parseMtbBusMessage(uint8_t module, uint8_t attempts, uint8_t comman
 		break;
 	}
 
-	// Find appropriate history item & call its ok callback
-	for (size_t i = 0; i < m_hist.size(); i++) {
-		if (is<CmdMtbUsbForward>(*m_hist[i].cmd)) {
-			const CmdMtbUsbForward &forward = dynamic_cast<const CmdMtbUsbForward&>(*m_hist[i].cmd);
+	// Find appropriate pendingory item & call its ok callback
+	for (size_t i = 0; i < m_pending.size(); i++) {
+		if (is<CmdMtbUsbForward>(*m_pending[i].cmd)) {
+			const CmdMtbUsbForward &forward = dynamic_cast<const CmdMtbUsbForward&>(*m_pending[i].cmd);
 			if ((forward.module == module) &&
 			    (forward.processBusResponse(command, data))) {
-				for (auto it = m_hist.begin(); it != m_hist.end(); ++it) {
-					if (it->cmd.get() == m_hist[i].cmd.get()) {
-						m_hist.erase(it);
+				for (auto it = m_pending.begin(); it != m_pending.end(); ++it) {
+					if (it->cmd.get() == m_pending[i].cmd.get()) {
+						m_pending.erase(it);
 						if (!m_out.empty())
 							this->sendNextOut();
 						return;
@@ -235,13 +235,13 @@ void MtbUsb::parseMtbBusMessage(uint8_t module, uint8_t attempts, uint8_t comman
 void MtbUsb::handleMtbUsbError(uint8_t code, uint8_t out_command_code, uint8_t addr) {
 	MtbUsbRecvError error = static_cast<MtbUsbRecvError>(code);
 	if (error == MtbUsbRecvError::NoResponse) {
-		for (size_t i = 0; i < m_hist.size(); i++) {
-			if (is<CmdMtbUsbForward>(*m_hist[i].cmd)) {
-				const CmdMtbUsbForward &forward = dynamic_cast<const CmdMtbUsbForward&>(*m_hist[i].cmd);
+		for (size_t i = 0; i < m_pending.size(); i++) {
+			if (is<CmdMtbUsbForward>(*m_pending[i].cmd)) {
+				const CmdMtbUsbForward &forward = dynamic_cast<const CmdMtbUsbForward&>(*m_pending[i].cmd);
 				if ((out_command_code == forward.busCommandCode) && (addr == forward.module)) {
 					log("GET: error: no response from module "+QString::number(addr)+" to command "+forward.msg(),
 					    LogLevel::Error);
-					histTimeoutError(CmdError::BusNoResponse, i);
+					pendingTimeoutError(CmdError::BusNoResponse, i);
 					return;
 				}
 			}
@@ -265,13 +265,13 @@ void MtbUsb::handleMtbUsbError(uint8_t code, uint8_t out_command_code, uint8_t a
 void MtbUsb::handleMtbBusError(uint8_t errorCode, uint8_t addr) {
 	MtbBusRecvError error = static_cast<MtbBusRecvError>(errorCode);
 
-	for (size_t i = 0; i < m_hist.size(); i++) {
-		if (is<CmdMtbUsbForward>(*m_hist[i].cmd)) {
-			const CmdMtbUsbForward &forward = dynamic_cast<const CmdMtbUsbForward&>(*m_hist[i].cmd);
+	for (size_t i = 0; i < m_pending.size(); i++) {
+		if (is<CmdMtbUsbForward>(*m_pending[i].cmd)) {
+			const CmdMtbUsbForward &forward = dynamic_cast<const CmdMtbUsbForward&>(*m_pending[i].cmd);
 			if (addr == forward.module) {
 				log("GET: error: "+mtbBusRecvErrorToStr(error)+", module: "+QString::number(addr)+
 				    ", command: "+forward.msg(), LogLevel::Error);
-				histTimeoutError(static_cast<CmdError>(errorCode), i);
+				pendingTimeoutError(static_cast<CmdError>(errorCode), i);
 				return;
 			}
 		}
@@ -281,17 +281,17 @@ void MtbUsb::handleMtbBusError(uint8_t errorCode, uint8_t addr) {
 		", unable to pair with outgoing command", LogLevel::Error);
 }
 
-void MtbUsb::histTimeoutError(CmdError cmdError, size_t i) {
-	auto it = m_hist.begin();
+void MtbUsb::pendingTimeoutError(CmdError cmdError, size_t i) {
+	auto it = m_pending.begin();
 	for (size_t j = 0; j < i; j++) {
 		++it;
-		if (it == m_hist.end())
+		if (it == m_pending.end())
 			return;
 	}
 
-	assert(m_hist[i].cmd != nullptr);
-	std::unique_ptr<const Cmd> cmd = std::move(m_hist[i].cmd);
-	m_hist.erase(it);
+	assert(m_pending[i].cmd != nullptr);
+	std::unique_ptr<const Cmd> cmd = std::move(m_pending[i].cmd);
+	m_pending.erase(it);
 	cmd->callError(cmdError);
 
 	if (!m_out.empty())
