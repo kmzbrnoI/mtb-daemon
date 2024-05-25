@@ -635,6 +635,7 @@ QJsonObject MtbModule::dvRepr(uint8_t dvi, const std::vector<uint8_t> &data) con
 		case Mtb::DVCommon::MtbBusReceived:
 		case Mtb::DVCommon::MtbBusBadCrc:
 		case Mtb::DVCommon::MtbBusSent:
+		case Mtb::DVCommon::MtbBusNotSent:
 			if (data.size() == 4)
 				return {{Mtb::DVCommonToStr(dvi), static_cast<qint64>(pack<uint32_t>(data))}};
 			break;
