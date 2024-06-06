@@ -29,6 +29,19 @@ to control MTBbus and MTBbus modules. When connection with MTB-USB fails,
 daemon reports this event to clients and keeps running. When MTB-USB is
 available again, connection is established again.
 
+## Using
+
+Just start the console application and let it run as a daemon on background.
+
+```bash
+$ ./mtb-daemon [config-filename]
+```
+
+The program takes a single optional argument – path to main configuration file
+(default: `./mtb-daemon.json`).
+
+See [Description of mtb-daemon.json file](doc.mtb-daemon.json.md).
+
 ## Building & toolkit
 
 This library was developed in `vim` using `qmake` & `make`. It is suggested
