@@ -1,5 +1,5 @@
-#ifndef ERRORS_H
-#define ERRORS_H
+#ifndef _ERRORS_H_
+#define _ERRORS_H_
 
 constexpr size_t MTB_MODULE_INVALID_ADDR = 1100;
 constexpr size_t MTB_MODULE_INVALID_PORT = 1101;

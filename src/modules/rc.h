@@ -1,5 +1,5 @@
-#ifndef MODULE_MTB_RC_H
-#define MODULE_MTB_RC_H
+#ifndef _MODULE_MTB_RC_H_
+#define _MODULE_MTB_RC_H_
 
 #include <set>
 #include <QMap>

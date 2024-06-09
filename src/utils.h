@@ -1,5 +1,5 @@
-#ifndef __UTILS_H_
-#define __UTILS_H_
+#ifndef _UTILS_H_
+#define _UTILS_H_
 
 #include <QMap>
 #include <vector>

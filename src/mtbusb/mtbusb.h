@@ -1,5 +1,5 @@
-#ifndef MTBUSB_H
-#define MTBUSB_H
+#ifndef _MTBUSB_H_
+#define _MTBUSB_H_
 
 /* Low-level access to MTB-USB module via CDC serial port. */
 

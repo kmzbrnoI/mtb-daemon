@@ -1,5 +1,5 @@
-#ifndef MODULE_MTB_UNI_H
-#define MODULE_MTB_UNI_H
+#ifndef _MODULE_MTB_UNI_H_
+#define _MODULE_MTB_UNI_H_
 
 #include "module.h"
 #include "server.h"

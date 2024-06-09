@@ -1,5 +1,5 @@
-#ifndef MTBUSB_COMMANDS
-#define MTBUSB_COMMANDS
+#ifndef _MTBUSB_COMMANDS_
+#define _MTBUSB_COMMANDS_
 
 /*
 This file defines MTB-USB & MTBbus commands.

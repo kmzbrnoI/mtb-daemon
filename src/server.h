@@ -1,5 +1,5 @@
-#ifndef DAEMON_SERVER_H
-#define DAEMON_SERVER_H
+#ifndef _SERVER_H_
+#define _SERVER_H_
 
 #include <QObject>
 #include <QTcpServer>

@@ -1,5 +1,5 @@
-#ifndef MTBUSB_COMMON_H
-#define MTBUSB_COMMON_H
+#ifndef _MTBUSB_COMMON_H_
+#define _MTBUSB_COMMON_H_
 
 #include <stdexcept>
 #include <QString>

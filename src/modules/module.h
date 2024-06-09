@@ -1,5 +1,5 @@
-#ifndef MODULE_H
-#define MODULE_H
+#ifndef _MODULE_H_
+#define _MODULE_H_
 
 #include <QTcpSocket>
 #include <QJsonObject>
