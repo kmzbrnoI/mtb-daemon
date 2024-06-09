@@ -1,6 +1,7 @@
 #ifndef _ERRORS_H_
 #define _ERRORS_H_
 
+constexpr size_t MTB_INVALID_JSON = 1000;
 constexpr size_t MTB_MODULE_INVALID_ADDR = 1100;
 constexpr size_t MTB_MODULE_INVALID_PORT = 1101;
 constexpr size_t MTB_MODULE_FAILED = 1102;

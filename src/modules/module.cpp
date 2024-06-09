@@ -98,7 +98,7 @@ void MtbModule::mtbBusDiagStateChanged(bool isError, bool isWarning) {
 }
 
 void MtbModule::jsonCommand(QTcpSocket *socket, const QJsonObject &request, bool hasWriteAccess) {
-	QString command = request["command"].toString();
+	QString command = QJsonSafe::safeString(request, "command");
 
 	// Commands for clients with read-only access
 	if (command == "module_diag")
@@ -133,9 +133,9 @@ void MtbModule::jsonSetOutput(QTcpSocket *socket, const QJsonObject &request) {
 
 void MtbModule::jsonSetConfig(QTcpSocket*, const QJsonObject &json) {
 	if (json.contains("type_code"))
-		this->type = static_cast<MtbModuleType>(json["type_code"].toInt());
+		this->type = static_cast<MtbModuleType>(QJsonSafe::safeUInt(json, "type_code"));
 	if (json.contains("name"))
-		this->name = json["name"].toString();
+		this->name = QJsonSafe::safeString(json, "name");
 }
 
 void MtbModule::jsonSetAddress(QTcpSocket *socket, const QJsonObject &request) {
@@ -152,7 +152,7 @@ void MtbModule::jsonSetAddress(QTcpSocket *socket, const QJsonObject &request) {
 		return;
 	}
 
-	uint8_t newaddr = request["new_address"].toInt(1);
+	uint8_t newaddr = QJsonSafe::safeUInt(request, "new_address");
 	mtbusb.send(
 		Mtb::CmdMtbModuleChangeAddr(
 			this->address, newaddr,
@@ -242,8 +242,8 @@ void MtbModule::sendOutputsChanged(QJsonObject outputs, const std::vector<QTcpSo
 }
 
 void MtbModule::loadConfig(const QJsonObject &json) {
-	this->name = json["name"].toString();
-	this->type = static_cast<MtbModuleType>(json["type"].toInt());
+	this->name = QJsonSafe::safeString(json, "name");
+	this->type = static_cast<MtbModuleType>(QJsonSafe::safeUInt(json, "type"));
 }
 
 void MtbModule::saveConfig(QJsonObject &json) const {
@@ -285,7 +285,7 @@ bool MtbModule::isConfigSetting() const { return this->configWriting.has_value()
 void MtbModule::jsonGetDiag(QTcpSocket *socket, const QJsonObject &request) {
 	uint8_t dv_num = 0;
 	if (request.contains("DVnum")) {
-		dv_num = request["DVnum"].toInt();
+		dv_num = QJsonSafe::safeUInt(request, "DVnum");
 	} else {
 		std::optional<uint8_t> dv = this->StrToDV(request["DVkey"].toString());
 		if (!dv)
@@ -337,7 +337,7 @@ std::map<size_t, std::vector<uint8_t>> MtbModule::parseFirmware(const QJsonObjec
 
 	for (const QString &key : json.keys()) {
 		size_t addr = key.toInt();
-		const QString &dataStr = json[key].toString();
+		const QString &dataStr = QJsonSafe::safeString(json[key]);
 		std::vector<uint8_t> data;
 		for (int i = 0; i < dataStr.size(); i += 2)
 			data.push_back(dataStr.mid(i, 2).toInt(nullptr, 16));
@@ -541,10 +541,14 @@ void MtbModule::fullyActivated() {
 }
 
 void MtbModule::jsonSpecificCommand(QTcpSocket *socket, const QJsonObject &request) {
-	const QJsonArray &dataAr = request["data"].toArray();
+	const QJsonArray dataAr = QJsonSafe::safeArray(request, "data");
 	std::vector<uint8_t> data;
-	for (const auto var : dataAr)
-		data.push_back(var.toInt());
+	for (const auto var : dataAr) {
+		unsigned int value = QJsonSafe::safeUInt(var);
+		if (value > 0xFF)
+			throw JsonParseError("Each item of 'data' must be <= 0xFF");
+		data.push_back(value);
+	}
 
 	mtbusb.send(
 		Mtb::CmdMtbModuleSpecific(
@@ -569,7 +573,7 @@ void MtbModule::jsonSpecificCommand(QTcpSocket *socket, const QJsonObject &reque
 }
 
 void MtbModule::jsonBeacon(QTcpSocket *socket, const QJsonObject &request) {
-	bool beacon = request["beacon"].toBool();
+	bool beacon = QJsonSafe::safeBool(request, "beacon");
 
 	mtbusb.send(
 		Mtb::CmdMtbModuleBeacon(

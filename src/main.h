@@ -9,6 +9,7 @@
 #include "mtbusb.h"
 #include "server.h"
 #include "module.h"
+#include "qjsonsafe.h"
 
 extern Mtb::MtbUsb mtbusb;
 extern DaemonServer server;
@@ -32,11 +33,6 @@ struct ConfigNotFound : public std::logic_error {
 struct FileWriteError : public std::logic_error {
 	FileWriteError(const std::string &str) : std::logic_error(str) {}
 	FileWriteError(const QString &str) : logic_error(str.toStdString()) {}
-};
-
-struct JsonParseError : public std::logic_error {
-	JsonParseError(const std::string &str) : std::logic_error(str) {}
-	JsonParseError(const QString &str) : logic_error(str.toStdString()) {}
 };
 
 

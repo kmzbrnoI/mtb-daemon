@@ -13,6 +13,7 @@ SOURCES += \
 	src/mtbusb/mtbusb-win-com-discover.cpp \
 	src/server.cpp \
 	src/logging.cpp \
+	src/qjsonsafe.cpp \
 	src/modules/module.cpp \
 	src/modules/uni.cpp \
 	src/modules/unis.cpp \
@@ -26,6 +27,7 @@ HEADERS += \
 	src/mtbusb/mtbusb-common.h \
 	src/server.h \
 	src/logging.h \
+	src/qjsonsafe.h \
 	src/modules/module.h \
 	src/modules/uni.h \
 	src/modules/unis.h \

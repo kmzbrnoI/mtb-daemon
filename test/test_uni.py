@@ -174,10 +174,11 @@ def test_set_output_invalid_port() -> None:
 
 def test_set_output_empty() -> None:
     # Missing 'outputs' -> should do nothing
-    mtb_daemon.request_response(
+    response = mtb_daemon.request_response(
         {'command': 'module_set_outputs', 'address': common.TEST_MODULE_ADDR},
+        ok=False
     )
-    check_uni_state(common.TEST_MODULE_ADDR, 0)
+    common.check_error(response, common.MtbDaemonError.INVALID_JSON)
 
 
 def test_set_output_of_inactive_module() -> None:
@@ -255,7 +256,10 @@ def set_and_check_input_delay(addr: int, delay: float) -> None:
     mtb_daemon.request_response({
         'command': 'module_set_config',
         'address': addr,
-        'config': {'inputsDelay': [delay] + [0]*15},
+        'config': {
+            'inputsDelay': [delay] + [0]*15,
+            'outputsSafe': [{'type': 'plain', 'value': 1}]*16,
+        },
     })
 
     # Activate output
@@ -299,7 +303,10 @@ def test_set_inputs_delay_inactive() -> None:
     mtb_daemon.request_response({
         'command': 'module_set_config',
         'address': common.INACTIVE_MODULE_ADDR,
-        'config': {'inputsDelay': delays},
+        'config': {
+            'inputsDelay': delays,
+            'outputsSafe': [{'type': 'plain', 'value': 1}]*16,
+        },
     })
 
     response = mtb_daemon.request_response({
@@ -312,7 +319,10 @@ def test_set_inputs_delay_inactive() -> None:
     mtb_daemon.request_response({
         'command': 'module_set_config',
         'address': common.INACTIVE_MODULE_ADDR,
-        'config': {'inputsDelay': [0]*16},
+        'config': {
+            'inputsDelay': [0]*16,
+            'outputsSafe': [{'type': 'plain', 'value': 1}]*16,
+        },
     })
 
     response = mtb_daemon.request_response({
@@ -326,7 +336,10 @@ def set_output_0_safe_and_check(addr: int, value: int) -> None:
     mtb_daemon.request_response({
         'command': 'module_set_config',
         'address': addr,
-        'config': {'outputsSafe': [{'type': 'plain', 'value': value}]},
+        'config': {
+            'outputsSafe': [{'type': 'plain', 'value': value}]*16,
+            'inputsDelay': [0]*16,
+        },
     })
 
     time.sleep(0.5)  # TODO: this is required; is it an issue?

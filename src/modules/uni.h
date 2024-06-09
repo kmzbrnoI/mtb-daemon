@@ -13,6 +13,7 @@ struct MtbUniConfig {
 	std::array<size_t, UNI_IO_CNT> inputsDelay = {0, }; // 0 = 0s, 1 = 0.1s, 15 = 1.5s, min=0, max=15
 	uint16_t irs = 0;
 
+	MtbUniConfig() {} // default config
 	MtbUniConfig(const QJsonObject& json) { this->fromJson(json); }
 	MtbUniConfig(const std::vector<uint8_t>& mtbUsbData) { this->fromMtbUsb(mtbUsbData); }
 

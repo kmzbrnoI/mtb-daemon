@@ -19,6 +19,7 @@ struct MtbUnisConfig {
 	std::array<uint8_t, UNIS_SERVO_OUT_CNT> servoPosition = {0, };
 	std::array<uint8_t, UNIS_SERVO_CNT> servoSpeed = {0, };
 
+	MtbUnisConfig() {} // default config
 	MtbUnisConfig(const QJsonObject& json) { this->fromJson(json); }
 	MtbUnisConfig(const std::vector<uint8_t>& mtbUsbData) { this->fromMtbUsb(mtbUsbData); }
 

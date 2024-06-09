@@ -51,7 +51,8 @@ void MtbUnis::jsonSetOutput(QTcpSocket *socket, const QJsonObject &request) {
 		return;
 	}
 
-	QJsonObject outputs = request["outputs"].toObject();
+	QJsonObject outputs = QJsonSafe::safeObject(request, "outputs");
+	QMap<size_t, uint8_t> ports; // code per port
 
 	// Validate ports
 	bool ok;
@@ -61,6 +62,13 @@ void MtbUnis::jsonSetOutput(QTcpSocket *socket, const QJsonObject &request) {
 			sendError(socket, request, MTB_MODULE_INVALID_PORT, "Invalid port: "+key);
 			return;
 		}
+
+		try {
+			ports[port] = jsonOutputToByte(QJsonSafe::safeObject(outputs[key]));
+		} catch (const JsonParseError& e) {
+			sendError(socket, request, MTB_MODULE_INVALID_PORT, "Invalid port "+key+" content: "+e.what());
+			return;
+		}
 	}
 
 	bool send = (this->outputsWant == this->outputsConfirmed);
@@ -68,14 +76,13 @@ void MtbUnis::jsonSetOutput(QTcpSocket *socket, const QJsonObject &request) {
 
 	for (const auto &key : outputs.keys()) {
 		size_t port = key.toInt();
-		uint8_t code = jsonOutputToByte(outputs[key].toObject());
-		if (code != this->outputsWant[port]) {
+		if (ports[port] != this->outputsWant[port]) {
 			changed = true;
 			if ((this->whoSetOutput[port] != nullptr) && (this->whoSetOutput[port] != socket))
 				this->mlog("Multiple clients set same output: "+QString::number(port), Mtb::LogLevel::Warning);
 			this->whoSetOutput[port] = socket;
 		}
-		this->outputsWant[port] = code;
+		this->outputsWant[port] = ports[port];
 	}
 
 	if (changed) {
@@ -93,22 +100,26 @@ void MtbUnis::jsonSetOutput(QTcpSocket *socket, const QJsonObject &request) {
 }
 
 uint8_t MtbUnis::jsonOutputToByte(const QJsonObject &json) {
+	unsigned int value = QJsonSafe::safeUInt(json, "value");
+
 	if (json["type"] == "plain") {
-		return (json["value"].toInt() > 0) ? 1 : 0;
+		if ((value != 0) && (value != 1))
+			throw JsonParseError("'value' can only be 0/1!");
+		return (value > 0) ? 1 : 0;
 	}
 	if (json["type"] == "s-com") {
-		uint8_t value = json["value"].toInt();
 		if (value > 127)
-			value = 127;
+			throw JsonParseError("'value' can only be 0-127!");
 		return value | 0x80;
 	}
 	if (json["type"] == "flicker") {
-		uint8_t value = flickPerMinToMtbUnisValue(json["value"].toInt());
-		if (value == 0)
-			value = 1;
+		uint8_t flick = flickPerMinToMtbUnisValue(value);
+		if (flick == 0)
+			throw JsonParseError("'value' is not a valid flicker frequency!");
 		return value | 0x40;
 	}
-	return 0;
+
+	throw JsonParseError("unknown output type");
 }
 
 void MtbUnis::setOutputs() {
@@ -239,11 +250,16 @@ void MtbUnis::jsonSetConfig(QTcpSocket *socket, const QJsonObject &request) {
 		sendError(socket, request, MTB_MODULE_IN_BOOTLOADER, "Module is in bootloader!");
 		return;
 	}
-	this->mlog("json set config", Mtb::LogLevel::Info);
+
+	// Check validity first
+	MtbUnisConfig newConfig;
+	if (request.contains("config")) // allow to create empty module with empty config
+		newConfig = MtbUnisConfig(QJsonSafe::safeObject(request, "config"));
+
 	MtbModule::jsonSetConfig(socket, request);
 
 	std::optional<MtbUnisConfig> oldConfig = this->configToWrite;
-	this->configToWrite.emplace(MtbUnisConfig(request["config"].toObject()));
+	this->configToWrite.emplace(newConfig);
 	this->configWriting = ServerRequest(socket, request);
 
 	if ((this->active) && (oldConfig != this->configToWrite)) {
@@ -307,7 +323,7 @@ void MtbUnis::jsonUpgradeFw(QTcpSocket *socket, const QJsonObject &request) {
 	}
 
 	this->fwUpgrade.fwUpgrading = ServerRequest(socket, request);
-	this->fwUpgrade.data = parseFirmware(request["firmware"].toObject());
+	this->fwUpgrade.data = parseFirmware(QJsonSafe::safeObject(request, "firmware"));
 	this->alignFirmware(this->fwUpgrade.data, UNIS_PAGE_SIZE);
 
 	if (!this->configWriting.has_value() && this->setOutputsSent.empty())
@@ -554,13 +570,14 @@ void MtbUnis::mtbUsbDisconnected() {
 	this->inputs = 0;
 }
 
-/* -------------------------------------------------------------------------- */
+/* MtbUnisConfig ------------------------------------------------------------ */
 
 std::vector<uint8_t> MtbUnisConfig::serializeForMtbUsb() const {
 	std::vector<uint8_t> result;
 	std::copy(this->outputsSafe.begin(), this->outputsSafe.end(), std::back_inserter(result));
 	for (size_t i = 0; i < 8; i++)
-		result.push_back(this->inputsDelay[2*i] | (this->inputsDelay[2*i+1] << 4));
+		result.push_back(std::min<uint8_t>(this->inputsDelay[2*i], 0xF) |
+		                                   (std::min<uint8_t>(this->inputsDelay[2*i+1], 0xF) << 4));
 	result.push_back(this->servoEnabledMask & 0x3F);
 	for (size_t i = 0; i < UNIS_SERVO_OUT_CNT; i++)
 		result.push_back(this->servoPosition[i]);
@@ -614,28 +631,24 @@ QJsonObject MtbUnisConfig::json() const {
 }
 
 void MtbUnisConfig::fromJson(const QJsonObject &json) {
-	const QJsonArray &jsonOutputsSafe = json["outputsSafe"].toArray();
-	const QJsonArray &jsonInputsDelay = json["inputsDelay"].toArray();
-	const QJsonArray &jsonServoPosition = json["servoPosition"].toArray();
-	const QJsonArray &jsonServoSpeed = json["servoSpeed"].toArray();
+	const QJsonArray &jsonOutputsSafe = QJsonSafe::safeArray(json, "outputsSafe", UNIS_OUT_CNT);
+	const QJsonArray &jsonInputsDelay = QJsonSafe::safeArray(json, "inputsDelay", UNIS_IN_CNT);
+	const QJsonArray &jsonServoPosition = QJsonSafe::safeArray(json, "servoPosition", UNIS_SERVO_CNT);
+	const QJsonArray &jsonServoSpeed = QJsonSafe::safeArray(json, "servoSpeed", UNIS_SERVO_CNT);
 
 	for (size_t i = 0; i < UNIS_IN_CNT; i++) {
-		if (i < static_cast<size_t>(jsonInputsDelay.size()))
-			this->inputsDelay[i] = jsonInputsDelay[i].toDouble()*10;
+		int value = QJsonSafe::safeDouble(jsonInputsDelay[i])*10;
+		if ((value < 0) || (value > 15))
+			throw JsonParseError("Allowed delay: 0-1.5 s (0.1 s units)!");
+		this->inputsDelay[i] = value;
 	}
-	for (size_t i = 0; i < UNIS_OUT_CNT; i++) {
-		if (i < static_cast<size_t>(jsonOutputsSafe.size()))
-			this->outputsSafe[i] = MtbUnis::jsonOutputToByte(jsonOutputsSafe[i].toObject());
-	}
-	this->servoEnabledMask = json["servoEnabledMask"].toInt(0);
-	for (size_t i = 0; i < UNIS_SERVO_OUT_CNT; i++) {
-		if (i < static_cast<size_t>(jsonServoPosition.size()))
-			this->servoPosition[i] = jsonServoPosition[i].toInt(127);
-	}
-	for (size_t i = 0; i < UNIS_SERVO_CNT; i++) {
-		if (i < static_cast<size_t>(jsonServoSpeed.size()))
-			this->servoSpeed[i] = jsonServoSpeed[i].toInt(20);
-	}
+	for (size_t i = 0; i < UNIS_OUT_CNT; i++)
+		this->outputsSafe[i] = MtbUnis::jsonOutputToByte(QJsonSafe::safeObject(jsonOutputsSafe[i]));
+	this->servoEnabledMask = QJsonSafe::safeUInt(json, "servoEnabledMask");
+	for (size_t i = 0; i < UNIS_SERVO_OUT_CNT; i++)
+		this->servoPosition[i] = QJsonSafe::safeUInt(jsonServoPosition[i]);
+	for (size_t i = 0; i < UNIS_SERVO_CNT; i++)
+		this->servoSpeed[i] = QJsonSafe::safeUInt(jsonServoSpeed[i]);
 }
 
 void MtbUnisConfig::fromMtbUsb(const std::vector<uint8_t> &data) {
@@ -696,7 +709,7 @@ void MtbUnis::reactivateCheck() {
 
 void MtbUnis::loadConfig(const QJsonObject &json) {
 	MtbModule::loadConfig(json);
-	this->config.emplace(MtbUnisConfig(json["config"].toObject()));
+	this->config.emplace(MtbUnisConfig(QJsonSafe::safeObject(json, "config")));
 }
 
 void MtbUnis::saveConfig(QJsonObject &json) const {
