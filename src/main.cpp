@@ -272,7 +272,8 @@ void DaemonCoreApplication::moduleGotInfo(uint8_t addr, Mtb::ModuleInfo info) {
 	}
 	if (modules[addr] == nullptr) { // module not created yet
 		modules[addr] = this->newModule(info.type, addr);
-		log("Created new module "+QString::number(addr), Mtb::LogLevel::Info);
+		log("Created new module "+QString::number(addr)+
+		    " ("+moduleTypeToStr(static_cast<MtbModuleType>(info.type))+")", Mtb::LogLevel::Info);
 	}
 
 	modules[addr]->mtbBusActivate(info);
