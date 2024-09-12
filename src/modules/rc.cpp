@@ -100,6 +100,7 @@ void MtbRc::mtbBusActivate(Mtb::ModuleInfo info) {
 	if (info.inBootloader()) {
 		// In bootloader → mark as active, don't do anything else
 		this->mlog("Module is in bootloader!", Mtb::LogLevel::Info);
+		this->active = true;
 		return;
 	}
 

@@ -633,7 +633,7 @@ QJsonObject MtbUnisConfig::json() const {
 void MtbUnisConfig::fromJson(const QJsonObject &json) {
 	const QJsonArray &jsonOutputsSafe = QJsonSafe::safeArray(json, "outputsSafe", UNIS_OUT_CNT);
 	const QJsonArray &jsonInputsDelay = QJsonSafe::safeArray(json, "inputsDelay", UNIS_IN_CNT);
-	const QJsonArray &jsonServoPosition = QJsonSafe::safeArray(json, "servoPosition", UNIS_SERVO_CNT);
+	const QJsonArray &jsonServoPosition = QJsonSafe::safeArray(json, "servoPosition", UNIS_SERVO_CNT * 2);
 	const QJsonArray &jsonServoSpeed = QJsonSafe::safeArray(json, "servoSpeed", UNIS_SERVO_CNT);
 
 	for (size_t i = 0; i < UNIS_IN_CNT; i++) {
