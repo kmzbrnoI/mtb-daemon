@@ -141,7 +141,7 @@ uint8_t MtbUni::jsonOutputToByte(const QJsonObject &json) {
 		uint8_t flick = flickPerMinToMtbUniValue(value);
 		if (flick == 0)
 			throw JsonParseError("'value' is not a valid flicker frequency!");
-		return value | 0x40;
+		return flick | 0x40;
 	}
 
 	throw JsonParseError("unknown output type");
@@ -608,7 +608,7 @@ QJsonObject MtbUniConfig::json(bool withIrs, bool file) const {
 				outputs["value"] = output & 0x7F;
 			} else if ((output & 0x40) > 0) {
 				outputs["type"] = "flicker";
-				outputs["value"] = output & 0x0F;
+				outputs["value"] = static_cast<int>(MtbUni::flickMtbUniToPerMin(output & 0x0F));
 			} else {
 				outputs["type"] = "plain";
 				outputs["value"] = output & 1;

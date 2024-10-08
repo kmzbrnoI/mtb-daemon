@@ -41,6 +41,8 @@ struct MtbUnisConfig {
 };
 
 class MtbUnis : public MtbModule {
+	friend MtbUnisConfig;
+
 protected:
 	uint16_t inputs;
 	std::array<uint8_t, UNIS_OUT_CNT> outputsWant;
