@@ -15,6 +15,7 @@ Usage:
   manage.py [options] mtbusb speed <speed>
   manage.py [options] version
   manage.py [options] module <module_addr> [--diag]
+  manage.py [options] delete <module_addr>
   manage.py [options] inputs <module_addr>
   manage.py [options] outputs <module_addr>
   manage.py [options] reboot <module_addr>
@@ -137,6 +138,13 @@ def module(sock: socket.socket, verbose: bool, module: int) -> None:
             unis_print_config(val['config'])
             val.pop('config')
         print(key, ':', val)
+
+
+def delete(sock: socket.socket, verbose: bool, module: int) -> None:
+    response = request_response(sock, verbose, {
+        'command': 'module_delete',
+        'address': module,
+    })
 
 
 def module_diag(sock: socket.socket, verbose: bool, module: int) -> None:
@@ -533,6 +541,9 @@ if __name__ == '__main__':
             module(sock, args['-v'], int(args['<module_addr>']))
             if bool(args['--diag']):
                 module_diag(sock, args['-v'], int(args['<module_addr>']))
+
+        elif args['delete']:
+            delete(sock, args['-v'], int(args['<module_addr>']))
 
         elif args['inputs']:
             get_inputs(sock, args['-v'], int(args['<module_addr>']))
