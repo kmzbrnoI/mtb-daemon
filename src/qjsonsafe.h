@@ -35,6 +35,6 @@ bool safeBool(const QJsonObject &parent, const QString &key);
 QString safeString(const QJsonValue&);
 QString safeString(const QJsonObject &parent, const QString &key);
 
-}; // namespace QJsonSafe
+} // namespace QJsonSafe
 
 #endif
