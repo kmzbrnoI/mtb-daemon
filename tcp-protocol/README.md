@@ -74,3 +74,4 @@ Valid address of a MTB module: 1..255.
 ## Specialization of messages for module types
 
  * [MTB-UNI](uni.md)
+ * [MTB-UNIS](unis.md)
