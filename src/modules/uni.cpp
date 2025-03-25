@@ -658,7 +658,8 @@ void MtbUniConfig::fromJson(const QJsonObject &json) {
 			this->inputsDelay[i] = value;
 		}
 		if (i < static_cast<size_t>(jsonIrs.size()))
-			this->irs |= (1 << QJsonSafe::safeBool(jsonIrs[i]));
+			if (QJsonSafe::safeBool(jsonIrs[i]))
+				this->irs |= (1 << i);
 	}
 }
 
