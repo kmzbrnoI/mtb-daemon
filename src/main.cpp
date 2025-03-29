@@ -825,6 +825,7 @@ QJsonObject DaemonCoreApplication::mtbUsbJson() const {
 			status["speed"] = Mtb::mtbBusSpeedToInt(mtbusbinfo.speed);
 		} catch (...) {}
 		status["firmware_version"] = mtbusbinfo.fw_version();
+		status["firmware_deprecated"] = mtbusbinfo.fw_deprecated();
 		status["protocol_version"] = mtbusbinfo.proto_version();
 
 		QJsonArray jsonActiveModules;
