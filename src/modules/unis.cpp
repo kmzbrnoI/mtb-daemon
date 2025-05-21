@@ -9,6 +9,10 @@ MtbUnis::MtbUnis(uint8_t addr) : MtbModule(addr) {
 	std::fill(this->whoSetOutput.begin(), this->whoSetOutput.end(), nullptr);
 }
 
+bool MtbUni::fwDeprecated() const {
+	return (this->busModuleInfo.uint_fw_version() <= UNIS_FW_DEPRECATED);
+}
+
 /* JSON Module Info --------------------------------------------------------- */
 
 QJsonObject MtbUnis::moduleInfo(bool state, bool config) const {
@@ -583,6 +587,8 @@ std::vector<uint8_t> MtbUnisConfig::serializeForMtbUsb() const {
 		result.push_back(this->servoPosition[i]);
 	for (size_t i = 0; i < UNIS_SERVO_CNT; i++)
 		result.push_back(this->servoSpeed[i]);
+	for (size_t i = 0; i < UNIS_SERVO_CNT; i++)
+		result.push_back(this->servoInputMap[i]);
 
 	return result;
 }
@@ -627,6 +633,12 @@ QJsonObject MtbUnisConfig::json() const {
 			array.push_back(speed);
 		result["servoSpeed"] = array;
 	}
+	{
+		QJsonArray array;
+		for (uint8_t inputMap : this->servoInputMap)
+			array.push_back(inputMap);
+		result["servoInputMap"] = array;
+	}
 	return result;
 }
 
@@ -635,6 +647,7 @@ void MtbUnisConfig::fromJson(const QJsonObject &json) {
 	const QJsonArray &jsonInputsDelay = QJsonSafe::safeArray(json, "inputsDelay", UNIS_IN_CNT);
 	const QJsonArray &jsonServoPosition = QJsonSafe::safeArray(json, "servoPosition", UNIS_SERVO_CNT * 2);
 	const QJsonArray &jsonServoSpeed = QJsonSafe::safeArray(json, "servoSpeed", UNIS_SERVO_CNT);
+	const QJsonArray &jsonInputMap = QJsonSafe::safeArray(json, "servoInputMap", UNIS_SERVO_CNT);
 
 	for (size_t i = 0; i < UNIS_IN_CNT; i++) {
 		int value = QJsonSafe::safeDouble(jsonInputsDelay[i])*10;
@@ -649,16 +662,18 @@ void MtbUnisConfig::fromJson(const QJsonObject &json) {
 		this->servoPosition[i] = QJsonSafe::safeUInt(jsonServoPosition[i]);
 	for (size_t i = 0; i < UNIS_SERVO_CNT; i++)
 		this->servoSpeed[i] = QJsonSafe::safeUInt(jsonServoSpeed[i]);
+	for (size_t i = 0; i < UNIS_SERVO_CNT; i++)
+		this->servoInputMap[i] = QJsonSafe::safeUInt(jsonInputMap[i]);
 }
 
 void MtbUnisConfig::fromMtbUsb(const std::vector<uint8_t> &data) {
-	if (data.size() < 67)
+	if (data.size() < 61)
 		return;
 	uint8_t pos = 0;
 	for (size_t i = 0; i < (UNIS_OUT_CNT); i++)
 		this->outputsSafe[i] = data[pos+i];
 	pos = UNIS_OUT_CNT;
-	for (size_t i = 0; i < (UNIS_IO_CNT); i++)
+	for (size_t i = 0; i < (UNIS_IN_CNT); i++)
 		this->inputsDelay[i] = ((i%2 == 0) ? data[pos+i/2] : data[pos+i/2] >> 4) & 0x0F;
 	pos += UNIS_IO_CNT/2;
 	this->servoEnabledMask = data[pos];
@@ -669,6 +684,10 @@ void MtbUnisConfig::fromMtbUsb(const std::vector<uint8_t> &data) {
 	pos += UNIS_SERVO_OUT_CNT;
 	for (size_t i = 0; i < (UNIS_SERVO_CNT); i++) {
 		this->servoSpeed[i] = data[pos+i];
+	}
+	pos += UNIS_SERVO_CNT;
+	for (size_t i = 0; i < (UNIS_SERVO_CNT); i++) {
+		this->servoInputMap[i] = data[pos+i];
 	}
 }
 

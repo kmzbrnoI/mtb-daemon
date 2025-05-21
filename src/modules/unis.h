@@ -11,6 +11,7 @@ constexpr size_t UNIS_OUT_CNT = (UNIS_IO_CNT + UNIS_SERVO_OUT_CNT);
 constexpr size_t UNIS_IN_CNT = (UNIS_IO_CNT);
 constexpr size_t UNIS_PAGE_SIZE = 256;
 constexpr float UNIS_ADC_BG = 1.22;
+constexpr uint16_t UNIS_FW_DEPRECATED = 0x0200; // FW <= UNIS_DEPRECATED is marked as deprecated
 
 struct MtbUnisConfig {
 	std::array<uint8_t, UNIS_OUT_CNT> outputsSafe = {0, };
@@ -18,6 +19,7 @@ struct MtbUnisConfig {
 	uint8_t servoEnabledMask = 0;
 	std::array<uint8_t, UNIS_SERVO_OUT_CNT> servoPosition = {0, };
 	std::array<uint8_t, UNIS_SERVO_CNT> servoSpeed = {0, };
+	std::array<uint8_t, UNIS_SERVO_CNT> servoInputMap = {1, 3, 5, 7, 9, 11};
 
 	MtbUnisConfig() {} // default config
 	MtbUnisConfig(const QJsonObject& json) { this->fromJson(json); }
@@ -34,7 +36,8 @@ struct MtbUnisConfig {
 		        (this->inputsDelay == other.inputsDelay) &&
 		        (this->servoEnabledMask == other.servoEnabledMask) &&
 		        (this->servoPosition == other.servoPosition) &&
-		        (this->servoSpeed == other.servoSpeed));
+		        (this->servoSpeed == other.servoSpeed) &&
+		        (this->servoInputMap == other.servoInputMap));
 	}
 
 	bool operator!=(const MtbUnisConfig& other) const { return !(*this == other); }
