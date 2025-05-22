@@ -9,7 +9,7 @@ MtbUnis::MtbUnis(uint8_t addr) : MtbModule(addr) {
 	std::fill(this->whoSetOutput.begin(), this->whoSetOutput.end(), nullptr);
 }
 
-bool MtbUni::fwDeprecated() const {
+bool MtbUnis::fwDeprecated() const {
 	return (this->busModuleInfo.uint_fw_version() <= UNIS_FW_DEPRECATED);
 }
 

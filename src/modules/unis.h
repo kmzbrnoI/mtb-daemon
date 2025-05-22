@@ -108,6 +108,8 @@ public:
 	void reactivateCheck() override;
 
 	static uint8_t jsonOutputToByte(const QJsonObject&);
+
+	bool fwDeprecated() const override;
 };
 
 #endif
