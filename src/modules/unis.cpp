@@ -257,7 +257,7 @@ void MtbUnis::jsonSetConfig(QTcpSocket *socket, const QJsonObject &request) {
 
 	// Check validity first
 	MtbUnisConfig newConfig;
-	if (request.contains("config")) // allow to create empty module with empty config
+	if (request.contains("config")) // allow to create empty module with default config
 		newConfig = MtbUnisConfig(QJsonSafe::safeObject(request, "config"));
 
 	MtbModule::jsonSetConfig(socket, request);

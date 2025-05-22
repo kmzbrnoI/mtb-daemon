@@ -17,8 +17,8 @@ struct MtbUnisConfig {
 	std::array<uint8_t, UNIS_OUT_CNT> outputsSafe = {0, };
 	std::array<size_t, UNIS_IN_CNT> inputsDelay = {0, }; // 0 = 0s, 1 = 0.1s, 15 = 1.5s, min=0, max=15
 	uint8_t servoEnabledMask = 0;
-	std::array<uint8_t, UNIS_SERVO_OUT_CNT> servoPosition = {0, };
-	std::array<uint8_t, UNIS_SERVO_CNT> servoSpeed = {0, };
+	std::array<uint8_t, UNIS_SERVO_OUT_CNT> servoPosition = {50, 100, 50, 100, 50, 100, 50, 100, 50, 100, 50, 100};
+	std::array<uint8_t, UNIS_SERVO_CNT> servoSpeed = {100, };
 	std::array<uint8_t, UNIS_SERVO_CNT> servoInputMap = {1, 3, 5, 7, 9, 11};
 
 	MtbUnisConfig() {} // default config
