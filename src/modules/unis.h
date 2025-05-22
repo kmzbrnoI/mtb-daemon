@@ -19,7 +19,7 @@ struct MtbUnisConfig {
 	uint8_t servoEnabledMask = 0;
 	std::array<uint8_t, UNIS_SERVO_OUT_CNT> servoPosition = {50, 100, 50, 100, 50, 100, 50, 100, 50, 100, 50, 100};
 	std::array<uint8_t, UNIS_SERVO_CNT> servoSpeed = {100, };
-	std::array<uint8_t, UNIS_SERVO_CNT> servoInputMap = {1, 3, 5, 7, 9, 11};
+	std::array<uint8_t, UNIS_SERVO_CNT> servoInputMap = {1, 3, 5, 7, 9, 11}; // 0 is reserved for 'no input', 1~GPIO 0+1, 3~GPIO 2+3 etc.
 
 	MtbUnisConfig() {} // default config
 	MtbUnisConfig(const QJsonObject& json) { this->fromJson(json); }
