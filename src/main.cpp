@@ -775,10 +775,18 @@ void DaemonCoreApplication::serverCmdModuleSpecificCommand(QTcpSocket *socket, c
 }
 
 void DaemonCoreApplication::serverCmdSetAddress(QTcpSocket *socket, const QJsonObject &request) {
-	uint8_t newaddr = QJsonSafe::safeUInt(request, "new_address");
+	if (!this->hasWriteAccess(socket))
+		return sendAccessDenied(socket, request);
+
+	unsigned newaddr = QJsonSafe::safeUInt(request, "new_address");
+	if (!Mtb::isValidModuleAddress(newaddr))
+		return sendError(socket, request, MTB_MODULE_INVALID_ADDR, "Invalid new module address");
+	if ((modules[newaddr]) && (modules[newaddr]->isActive()))
+		return sendError(socket, request, MTB_MODULE_ACTIVE, "Module with specified address is already active");
+
 	mtbusb.send(
 		Mtb::CmdMtbModuleChangeAddr(
-			newaddr,
+			static_cast<uint8_t>(newaddr),
 			{[request, socket](void*) {
 				QJsonObject json = jsonOkResponse(request);
 				server.send(socket, json);

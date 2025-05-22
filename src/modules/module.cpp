@@ -139,23 +139,22 @@ void MtbModule::jsonSetConfig(QTcpSocket*, const QJsonObject &json) {
 }
 
 void MtbModule::jsonSetAddress(QTcpSocket *socket, const QJsonObject &request) {
-	if (this->isFirmwareUpgrading()) {
-		sendError(socket, request, MTB_MODULE_UPGRADING_FW, "Firmware of module is being upgraded!");
-		return;
-	}
-	if (this->busModuleInfo.inBootloader()) {
-		sendError(socket, request, MTB_MODULE_IN_BOOTLOADER, "Module is in bootloader!");
-		return;
-	}
-	if (this->isConfigSetting()) {
-		sendError(socket, request, MTB_MODULE_CONFIG_SETTING, "Configuration of module is being changed!");
-		return;
-	}
+	if (this->isFirmwareUpgrading())
+		return sendError(socket, request, MTB_MODULE_UPGRADING_FW, "Firmware of module is being upgraded!");
+	if (this->busModuleInfo.inBootloader())
+		return sendError(socket, request, MTB_MODULE_IN_BOOTLOADER, "Module is in bootloader!");
+	if (this->isConfigSetting())
+		return sendError(socket, request, MTB_MODULE_CONFIG_SETTING, "Configuration of module is being changed!");
 
-	uint8_t newaddr = QJsonSafe::safeUInt(request, "new_address");
+	unsigned newaddr = QJsonSafe::safeUInt(request, "new_address");
+	if (!Mtb::isValidModuleAddress(newaddr))
+		return sendError(socket, request, MTB_MODULE_INVALID_ADDR, "Invalid new module address");
+	if ((modules[newaddr]) && (modules[newaddr]->isActive()))
+		return sendError(socket, request, MTB_MODULE_ACTIVE, "Module with specified address is already active");
+
 	mtbusb.send(
 		Mtb::CmdMtbModuleChangeAddr(
-			this->address, newaddr,
+			this->address, static_cast<uint8_t>(newaddr),
 			{[socket, request](uint8_t, void*) {
 				QJsonObject response = jsonOkResponse(request);
 				server.send(socket, response);
