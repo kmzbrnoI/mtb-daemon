@@ -670,25 +670,22 @@ void MtbUnisConfig::fromMtbUsb(const std::vector<uint8_t> &data) {
 	if (data.size() < 61)
 		return;
 	uint8_t pos = 0;
-	for (size_t i = 0; i < (UNIS_OUT_CNT); i++)
+	for (size_t i = 0; i < UNIS_OUT_CNT; i++)
 		this->outputsSafe[i] = data[pos+i];
 	pos = UNIS_OUT_CNT;
-	for (size_t i = 0; i < (UNIS_IN_CNT); i++)
+	for (size_t i = 0; i < UNIS_IN_CNT; i++)
 		this->inputsDelay[i] = ((i%2 == 0) ? data[pos+i/2] : data[pos+i/2] >> 4) & 0x0F;
-	pos += UNIS_IO_CNT/2;
+	pos += UNIS_IN_CNT/2;
 	this->servoEnabledMask = data[pos];
 	pos++;
-	for (size_t i = 0; i < (UNIS_SERVO_OUT_CNT); i++) {
+	for (size_t i = 0; i < UNIS_SERVO_OUT_CNT; i++)
 		this->servoPosition[i] = data[pos+i];
-	}
 	pos += UNIS_SERVO_OUT_CNT;
-	for (size_t i = 0; i < (UNIS_SERVO_CNT); i++) {
+	for (size_t i = 0; i < UNIS_SERVO_CNT; i++)
 		this->servoSpeed[i] = data[pos+i];
-	}
 	pos += UNIS_SERVO_CNT;
-	for (size_t i = 0; i < (UNIS_SERVO_CNT); i++) {
+	for (size_t i = 0; i < UNIS_SERVO_CNT; i++)
 		this->servoInputMap[i] = data[pos+i];
-	}
 }
 
 uint8_t MtbUnis::flickPerMinToMtbUnisValue(size_t flickPerMin) {
