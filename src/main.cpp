@@ -179,7 +179,7 @@ void DaemonCoreApplication::mtbUsbOnConnect() {
 }
 
 void DaemonCoreApplication::mtbUsbGotInfo() {
-	const Mtb::MtbUsbInfo& mtbusbinfo = mtbusb.mtbUsbInfo().value();
+	const Mtb::MtbUsbInfo mtbusbinfo = mtbusb.mtbUsbInfo().value();
 	const QJsonObject& mtbusbObj = this->config["mtb-usb"].toObject();
 	if (!mtbusbObj.contains("speed"))
 		return this->mtbUsbProperSpeedSet();
