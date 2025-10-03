@@ -15,7 +15,8 @@ Definition of messages for MTB-UNIS
         "inputsDelay": [0, 0.5, 0.2, ..., 0.3], # 16 values
         "servoEnabledMask": 3, # 0–0x3F, mask with servo enable outputs
         "servoPosition": [0, 255, ..., 32], # 12 values, 0—255
-        "servoSpeed": [100, 50, 100, 100, 200, 200] # 6 values 0—255
+        "servoSpeed": [100, 50, 100, 100, 200, 200], # 6 values 0—255
+        "servoInputMap": [1, 3, 5, 7, 9, 11] # 6 values 0—14, 0=no input, 1=inputs 0,1 ... 14=inputs 14,15
     },
     "state": {
         "outputs": ..., # See 'Outputs' below
@@ -27,6 +28,7 @@ Definition of messages for MTB-UNIS
 * Flicker value: number of ticks in minute. Allowed values:
   60, 120, 180, 240, 320, 600, 33, 66.
 * Inputs delay: 0–1.5 (including bounds), step=0.1.
+* `servoInputMap` since MTB Daemon v1.8.
 
 ## Inputs
 
