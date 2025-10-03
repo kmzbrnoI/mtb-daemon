@@ -68,13 +68,13 @@ unsigned int safeUInt(const QJsonObject &parent, const QString &key) {
 	return static_cast<unsigned int>(value);
 }
 
-int safeDouble(const QJsonValue &json) {
+double safeDouble(const QJsonValue &json) {
 	if (!json.isDouble())
 		throw JsonParseError("Double expected!");
 	return json.toDouble();
 }
 
-int safeDouble(const QJsonObject &parent, const QString &key) {
+double safeDouble(const QJsonObject &parent, const QString &key) {
 	if (!parent.contains(key))
 		throw JsonParseError(key + " not found in parent object!");
 

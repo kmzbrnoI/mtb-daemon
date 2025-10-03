@@ -8,7 +8,7 @@
 #include "errors.h"
 
 enum class MtbModuleType {
-	Uknown = 0x00,
+	Unknown = 0x00,
 	Univ2ir = 0x10,
 	Univ2noIr = 0x11,
 	Univ40 = 0x15,
@@ -25,7 +25,7 @@ protected:
 	bool active = false;
 	uint8_t address;
 	QString name;
-	MtbModuleType type = MtbModuleType::Uknown;
+	MtbModuleType type = MtbModuleType::Unknown;
 	Mtb::ModuleInfo busModuleInfo;
 	std::optional<ServerRequest> configWriting;
 	bool beacon = false;

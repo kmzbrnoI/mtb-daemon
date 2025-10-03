@@ -15,6 +15,7 @@ Usage:
   manage.py [options] mtbusb speed <speed>
   manage.py [options] version
   manage.py [options] module <module_addr> [--diag]
+  manage.py [options] delete <module_addr>
   manage.py [options] inputs <module_addr>
   manage.py [options] outputs <module_addr>
   manage.py [options] reboot <module_addr>
@@ -139,6 +140,13 @@ def module(sock: socket.socket, verbose: bool, module: int) -> None:
         print(key, ':', val)
 
 
+def delete(sock: socket.socket, verbose: bool, module: int) -> None:
+    response = request_response(sock, verbose, {
+        'command': 'module_delete',
+        'address': module,
+    })
+
+
 def module_diag(sock: socket.socket, verbose: bool, module: int) -> None:
     DVS = ['warnings', 'errors', 'uptime', 'mcu_voltage', 'mcu_temperature']
 
@@ -179,6 +187,16 @@ def unis_print_config(config: Dict[str, Any]) -> None:
     for inp, out in zip(inputs, outputs):
         print(inp.ljust(20), out)
 
+def unis_inputs_str(inputs: Dict[str, Any]) -> str:
+    return ((''.join(str(int(val)) for val in inputs['full'][:8])) + ' ' +
+            (''.join(str(int(val)) for val in inputs['full'][8:16])) + ' ' +
+	    (''.join(str(int(val)) for val in inputs['full'][16:18])) + ' ' +
+	    (''.join(str(int(val)) for val in inputs['full'][18:20])) + ' ' +
+	    (''.join(str(int(val)) for val in inputs['full'][20:22])) + ' ' +
+	    (''.join(str(int(val)) for val in inputs['full'][22:24])) + ' ' +
+	    (''.join(str(int(val)) for val in inputs['full'][24:26])) + ' ' +
+	    (''.join(str(int(val)) for val in inputs['full'][26:28])))
+
 
 def uni_inputs_str(inputs: Dict[str, Any]) -> str:
     return ((''.join(str(int(val)) for val in inputs['full'][:8])) + ' ' +
@@ -190,7 +208,9 @@ def rc_inputs_str(inputs: Dict[str, Any]) -> str:
 
 
 def inputs_str(module_type: str, inputs: Dict[str, Any]) -> str:
-    if module_type.startswith('MTB-UNI'):
+    if module_type.startswith('MTB-UNIS'):
+        return unis_inputs_str(inputs)
+    elif module_type == 'MTB-RC':
         return uni_inputs_str(inputs)
     elif module_type == 'MTB-RC':
         return rc_inputs_str(inputs)
@@ -533,6 +553,9 @@ if __name__ == '__main__':
             module(sock, args['-v'], int(args['<module_addr>']))
             if bool(args['--diag']):
                 module_diag(sock, args['-v'], int(args['<module_addr>']))
+
+        elif args['delete']:
+            delete(sock, args['-v'], int(args['<module_addr>']))
 
         elif args['inputs']:
             get_inputs(sock, args['-v'], int(args['<module_addr>']))

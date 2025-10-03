@@ -26,8 +26,8 @@ QJsonArray safeArray(const QJsonObject &parent, const QString &key, qsizetype si
 unsigned int safeUInt(const QJsonValue&);
 unsigned int safeUInt(const QJsonObject &parent, const QString &key);
 
-int safeDouble(const QJsonValue&);
-int safeDouble(const QJsonObject &parent, const QString &key);
+double safeDouble(const QJsonValue&);
+double safeDouble(const QJsonObject &parent, const QString &key);
 
 bool safeBool(const QJsonValue&);
 bool safeBool(const QJsonObject &parent, const QString &key);
@@ -35,6 +35,6 @@ bool safeBool(const QJsonObject &parent, const QString &key);
 QString safeString(const QJsonValue&);
 QString safeString(const QJsonObject &parent, const QString &key);
 
-}; // namespace QJsonSafe
+} // namespace QJsonSafe
 
 #endif
