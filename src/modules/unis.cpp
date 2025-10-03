@@ -25,10 +25,10 @@ QJsonObject MtbUnis::moduleInfo(bool state, bool config) const {
 
 	if (state && this->active && !this->busModuleInfo.inBootloader()) {
 		unis["state"] = QJsonObject{
-		                    {"outputs", outputsToJson(this->outputsConfirmed)},
-		                    {"inputs", inputsToJson(this->inputs)},
-		                    {"inputsPacked", (int) this->inputs},
-	                    };
+		                  {"outputs", outputsToJson(this->outputsConfirmed)},
+		                  {"inputs", inputsToJson(this->inputs)},
+		                  {"inputsPacked", (int) this->inputs},
+	                  };
 	};
 
 	response[moduleTypeToStr(this->type)] = unis;
