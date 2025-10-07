@@ -526,7 +526,6 @@ void MtbUnis::inputsRead(const std::vector<uint8_t> &data) {
 void MtbUnis::storeInputsState(const std::vector<uint8_t> &data) {
 	if (data.size() >= 4)
 		this->inputs = (data[3] << 24) | (data[2] << 16) | (data[1] << 8) | data[0];
-	this->mlog(QString("raw inputs: 0x%1").arg(QString::number(this->inputs, 16)), Mtb::LogLevel::Error);
 }
 
 void MtbUnis::outputsReset() {
