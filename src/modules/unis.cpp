@@ -25,10 +25,10 @@ QJsonObject MtbUnis::moduleInfo(bool state, bool config) const {
 
 	if (state && this->active && !this->busModuleInfo.inBootloader()) {
 		unis["state"] = QJsonObject{
-		                  {"outputs", outputsToJson(this->outputsConfirmed)},
-		                  {"inputs", inputsToJson(this->inputs)},
-		                  {"inputsPacked", (int) this->inputs},
-	                  };
+			{"outputs", outputsToJson(this->outputsConfirmed)},
+			{"inputs", inputsToJson(this->inputs)},
+			{"inputsPacked", (int)this->inputs},
+		};
 	};
 
 	response[moduleTypeToStr(this->type)] = unis;
@@ -203,7 +203,7 @@ QJsonObject MtbUnis::inputsToJson(uint32_t inputs) {
 		json.push_back(static_cast<bool>(_inputs&1));
 		_inputs >>= 1;
 	}
-	return {{"full", json}, {"packed", (int) inputs}};
+	return {{"full", json}, {"packed", (int)inputs}};
 }
 
 void MtbUnis::mtbBusOutputsNotSet(Mtb::CmdError error) {
@@ -571,6 +571,7 @@ std::vector<uint8_t> MtbUnisConfig::serializeForMtbUsb() const {
 		result.push_back(this->servoSpeed[i]);
 	for (size_t i = 0; i < UNIS_SERVO_CNT; i++)
 		result.push_back(this->servoInputMap[i]);
+
 	return result;
 }
 

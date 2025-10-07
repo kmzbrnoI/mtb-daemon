@@ -190,12 +190,12 @@ def unis_print_config(config: Dict[str, Any]) -> None:
 def unis_inputs_str(inputs: Dict[str, Any]) -> str:
     return ((''.join(str(int(val)) for val in inputs['full'][:8])) + ' ' +
             (''.join(str(int(val)) for val in inputs['full'][8:16])) + ' ' +
-	    (''.join(str(int(val)) for val in inputs['full'][16:18])) + ' ' +
-	    (''.join(str(int(val)) for val in inputs['full'][18:20])) + ' ' +
-	    (''.join(str(int(val)) for val in inputs['full'][20:22])) + ' ' +
-	    (''.join(str(int(val)) for val in inputs['full'][22:24])) + ' ' +
-	    (''.join(str(int(val)) for val in inputs['full'][24:26])) + ' ' +
-	    (''.join(str(int(val)) for val in inputs['full'][26:28])))
+            (''.join(str(int(val)) for val in inputs['full'][16:18])) + ' ' +
+            (''.join(str(int(val)) for val in inputs['full'][18:20])) + ' ' +
+            (''.join(str(int(val)) for val in inputs['full'][20:22])) + ' ' +
+            (''.join(str(int(val)) for val in inputs['full'][22:24])) + ' ' +
+            (''.join(str(int(val)) for val in inputs['full'][24:26])) + ' ' +
+            (''.join(str(int(val)) for val in inputs['full'][26:28])))
 
 
 def uni_inputs_str(inputs: Dict[str, Any]) -> str:
