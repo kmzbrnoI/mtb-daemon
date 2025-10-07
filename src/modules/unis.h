@@ -86,7 +86,6 @@ protected:
 	static size_t flickMtbUnisToPerMin(uint8_t MtbUnisFlick);
 
 	static void alignFirmware(std::map<size_t, std::vector<uint8_t>>&, size_t pageSize);
-    bool fwDeprecated() const override;
 
 	QJsonObject dvRepr(uint8_t dvi, const std::vector<uint8_t> &data) const override;
 
