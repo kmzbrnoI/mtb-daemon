@@ -628,7 +628,6 @@ void MtbUnisConfig::fromJson(const QJsonObject &json) {
 	const QJsonArray &jsonInputsDelay = QJsonSafe::safeArray(json, "inputsDelay", UNIS_IN_CNT);
 	const QJsonArray &jsonServoPosition = QJsonSafe::safeArray(json, "servoPosition", UNIS_SERVO_CNT * 2);
 	const QJsonArray &jsonServoSpeed = QJsonSafe::safeArray(json, "servoSpeed", UNIS_SERVO_CNT);
-	const QJsonArray &jsonInputMap = QJsonSafe::safeArray(json, "servoInputMap", UNIS_SERVO_CNT);
 
 	for (size_t i = 0; i < UNIS_IN_CNT; i++) {
 		int value = QJsonSafe::safeDouble(jsonInputsDelay[i])*10;
@@ -643,8 +642,11 @@ void MtbUnisConfig::fromJson(const QJsonObject &json) {
 		this->servoPosition[i] = QJsonSafe::safeUInt(jsonServoPosition[i]);
 	for (size_t i = 0; i < UNIS_SERVO_CNT; i++)
 		this->servoSpeed[i] = QJsonSafe::safeUInt(jsonServoSpeed[i]);
-	for (size_t i = 0; i < UNIS_SERVO_CNT; i++)
-		this->servoInputMap[i] = QJsonSafe::safeUInt(jsonInputMap[i]);
+	if (json.contains("servoInputMap")) { // backward-compatibility
+		const QJsonArray &jsonInputMap = QJsonSafe::safeArray(json, "servoInputMap", UNIS_SERVO_CNT);
+		for (size_t i = 0; i < UNIS_SERVO_CNT; i++)
+			this->servoInputMap[i] = QJsonSafe::safeUInt(jsonInputMap[i]);
+	}
 }
 
 void MtbUnisConfig::fromMtbUsb(const std::vector<uint8_t> &data) {
