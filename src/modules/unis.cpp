@@ -723,7 +723,7 @@ QJsonObject MtbUnis::dvRepr(uint8_t dvi, const std::vector<uint8_t> &data) const
 			if (data.size() < 2)
 				return {};
 
-			uint16_t raw = (data[1] << 8) | data[0];
+			uint16_t raw = (data[0] << 8) | data[1];
 			float value = (UNIS_ADC_BG * 1024) / raw;
 			float value_min = (UNIS_ADC_BG*0.9 * 1024) / raw;
 			float value_max = (UNIS_ADC_BG*1.1 * 1024) / raw;
@@ -739,7 +739,7 @@ QJsonObject MtbUnis::dvRepr(uint8_t dvi, const std::vector<uint8_t> &data) const
 			if (data.size() < 4)
 				return {};
 
-			uint16_t raw = (data[0] << 8) | data[1];
+			uint16_t raw = (data[1] << 8) | data[0];
 			int8_t ts_offset = data[2];
 			uint8_t ts_gain = data[3];
 			float temp = ((raw-(273+100-ts_offset))*128 / ts_gain) + 25;
