@@ -318,7 +318,7 @@ std::vector<uint8_t> MtbLed::ioToMtb(const std::array<bool, LED_IO_CNT> &state) 
 
 	for (size_t i = 0; i < LED_IO_CNT; i++)
 		if (state[i])
-			data[i/8] = (1 << (i%8));
+			data[i/8] |= (1 << (i%8));
 
 	return data;
 }
