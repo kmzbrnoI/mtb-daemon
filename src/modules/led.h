@@ -8,6 +8,7 @@ constexpr size_t LED_IO_CNT = 32;
 
 struct MtbLedConfig {
 	std::array<bool, LED_IO_CNT> outputsSafe = {false, };
+	std::array<uint8_t, LED_IO_CNT> brightness = {100, };
 
 	MtbLedConfig() {} // default config
 	MtbLedConfig(const QJsonObject& json) { this->fromJson(json); }

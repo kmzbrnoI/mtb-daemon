@@ -318,18 +318,19 @@ std::vector<uint8_t> MtbLed::ioToMtb(const std::array<bool, LED_IO_CNT> &state) 
 
 	for (size_t i = 0; i < LED_IO_CNT; i++)
 		if (state[i])
-			data[i/4] = (1 << (i%4));
+			data[i/8] = (1 << (i%8));
 
 	return data;
 }
 
 std::array<bool, LED_IO_CNT> MtbLed::mtbDataToIo(const std::vector<uint8_t> &mtbBusData) {
+	// 'mtbBusData' could be longer - no problem (used in MtbLedConfig
 	std::array<bool, LED_IO_CNT> result{}; // initialize with 'false'
 	if (mtbBusData.size() < 4)
 		return result; // TODO: report error?
 
 	for (size_t i = 0; i < LED_IO_CNT; i++)
-		if (mtbBusData[i/4] & (1 << (i%4)))
+		if (mtbBusData[i/8] & (1 << (i%8)))
 			result[i] = true;
 
 	return result;
@@ -469,31 +470,53 @@ void MtbLed::mtbUsbDisconnected() {
 /* MtbLedConfig ------------------------------------------------------------- */
 
 std::vector<uint8_t> MtbLedConfig::serializeForMtbUsb() const {
-	return MtbLed::ioToMtb(this->outputsSafe);
+	std::vector<uint8_t> result;
+	const std::vector<uint8_t> safeStateSerialized = MtbLed::ioToMtb(this->outputsSafe);
+	std::copy(safeStateSerialized.begin(), safeStateSerialized.end(), std::back_inserter(result));
+	std::copy(this->brightness.begin(), this->brightness.end(), std::back_inserter(result));
+	return result;
 }
 
 QJsonObject MtbLedConfig::json() const {
 	QJsonObject result;
 	{
 		QJsonArray array;
-		for (uint8_t output : this->outputsSafe)
+		for (bool output : this->outputsSafe)
 			array.push_back(output);
 		result["outputsSafe"] = array;
+	}
+	{
+		QJsonArray brightness;
+		for (uint8_t value : this->brightness)
+			brightness.push_back(value);
+		result["brightness"] = brightness;
 	}
 
 	return result;
 }
 
 void MtbLedConfig::fromJson(const QJsonObject &json) {
-	const QJsonArray &jsonOutputsSafe = QJsonSafe::safeArray(json, "outputsSafe", LED_IO_CNT);
-	for (size_t i = 0; i < LED_IO_CNT; i++)
-		this->outputsSafe[i] = QJsonSafe::safeBool(jsonOutputsSafe[i]);
+	{
+		const QJsonArray &jsonOutputsSafe = QJsonSafe::safeArray(json, "outputsSafe", LED_IO_CNT);
+		for (size_t i = 0; i < LED_IO_CNT; i++)
+			this->outputsSafe[i] = QJsonSafe::safeBool(jsonOutputsSafe[i]);
+	}
+
+	{
+		const QJsonArray &jsonBrightness = QJsonSafe::safeArray(json, "brightness", LED_IO_CNT);
+		for (size_t i = 0; i < LED_IO_CNT; i++)
+			this->brightness[i] = QJsonSafe::safeUInt(jsonBrightness[i]);
+	}
 }
 
 void MtbLedConfig::fromMtbUsb(const std::vector<uint8_t> &data) {
-	if (data.size() < 4)
+	if (data.size() < (LED_IO_CNT+4))
 		return;
+
 	this->outputsSafe = MtbLed::mtbDataToIo(data);
+
+	for (size_t i = 0; i < LED_IO_CNT; i++)
+		this->brightness[i] = data[i+4];
 }
 
 void MtbLed::reactivateCheck() {
