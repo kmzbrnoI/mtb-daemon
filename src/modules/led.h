@@ -21,7 +21,7 @@ struct MtbLedConfig {
 	QJsonObject json() const;
 
 	bool operator==(const MtbLedConfig& other) const {
-		return (this->outputsSafe == other.outputsSafe);
+		return (this->outputsSafe == other.outputsSafe) && (this->brightness == other.brightness);
 	}
 
 	bool operator!=(const MtbLedConfig& other) const { return !(*this == other); }
