@@ -81,6 +81,8 @@ protected:
 
 	void mtbBusDiagStateChanged(bool isError, bool isWarning);
 
+	static void alignFirmware(std::map<size_t, std::vector<uint8_t>>&, size_t pageSize);
+
 public:
 	MtbModule(uint8_t addr);
 	virtual ~MtbModule() = default;

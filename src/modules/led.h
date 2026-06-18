@@ -28,6 +28,8 @@ struct MtbLedConfig {
 
 class MtbLed : public MtbModule {
 	friend MtbLedConfig;
+	static constexpr float ADCBG = 1.1;
+	static constexpr size_t PAGE_SIZE = 128;
 
 protected:
 	std::array<bool, LED_IO_CNT> inputs;
@@ -65,11 +67,7 @@ protected:
 	std::vector<uint8_t> mtbBusOutputsData() const;
 	static std::array<bool, LED_IO_CNT> moduleOutputsData(const std::vector<uint8_t>& mtbBusData);
 
-	static void alignFirmware(std::map<size_t, std::vector<uint8_t>>&, size_t pageSize);
-
 	QJsonObject dvRepr(uint8_t dvi, const std::vector<uint8_t> &data) const override;
-
-	float adcbg() const;
 
 public:
 	MtbLed(uint8_t addr);

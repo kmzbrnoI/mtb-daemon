@@ -115,7 +115,6 @@ protected:
 
 	void jsonUpgradeFw(QTcpSocket*, const QJsonObject&) override;
 	void activate();
-	static void alignFirmware(std::map<size_t, std::vector<uint8_t>>&, size_t pageSize);
 
 	QJsonObject dvRepr(uint8_t dvi, const std::vector<uint8_t> &data) const override;
 

@@ -71,21 +71,6 @@ void MtbRc::jsonUpgradeFw(QTcpSocket *socket, const QJsonObject &request) {
 		this->fwUpgdInit();*/
 }
 
-void MtbRc::alignFirmware(std::map<size_t, std::vector<uint8_t>> &fw, size_t pageSize) {
-	// TODO
-	const size_t blocksPerPage = pageSize / MtbModule::FwUpgrade::BLOCK_SIZE;
-	std::vector<size_t> blocks;
-	for (auto const &imap : fw)
-		blocks.push_back(imap.first);
-	for (size_t block : blocks) {
-		size_t page = block / blocksPerPage;
-		for (size_t i = 0; i < blocksPerPage; i++) {
-			if (fw.find((page*blocksPerPage)+i) == fw.end())
-				fw.emplace((page*blocksPerPage) + i, std::vector<uint8_t>(MtbModule::FwUpgrade::BLOCK_SIZE, 0xFF));
-		}
-	}
-}
-
 /* -------------------------------------------------------------------------- */
 
 /* MTB-RC activation ---------------------------------------------------------
