@@ -10,46 +10,23 @@ MtbLed::MtbLed(uint8_t addr) : MtbModule(addr) {
 	std::fill(this->whoSetOutput.begin(), this->whoSetOutput.end(), nullptr);
 }
 
-size_t MtbLed::pageSize() const {
-	if ((this->type == MtbModuleType::Univ2ir) || (this->type == MtbModuleType::Univ2noIr))
-		return 128;
-	return 256;
-}
-
-bool MtbLed::isUniv2() const {
-	return ((this->type == MtbModuleType::Univ2ir) || (this->type == MtbModuleType::Univ2noIr));
-}
-
-bool MtbLed::isUniv4() const {
-	return ((this->type == MtbModuleType::Univ40) || (this->type == MtbModuleType::Univ42));
-}
-
-bool MtbLed::fwDeprecated() const {
-	return ((this->isUniv4()) && (this->busModuleInfo.uint_fw_version() <= UNIv4_FW_DEPRECATED)) ||
-		((this->isUniv2()) && (this->busModuleInfo.uint_fw_version() <= UNIv2_FW_DEPRECATED));
-}
-
 /* JSON Module Info --------------------------------------------------------- */
 
 QJsonObject MtbLed::moduleInfo(bool state, bool config) const {
 	QJsonObject response = MtbModule::moduleInfo(state, config);
-
-	QJsonObject uni{
-		{"ir", this->isIrSupport()},
-	};
+	QJsonObject led;
 
 	if ((config) && (this->config.has_value()))
-		uni["config"] = this->config.value().json(this->isIrSupport(), false);
+		led["config"] = this->config.value().json();
 
 	if (state && this->active && !this->busModuleInfo.inBootloader()) {
-		uni["state"] = QJsonObject{
-			{"outputs", outputsToJson(this->outputsConfirmed)},
-			{"inputs", inputsToJson(this->inputs)},
-			{"inputsPacked", this->inputs},
+		led["state"] = QJsonObject{
+			{"outputs", ioStateToJson(this->outputsConfirmed)},
+			{"inputs", ioStateToJson(this->inputs)},
 		};
 	}
 
-	response[moduleTypeToStr(this->type)] = uni;
+	response[moduleTypeToStr(this->type)] = led;
 	return response;
 }
 
@@ -74,19 +51,19 @@ void MtbLed::jsonSetOutput(QTcpSocket *socket, const QJsonObject &request) {
 	}
 
 	QJsonObject outputs = QJsonSafe::safeObject(request, "outputs");
-	QMap<size_t, uint8_t> ports; // code per port
+	QMap<size_t, bool> ports; // state per port
 
 	// Validate ports
 	bool ok;
 	for (const auto &key : outputs.keys()) {
 		int port = key.toInt(&ok);
-		if ((!ok) || (port < 0) || (port >= static_cast<int>(UNI_IO_CNT))) {
+		if ((!ok) || (port < 0) || (port >= static_cast<int>(LED_IO_CNT))) {
 			sendError(socket, request, MTB_MODULE_INVALID_PORT, "Invalid port: "+key);
 			return;
 		}
 
 		try {
-			ports[port] = jsonOutputToByte(QJsonSafe::safeObject(outputs[key]));
+			ports[port] = QJsonSafe::safeBool(outputs[key]);
 		} catch (const JsonParseError& e) {
 			sendError(socket, request, MTB_MODULE_INVALID_PORT, "Invalid port "+key+" content: "+e.what());
 			return;
@@ -117,32 +94,9 @@ void MtbLed::jsonSetOutput(QTcpSocket *socket, const QJsonObject &request) {
 			this->setOutputs();
 	} else {
 		QJsonObject response = jsonOkResponse(request);
-		response["outputs"] = this->outputsToJson(this->outputsConfirmed);
+		response["outputs"] = this->ioStateToJson(this->outputsConfirmed);
 		server.send(socket, response);
 	}
-}
-
-uint8_t MtbLed::jsonOutputToByte(const QJsonObject &json) {
-	unsigned int value = QJsonSafe::safeUInt(json, "value");
-
-	if (json["type"] == "plain") {
-		if ((value != 0) && (value != 1))
-			throw JsonParseError("'value' can only be 0/1!");
-		return (value > 0) ? 1 : 0;
-	}
-	if (json["type"] == "s-com") {
-		if (value > 127)
-			throw JsonParseError("'value' can only be 0-127!");
-		return value | 0x80;
-	}
-	if (json["type"] == "flicker") {
-		uint8_t flick = flickPerMinToMtbLedValue(value);
-		if (flick == 0)
-			throw JsonParseError("'value' is not a valid flicker frequency!");
-		return flick | 0x40;
-	}
-
-	throw JsonParseError("unknown output type");
 }
 
 void MtbLed::setOutputs() {
@@ -151,7 +105,7 @@ void MtbLed::setOutputs() {
 
 	mtbusb.send(
 		Mtb::CmdMtbModuleSetOutput(
-			this->address, this->mtbBusOutputsData(),
+			this->address, this->ioToMtb(this->outputsWant),
 			{[this](uint8_t, const std::vector<uint8_t>& data, void*) {
 				this->mtbBusOutputsSet(data);
 			}},
@@ -161,7 +115,7 @@ void MtbLed::setOutputs() {
 }
 
 void MtbLed::mtbBusOutputsSet(const std::vector<uint8_t>& data) {
-	this->outputsConfirmed = this->moduleOutputsData(data);
+	this->outputsConfirmed = this->mtbDataToIo(data);
 
 	// TODO: check if output really set?
 
@@ -173,7 +127,7 @@ void MtbLed::mtbBusOutputsSet(const std::vector<uint8_t>& data) {
 			{"type", "response"},
 			{"status", "ok"},
 			{"address", this->address},
-			{"outputs", this->outputsToJson(this->outputsConfirmed)},
+			{"outputs", this->ioStateToJson(this->outputsConfirmed)},
 		};
 		if (sr.id.has_value())
 			response["id"] = static_cast<int>(sr.id.value());
@@ -183,7 +137,7 @@ void MtbLed::mtbBusOutputsSet(const std::vector<uint8_t>& data) {
 	this->setOutputsSent.clear();
 
 	// Report outputs changed event to other clients
-	this->sendOutputsChanged(outputsToJson(this->outputsConfirmed), ignore);
+	this->sendOutputsChanged(ioStateToJson(this->outputsConfirmed), ignore);
 
 	// Send next outputs
 	if (this->setOutputsWaiting.empty()) {
@@ -194,35 +148,15 @@ void MtbLed::mtbBusOutputsSet(const std::vector<uint8_t>& data) {
 	}
 }
 
-QJsonObject MtbLed::outputsToJson(const std::array<uint8_t, UNI_IO_CNT> &outputs) {
-	QJsonObject result;
-	for (size_t i = 0; i < UNI_IO_CNT; i++) {
-		QJsonObject output;
-
-		if ((outputs[i] & 0x80) > 0) {
-			output["type"] = "s-com";
-			output["value"] = outputs[i] & 0x7F;
-		} else if ((outputs[i] & 0x40) > 0) {
-			output["type"] = "flicker";
-			output["value"] = static_cast<int>(flickMtbLedToPerMin(outputs[i] & 0xF));
-		} else {
-			output["type"] = "plain";
-			output["value"] = outputs[i] & 1;
-		}
-
-		result[QString::number(i)] = output;
-	}
-	return result;
-}
-
-QJsonObject MtbLed::inputsToJson(uint16_t inputs) {
+QJsonObject MtbLed::ioStateToJson(const std::array<bool, LED_IO_CNT> &state) {
 	QJsonArray json;
-	uint16_t _inputs = inputs;
-	for (size_t i = 0; i < UNI_IO_CNT; i++) {
-		json.push_back(static_cast<bool>(_inputs&1));
-		_inputs >>= 1;
+	uint32_t packed = 0;
+	for (size_t i = 0; i < state.size(); i++) {
+		json.push_back(state[i]);
+		if (state[i])
+			packed |= (1 << i);
 	}
-	return {{"full", json}, {"packed", inputs}};
+	return {{"full", json}, {"packed", static_cast<int>(packed)}};
 }
 
 void MtbLed::mtbBusOutputsNotSet(Mtb::CmdError error) {
@@ -282,7 +216,7 @@ void MtbLed::jsonSetConfig(QTcpSocket *socket, const QJsonObject &request) {
 	if ((this->active) && (oldConfig != this->configToWrite)) {
 		mtbusb.send(
 			Mtb::CmdMtbModuleSetConfig(
-				this->address, this->configToWrite.value().serializeForMtbUsb(this->isIrSupport()),
+				this->address, this->configToWrite.value().serializeForMtbUsb(),
 				{[this](uint8_t, void*) { this->mtbBusConfigWritten(); }},
 				{[this](Mtb::CmdError error, void*) { this->mtbBusConfigNotWritten(error); }}
 			)
@@ -341,7 +275,7 @@ void MtbLed::jsonUpgradeFw(QTcpSocket *socket, const QJsonObject &request) {
 
 	this->fwUpgrade.fwUpgrading = ServerRequest(socket, request);
 	this->fwUpgrade.data = parseFirmware(QJsonSafe::safeObject(request, "firmware"));
-	this->alignFirmware(this->fwUpgrade.data, this->pageSize());
+	this->alignFirmware(this->fwUpgrade.data, PAGE_SIZE);
 
 	if (!this->configWriting.has_value() && this->setOutputsSent.empty())
 		this->fwUpgdInit();
@@ -354,7 +288,7 @@ void MtbLed::resetOutputsOfClient(QTcpSocket *socket) {
 
 	bool send = false;
 	if (this->config.has_value()) {
-		for (size_t i = 0; i < UNI_IO_CNT; i++) {
+		for (size_t i = 0; i < LED_IO_CNT; i++) {
 			if (this->whoSetOutput[i] == socket) {
 				this->outputsWant[i] = this->config.value().outputsSafe[i];
 				this->whoSetOutput[i] = nullptr;
@@ -378,67 +312,40 @@ std::vector<QTcpSocket*> MtbLed::outputSetters() const {
 	return result;
 }
 
-std::vector<uint8_t> MtbLed::mtbBusOutputsData() const {
+std::vector<uint8_t> MtbLed::ioToMtb(const std::array<bool, LED_IO_CNT> &state) {
 	// Set outputs data based on diff in this->outputsWant
-	const std::array<uint8_t, UNI_IO_CNT> &outputs = this->outputsWant;
 	std::vector<uint8_t> data {0, 0, 0, 0};
 
-	for (size_t i = 0; i < UNI_IO_CNT; i++) {
-		if ((outputs[i] & 0xC0) > 0) {
-			// Non-plain output
-			if (i < 8)
-				data[1] |= (1 << i);
-			else
-				data[0] |= (1 << (i-8));
-			data.push_back(outputs[i]);
-		} else {
-			// Plain outputs
-			if (outputs[i] > 0) {
-				if (i < 8)
-					data[3] |= (1 << i);
-				else
-					data[2] |= (1 << (i-8));
-			}
-		}
-	}
+	for (size_t i = 0; i < LED_IO_CNT; i++)
+		if (state[i])
+			data[i/4] = (1 << (i%4));
 
 	return data;
 }
 
-std::array<uint8_t, UNI_IO_CNT> MtbLed::moduleOutputsData(const std::vector<uint8_t> &mtbBusData) {
-	std::array<uint8_t, UNI_IO_CNT> result;
+std::array<bool, LED_IO_CNT> MtbLed::mtbDataToIo(const std::vector<uint8_t> &mtbBusData) {
+	std::array<bool, LED_IO_CNT> result{}; // initialize with 'false'
 	if (mtbBusData.size() < 4)
 		return result; // TODO: report error?
 
-	uint16_t mask = (mtbBusData[0] << 8) | mtbBusData[1];
-	uint16_t fullOutputs = (mtbBusData[2] << 8) | mtbBusData[3];
-	size_t j = 4;
-	for (size_t i = 0; i < UNI_IO_CNT; i++) {
-		if ((mask&1) == 0) {
-			result[i] = fullOutputs&1;
-		} else if (j < mtbBusData.size()) {
-			result[i] = mtbBusData[j];
-			j++;
-		}
-
-		mask >>= 1;
-		fullOutputs >>= 1;
-	}
+	for (size_t i = 0; i < LED_IO_CNT; i++)
+		if (mtbBusData[i/4] & (1 << (i%4)))
+			result[i] = true;
 
 	return result;
 }
 
 void MtbLed::allOutputsReset() {
-	for (size_t i = 0; i < UNI_IO_CNT; i++) {
-		this->outputsWant[i] = this->config.has_value() ? this->config.value().outputsSafe[i] : 0;
+	for (size_t i = 0; i < LED_IO_CNT; i++) {
+		this->outputsWant[i] = this->config.has_value() ? this->config.value().outputsSafe[i] : false;
 		this->outputsConfirmed[i] = this->outputsWant[i];
 		this->whoSetOutput[i] = nullptr;
 	}
-	this->sendOutputsChanged(outputsToJson(this->outputsConfirmed), {});
+	this->sendOutputsChanged(ioStateToJson(this->outputsConfirmed), {});
 }
 
-/* MTB-UNI activation ---------------------------------------------------------
- A) Module configuration was previously laoded from file:
+/* MTB-LED activation ---------------------------------------------------------
+ A) Module configuration was previously loaded from file:
  * 1) General information are read
  * 2) Config is SET
  * 3) Inputs are get
@@ -475,7 +382,7 @@ void MtbLed::activate() {
 		this->mlog("Config previously loaded from file, setting to module...", Mtb::LogLevel::Info);
 		mtbusb.send(
 			Mtb::CmdMtbModuleSetConfig(
-				this->address, this->config.value().serializeForMtbUsb(this->isIrSupport()),
+				this->address, this->config.value().serializeForMtbUsb(),
 				{[this](uint8_t, void*) { this->configSet(); }},
 				{[this](Mtb::CmdError error, void*) {
 					this->mlog("Unable to set module config.", Mtb::LogLevel::Error);
@@ -517,7 +424,7 @@ void MtbLed::configSet() {
 
 void MtbLed::inputsRead(const std::vector<uint8_t> &data) {
 	// Mtb module activation: got info & config set & inputs read → mark module as active
-	this->storeInputsState(data);
+	this->inputs = this->mtbDataToIo(data);
 
 	mtbusb.send(
 		Mtb::CmdMtbModuleResetOutputs(
@@ -532,18 +439,13 @@ void MtbLed::inputsRead(const std::vector<uint8_t> &data) {
 	);
 }
 
-void MtbLed::storeInputsState(const std::vector<uint8_t> &data) {
-	if (data.size() >= 2)
-		this->inputs = (data[0] << 8) | data[1];
-}
-
 void MtbLed::outputsReset() {
-	for (size_t i = 0; i < UNI_IO_CNT; i++) {
-		this->outputsWant[i] = this->config.has_value() ? this->config.value().outputsSafe[i] : 0;
+	for (size_t i = 0; i < LED_IO_CNT; i++) {
+		this->outputsWant[i] = this->config.has_value() ? this->config.value().outputsSafe[i] : false;
 		this->outputsConfirmed[i] = this->outputsWant[i];
 	}
 
-	for (size_t i = 0; i < UNI_IO_CNT; i++)
+	for (size_t i = 0; i < LED_IO_CNT; i++)
 		this->whoSetOutput[i] = nullptr;
 
 	this->fullyActivated();
@@ -553,140 +455,45 @@ void MtbLed::outputsReset() {
 
 void MtbLed::mtbBusInputsChanged(const std::vector<uint8_t> &data) {
 	if (this->active || this->activating) {
-		this->storeInputsState(data);
-		this->sendInputsChanged(inputsToJson(this->inputs));
+		this->inputs = this->mtbDataToIo(data);
+		this->sendInputsChanged(ioStateToJson(this->inputs));
 	}
 }
 
 void MtbLed::mtbUsbDisconnected() {
 	MtbModule::mtbUsbDisconnected();
 	this->allOutputsReset();
-	this->inputs = 0;
+	this->inputs.fill(false);
 }
 
 /* MtbLedConfig ------------------------------------------------------------- */
 
-std::vector<uint8_t> MtbLedConfig::serializeForMtbUsb(bool withIrs) const {
-	std::vector<uint8_t> result;
-	std::copy(this->outputsSafe.begin(), this->outputsSafe.end(), std::back_inserter(result));
-	for (size_t i = 0; i < 8; i++)
-		result.push_back(std::min<uint8_t>(this->inputsDelay[2*i], 0xF) |
-		                                   (std::min<uint8_t>(this->inputsDelay[2*i+1], 0xF) << 4));
-
-	if (withIrs) {
-		result.push_back(this->irs >> 8);
-		result.push_back(this->irs & 0xFF);
-	}
-
-	return result;
+std::vector<uint8_t> MtbLedConfig::serializeForMtbUsb() const {
+	return MtbLed::ioToMtb(this->outputsSafe);
 }
 
-QJsonObject MtbLedConfig::json(bool withIrs, bool file) const {
+QJsonObject MtbLedConfig::json() const {
 	QJsonObject result;
 	{
 		QJsonArray array;
-		for (uint8_t output : this->outputsSafe) {
-			QJsonObject outputs;
-			if ((output & 0x80) > 0) {
-				outputs["type"] = "s-com";
-				outputs["value"] = output & 0x7F;
-			} else if ((output & 0x40) > 0) {
-				outputs["type"] = "flicker";
-				outputs["value"] = static_cast<int>(MtbLed::flickMtbLedToPerMin(output & 0x0F));
-			} else {
-				outputs["type"] = "plain";
-				outputs["value"] = output & 1;
-			}
-			array.push_back(outputs);
-		}
+		for (uint8_t output : this->outputsSafe)
+			array.push_back(output);
 		result["outputsSafe"] = array;
-	}
-
-	{
-		QJsonArray array;
-		for (size_t delay : this->inputsDelay)
-			array.push_back(delay/10.0);
-		result["inputsDelay"] = array;
-	}
-
-	if (withIrs) {
-		QJsonArray array;
-		uint16_t irs = this->irs;
-		for (size_t i = 0; i < UNI_IO_CNT; i++) {
-			array.push_back(static_cast<bool>(irs & 1));
-			irs >>= 1;
-		}
-		result["irs"] = array;
-		if (!file)
-			result["irsPacked"] = this->irs;
 	}
 
 	return result;
 }
 
 void MtbLedConfig::fromJson(const QJsonObject &json) {
-	const QJsonArray &jsonOutputsSafe = QJsonSafe::safeArray(json, "outputsSafe", UNI_IO_CNT);
-	const QJsonArray &jsonInputsDelay = QJsonSafe::safeArray(json, "inputsDelay", UNI_IO_CNT);
-	if ((json.contains("irs")) && (!json["irs"].isArray()))
-		throw JsonParseError("'irs' must be an array!");
-	const QJsonArray &jsonIrs = json["irs"].toArray(); // 'irs' does not have to be present (modules without IR support)
-	if ((json.contains("irs")) && (jsonIrs.size() != UNI_IO_CNT))
-		throw JsonParseError("irs.size() must be "+QString::number(UNI_IO_CNT));
-	this->irs = 0;
-	for (size_t i = 0; i < UNI_IO_CNT; i++) {
-		this->outputsSafe[i] = MtbLed::jsonOutputToByte(QJsonSafe::safeObject(jsonOutputsSafe[i]));
-		{
-			int value = QJsonSafe::safeDouble(jsonInputsDelay[i])*10;
-			if ((value < 0) || (value > 15))
-				throw JsonParseError("Allowed delay: 0-1.5 s (0.1 s units)!");
-			this->inputsDelay[i] = value;
-		}
-		if (i < static_cast<size_t>(jsonIrs.size()))
-			if (QJsonSafe::safeBool(jsonIrs[i]))
-				this->irs |= (1 << i);
-	}
+	const QJsonArray &jsonOutputsSafe = QJsonSafe::safeArray(json, "outputsSafe", LED_IO_CNT);
+	for (size_t i = 0; i < LED_IO_CNT; i++)
+		this->outputsSafe[i] = QJsonSafe::safeBool(jsonOutputsSafe[i]);
 }
 
 void MtbLedConfig::fromMtbUsb(const std::vector<uint8_t> &data) {
-	if (data.size() < 24)
+	if (data.size() < 4)
 		return;
-	for (size_t i = 0; i < UNI_IO_CNT; i++)
-		this->outputsSafe[i] = data[i];
-	for (size_t i = 0; i < UNI_IO_CNT; i++)
-		this->inputsDelay[i] = ((i%2 == 0) ? data[i/2] : data[i/2] >> 4) & 0x0F;
-
-	if (data.size() >= 26)
-		this->irs = (data[24] << 8) | data[25];
-	else
-		this->irs = 0;
-}
-
-uint8_t MtbLed::flickPerMinToMtbLedValue(size_t flickPerMin) {
-	switch (flickPerMin) {
-	case 60: return 1;
-	case 120: return 2;
-	case 180: return 3;
-	case 240: return 4;
-	case 300: return 5;
-	case 600: return 6;
-	case 33: return 7;
-	case 66: return 8;
-	default: return 0;
-	}
-}
-
-size_t MtbLed::flickMtbLedToPerMin(uint8_t mtbUniFlick) {
-	switch (mtbUniFlick) {
-	case 1: return 60;
-	case 2: return 120;
-	case 3: return 180;
-	case 4: return 240;
-	case 5: return 300;
-	case 6: return 600;
-	case 7: return 33;
-	case 8: return 66;
-	default: return 0;
-	}
+	this->outputsSafe = MtbLed::mtbDataToIo(data);
 }
 
 void MtbLed::reactivateCheck() {
@@ -704,7 +511,7 @@ void MtbLed::loadConfig(const QJsonObject &json) {
 void MtbLed::saveConfig(QJsonObject &json) const {
 	MtbModule::saveConfig(json);
 	if (this->config.has_value())
-		json["config"] = this->config.value().json(this->isIrSupport(), true);
+		json["config"] = this->config.value().json();
 }
 
 /* Diagnostic Values -------------------------------------------------------- */
@@ -742,14 +549,6 @@ QJsonObject MtbLed::dvRepr(uint8_t dvi, const std::vector<uint8_t> &data) const 
 				{"mcu_ts_gain", ts_gain},
 			};
 		}
-
-		case Mtb::DVCommon::Uptime:
-			// Backward-compatible reversed endianness parsing for version <1.5 (<1.4)
-			if (((this->isUniv4()) && (this->busModuleInfo.uint_fw_version() < 0x0105)) ||
-			        ((this->isUniv2()) && (this->busModuleInfo.uint_fw_version() < 0x0104)))
-				if (data.size() == 4)
-					return {{"uptime_seconds", static_cast<int>(pack_reverse<uint32_t>(data))}};
-			break;
 	}
 
 	return MtbModule::dvRepr(dvi, data);

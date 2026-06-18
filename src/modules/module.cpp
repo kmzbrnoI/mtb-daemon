@@ -203,6 +203,7 @@ QString moduleTypeToStr(MtbModuleType type) {
 	case MtbModuleType::Univ42: return "MTB-UNI v4";
 	case MtbModuleType::Unis10: return "MTB-UNIS";
 	case MtbModuleType::Rc: return "MTB-RC";
+	case MtbModuleType::Led: return "MTB-LED";
 	default: return "Unknown type";
 	}
 }

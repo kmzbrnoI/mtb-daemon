@@ -12,6 +12,7 @@
 #include "uni.h"
 #include "unis.h"
 #include "rc.h"
+#include "led.h"
 
 #ifdef Q_OS_WIN
 #include <windows.h>
@@ -998,6 +999,8 @@ std::unique_ptr<MtbModule> DaemonCoreApplication::newModule(size_t type, uint8_t
 		return std::make_unique<MtbUnis>(addr);
 	} else if (type == static_cast<size_t>(MtbModuleType::Rc)) {
 		return std::make_unique<MtbRc>(addr);
+	} else if (type == static_cast<size_t>(MtbModuleType::Led)) {
+		return std::make_unique<MtbLed>(addr);
 	}
 
 	log("Unknown module type: "+QString::number(addr)+": 0x"+
