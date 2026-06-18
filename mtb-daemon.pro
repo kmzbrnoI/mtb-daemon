@@ -17,7 +17,8 @@ SOURCES += \
 	src/modules/module.cpp \
 	src/modules/uni.cpp \
 	src/modules/unis.cpp \
-	src/modules/rc.cpp
+	src/modules/rc.cpp \
+	src/modules/led.cpp
 
 HEADERS += \
 	src/main.h \
@@ -32,6 +33,7 @@ HEADERS += \
 	src/modules/uni.h \
 	src/modules/unis.h \
 	src/modules/rc.h \
+	src/modules/led.h \
 	src/errors.h \
 	src/utils.h \
 	lib/termcolor.h
@@ -60,7 +62,7 @@ QT -= gui
 QT += core serialport network
 
 VERSION_MAJOR = 1
-VERSION_MINOR = 8
+VERSION_MINOR = 9
 
 DEFINES += "VERSION_MAJOR=$$VERSION_MAJOR" "VERSION_MINOR=$$VERSION_MINOR"
 
