@@ -215,7 +215,7 @@ def inputs_str(module_type: str, inputs: Dict[str, Any]) -> str:
     elif module_type == 'MTB-RC':
         return rc_inputs_str(inputs)
     else:
-        return 'Unknown module type: {module_["type"]}'
+        return f'Unknown module type: {module_type}'
 
 
 def uni_outputs_str(outputs: Dict[str, Any]) -> str:
