@@ -549,7 +549,6 @@ QJsonObject MtbLed::dvRepr(uint8_t dvi, const std::vector<uint8_t> &data) const 
 				{"borf", static_cast<bool>(data[0] & 0x2)},
 				{"wdrf", static_cast<bool>(data[0] & 0x4)},
 				{"timer_miss", static_cast<bool>(data[0] & 0x10)},
-				{"vcc_oscilating", static_cast<bool>(data[0] & 0x20)},
 				{"tlc_tef", static_cast<bool>(data[1] & 0x01)},
 				{"tlc_lod", static_cast<bool>(data[1] & 0x02)},
 			};
