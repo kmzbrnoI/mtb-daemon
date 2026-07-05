@@ -541,35 +541,17 @@ void MtbLed::saveConfig(QJsonObject &json) const {
 
 QJsonObject MtbLed::dvRepr(uint8_t dvi, const std::vector<uint8_t> &data) const {
 	switch (dvi) {
-		case Mtb::DVCommon::MCUVoltage: {
+		case Mtb::DVCommon::Warnings: {
 			if (data.size() < 2)
 				return {};
-
-			uint16_t raw = (data[0] << 8) | data[1];
-			float value = (ADCBG * 1024) / raw;
-			float value_min = (ADCBG*0.9 * 1024) / raw;
-			float value_max = (ADCBG*1.1 * 1024) / raw;
 			return {
-				{"mcu_voltage", value},
-				{"mcu_voltage_min", value_min},
-				{"mcu_voltage_max", value_max},
-				{"mcu_voltage_raw", raw},
-			};
-		}
-
-		case Mtb::DVCommon::MCUTemperature: {
-			if (data.size() < 4)
-				return {};
-
-			uint16_t raw = (data[1] << 8) | data[0];
-			int8_t ts_offset = data[2];
-			uint8_t ts_gain = data[3];
-			float temp = ((raw-(273+100-ts_offset))*128 / ts_gain) + 25;
-			return {
-				{"mcu_temp_celsius", temp},
-				{"mcu_temp_raw", raw},
-				{"mcu_ts_offset", ts_offset},
-				{"mcu_ts_gain", ts_gain},
+				{"extrf", static_cast<bool>(data[0] & 0x1)},
+				{"borf", static_cast<bool>(data[0] & 0x2)},
+				{"wdrf", static_cast<bool>(data[0] & 0x4)},
+				{"timer_miss", static_cast<bool>(data[0] & 0x10)},
+				{"vcc_oscilating", static_cast<bool>(data[0] & 0x20)},
+				{"tlc_tef", static_cast<bool>(data[1] & 0x01)},
+				{"tlc_lod", static_cast<bool>(data[1] & 0x02)},
 			};
 		}
 	}
