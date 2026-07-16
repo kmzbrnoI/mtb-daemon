@@ -541,6 +541,14 @@ void MtbLed::saveConfig(QJsonObject &json) const {
 
 QJsonObject MtbLed::dvRepr(uint8_t dvi, const std::vector<uint8_t> &data) const {
 	switch (dvi) {
+		case Mtb::DVCommon::Errors: {
+			if (data.size() < 1)
+				return {};
+			return {
+				{"mcutemp_critical", static_cast<bool>(data[0] & 0x4)},
+			};
+		}
+
 		case Mtb::DVCommon::Warnings: {
 			if (data.size() < 2)
 				return {};
@@ -552,6 +560,7 @@ QJsonObject MtbLed::dvRepr(uint8_t dvi, const std::vector<uint8_t> &data) const 
 				{"tlc_tef", static_cast<bool>(data[1] & 0x01)},
 				{"tlc_lod", static_cast<bool>(data[1] & 0x02)},
 				{"ts_offset_uncalibrated", static_cast<bool>(data[1] & 0x04)},
+				{"mcutemp_high", static_cast<bool>(data[1] & 0x08)},
 			};
 		}
 
