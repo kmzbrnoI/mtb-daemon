@@ -553,6 +553,20 @@ QJsonObject MtbLed::dvRepr(uint8_t dvi, const std::vector<uint8_t> &data) const 
 				{"tlc_lod", static_cast<bool>(data[1] & 0x02)},
 			};
 		}
+
+		case Mtb::DVCommon::MCUTemperature: {
+			if (data.size() < 6)
+				return {};
+
+			uint16_t raw = (data[1] << 8) | data[0];
+			int temp = (data[3] << 8) | data[2];
+			int16_t ts_offset = (data[5] << 8) | data[4];
+			return {
+				{"mcu_temp_celsius", temp},
+				{"mcu_temp_raw", raw},
+				{"ts_offset", ts_offset},
+			};
+		}
 	}
 
 	return MtbModule::dvRepr(dvi, data);
