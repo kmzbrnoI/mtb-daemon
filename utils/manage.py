@@ -33,6 +33,7 @@ Usage:
   manage.py [options] dvstr <module_addr> <dvstr>
   manage.py [options] specific <module_addr> <command>
   manage.py [options] specific <command>
+  manage.py [options] tsoffset <module_addr> <tsoffset>
   manage.py --help
 
 Options:
@@ -525,6 +526,17 @@ def specific_module(sock: socket.socket, verbose: bool, module: int, data: List[
     print(response)
 
 
+def tsoffset(sock: socket.socket, verbose: bool, module: int, tsoffset: int) -> None:
+    tso_bytes = tsoffset & 0xFFFF
+
+    response = request_response(sock, verbose, {
+        'command': 'module_specific_command',
+        'address': module,
+        'data': [1, tso_bytes & 0xFF, tso_bytes >> 8],
+    })
+    print(response)
+
+
 if __name__ == '__main__':
     args = docopt(__doc__)
 
@@ -631,6 +643,8 @@ if __name__ == '__main__':
             specific_module(sock, args['-v'], int(args['<module_addr>']), list(args['<command>']))
         elif args['specific']:
             specific_broadcast(sock, args['-v'], list(args['<command>']))
+        elif args['tsoffset']:
+            tsoffset(sock, args['-v'], int(args['<module_addr>']), int(args['<tsoffset>'].replace('=', '')))
 
     except EDaemonResponse as e:
         sys.stderr.write(str(e)+'\n')
