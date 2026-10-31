@@ -32,6 +32,7 @@ int main(int argc, char *argv[]) {
 	DaemonCoreApplication a(argc, argv);
 #ifdef Q_OS_WIN
 	SetConsoleCtrlHandler(console_ctrl_handler, TRUE);
+	SetPriorityClass(GetCurrentProcess(), HIGH_PRIORITY_CLASS);
 #endif
 	if (a.startupError() != StartupError::Ok)
 		return static_cast<int>(a.startupError());
