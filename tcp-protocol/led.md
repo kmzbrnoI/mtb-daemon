@@ -31,3 +31,14 @@ Definition of messages for MTB-LED
 ```json
 "outputs": {"full": [False, False, True, True, ..., False], "packed": 5421}
 ```
+
+To set outputs:
+
+```json
+"outputs": {
+    "0": false,
+    "2": true,
+    "3": true,
+    "31": false
+}
+```
